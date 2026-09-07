@@ -231,6 +231,17 @@ bool LowTankThreatTrigger::IsActive()
     return tankThreat == 0.0f || threat > tankThreat * 0.5f;
 }
 
+bool OpeningTankThreatTrigger::IsActive()
+{
+    Unit* mainTank = AI_VALUE(Unit*, "main tank");
+    Unit* currentTarget = AI_VALUE(Unit*, "current target");
+    if (!mainTank || !currentTarget || mainTank == bot || currentTarget->GetVictim() != mainTank)
+        return false;
+
+    ThreatManager& mgr = currentTarget->GetThreatMgr();
+    return mgr.GetThreat(mainTank) > 0.0f && mgr.GetThreat(bot) == 0.0f;
+}
+
 bool AoeTrigger::IsActive()
 {
     Unit* current_target = AI_VALUE(Unit*, "current target");

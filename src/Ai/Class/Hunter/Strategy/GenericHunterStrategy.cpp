@@ -65,6 +65,7 @@ void GenericHunterStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
     // Aggro/Threat/Defensive Triggers
     triggers.push_back(new TriggerNode("has aggro", { NextAction("concussive shot", 20.0f) }));
+    triggers.push_back(new TriggerNode("opening tank threat", { NextAction("misdirection on main tank", ACTION_HIGH + 8) }));
     triggers.push_back(new TriggerNode("low tank threat", { NextAction("misdirection on main tank", 27.0f) }));
     triggers.push_back(new TriggerNode("low health", { NextAction("deterrence", 35.0f) }));
     triggers.push_back(new TriggerNode("concussive shot on snare target", { NextAction("concussive shot", 20.0f) }));

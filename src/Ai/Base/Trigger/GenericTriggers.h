@@ -260,6 +260,16 @@ public:
     bool IsActive() override;
 };
 
+// True only for a follower's first combat decision after the main tank has
+// established the boss as its victim. Classes can use it for an opening
+// threat-transfer spell before their first damaging action.
+class OpeningTankThreatTrigger : public Trigger
+{
+public:
+    OpeningTankThreatTrigger(PlayerbotAI* botAI) : Trigger(botAI, "opening tank threat") {}
+    bool IsActive() override;
+};
+
 class AoeTrigger : public AttackerCountTrigger
 {
 public:

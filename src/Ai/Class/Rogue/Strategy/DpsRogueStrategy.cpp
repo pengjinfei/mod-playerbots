@@ -202,6 +202,15 @@ void DpsRogueStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
     triggers.push_back(
         new TriggerNode(
+            "opening tank threat",
+            {
+                NextAction("tricks of the trade on main tank", ACTION_HIGH + 8)
+            }
+        )
+    );
+
+    triggers.push_back(
+        new TriggerNode(
             "low tank threat",
             {
                 NextAction("tricks of the trade on main tank", ACTION_HIGH + 7)
