@@ -36,12 +36,21 @@ public:
     bool isUseful() override;
 };
 
-class IngvarSmashReturnAction : public MovementAction
+class IngvarGetBehindAction : public MovementAction
 {
 public:
-    IngvarSmashReturnAction(PlayerbotAI* ai) : MovementAction(ai, "ingvar smash return") {}
+    IngvarGetBehindAction(PlayerbotAI* ai) : MovementAction(ai, "ingvar get behind") {}
     bool Execute(Event event) override;
-    bool isUseful() override;
+};
+
+class IngvarAvoidShadowAxeAction : public MovementAction
+{
+public:
+    IngvarAvoidShadowAxeAction(PlayerbotAI* ai) : MovementAction(ai, "ingvar avoid shadow axe") {}
+    bool Execute(Event event) override;
+
+private:
+    ObjectGuid _avoidedAxe;
 };
 
 #endif

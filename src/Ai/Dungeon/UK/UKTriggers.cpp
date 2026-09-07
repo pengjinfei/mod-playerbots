@@ -6,7 +6,11 @@
 
 #include "UKTriggers.h"
 #include "AiObjectContext.h"
+#include "Creature.h"
 #include "Playerbots.h"
+
+#include <algorithm>
+#include <list>
 
 bool KelesethFrostTombTrigger::IsActive()
 {
@@ -56,21 +60,23 @@ bool IngvarSmashTankTrigger::IsActive()
     return false;
 }
 
-bool IngvarSmashTankReturnTrigger::IsActive()
-{
-    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
-    // if (!boss || !botAI->IsTank(bot) || boss->HasUnitState(UNIT_STATE_CASTING))
-    // Ignore casting state as Ingvar will sometimes chain-cast a roar after a smash..
-    // We don't want this to prevent our tank from repositioning properly.
-    if (!boss || !botAI->IsTank(bot)) { return false; }
-
-    return true;
-}
-
 bool NotBehindIngvarTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
-    if (!boss || botAI->IsTank(bot)) { return false; }
+    Unit* currentTarget = AI_VALUE(Unit*, "current target");
+    if (!boss || currentTarget != boss || botAI->IsTank(bot) || botAI->IsHeal(bot)) { return false; }
 
-    return AI_VALUE2(bool, "behind", "current target");
+    return !AI_VALUE2(bool, "behind", "current target");
+}
+
+bool IngvarShadowAxeTrigger::IsActive()
+{
+    if (botAI->IsTank(bot)) { return false; }
+
+    std::list<Creature*> axes;
+    bot->GetCreatureListWithEntryInGrid(axes, NPC_THROW, 20.0f);
+    return std::any_of(axes.begin(), axes.end(), [](Creature const* axe)
+    {
+        return axe && axe->IsAlive();
+    });
 }

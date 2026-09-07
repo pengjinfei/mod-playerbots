@@ -29,6 +29,7 @@ enum UtgardeKeepIDs
     SPELL_WOE_STRIKE_H              = 59735,
     SPELL_DARK_SMASH_N              = 42723,
     SPELL_DARK_SMASH_H              = 59709,
+    NPC_THROW                       = 23997,
 };
 
 #define SPELL_STAGGERING_ROAR       DUNGEON_MODE(bot, SPELL_STAGGERING_ROAR_N, SPELL_STAGGERING_ROAR_H)
@@ -64,17 +65,17 @@ public:
     bool IsActive() override;
 };
 
-class IngvarSmashTankReturnTrigger : public Trigger
-{
-public:
-    IngvarSmashTankReturnTrigger(PlayerbotAI* ai) : Trigger(ai, "ingvar smash tank return") {}
-    bool IsActive() override;
-};
-
 class NotBehindIngvarTrigger : public Trigger
 {
 public:
     NotBehindIngvarTrigger(PlayerbotAI* ai) : Trigger(ai, "not behind ingvar") {}
+    bool IsActive() override;
+};
+
+class IngvarShadowAxeTrigger : public Trigger
+{
+public:
+    IngvarShadowAxeTrigger(PlayerbotAI* ai) : Trigger(ai, "ingvar shadow axe") {}
     bool IsActive() override;
 };
 

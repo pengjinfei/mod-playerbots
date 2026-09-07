@@ -22,15 +22,15 @@ class WotlkDungeonUKActionContext : public NamedObjectContext<Action>
             creators["ingvar get behind"] = &WotlkDungeonUKActionContext::ingvar_get_behind;
             // creators["ingvar hide los"] = &WotlkDungeonUKActionContext::ingvar_hide_los;
             creators["ingvar dodge smash"] = &WotlkDungeonUKActionContext::ingvar_dodge_smash;
-            creators["ingvar smash return"] = &WotlkDungeonUKActionContext::ingvar_smash_return;
+            creators["ingvar avoid shadow axe"] = &WotlkDungeonUKActionContext::ingvar_avoid_shadow_axe;
         }
     private:
         static Action* attack_frost_tomb(PlayerbotAI* ai) { return new AttackFrostTombAction(ai); }
         static Action* attack_dalronn(PlayerbotAI* ai) { return new AttackDalronnAction(ai); }
-        static Action* ingvar_get_behind(PlayerbotAI* ai) { return new SetBehindTargetAction(ai); }
+        static Action* ingvar_get_behind(PlayerbotAI* ai) { return new IngvarGetBehindAction(ai); }
         // static Action* ingvar_hide_los(PlayerbotAI* ai) { return new TellLosAction(ai); }
         static Action* ingvar_dodge_smash(PlayerbotAI* ai) { return new IngvarDodgeSmashAction(ai); }
-        static Action* ingvar_smash_return(PlayerbotAI* ai) { return new IngvarSmashReturnAction(ai); }
+        static Action* ingvar_avoid_shadow_axe(PlayerbotAI* ai) { return new IngvarAvoidShadowAxeAction(ai); }
 };
 
 #endif

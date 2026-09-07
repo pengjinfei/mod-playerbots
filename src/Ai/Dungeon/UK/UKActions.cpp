@@ -5,7 +5,12 @@
  */
 
 #include "UKActions.h"
+#include "Creature.h"
+#include "Map.h"
 #include "Playerbots.h"
+
+#include <algorithm>
+#include <list>
 
 bool AttackFrostTombAction::isUseful() { return !botAI->IsHeal(bot); }
 bool AttackFrostTombAction::Execute(Event /*event*/)
@@ -59,12 +64,63 @@ bool IngvarDodgeSmashAction::Execute(Event /*event*/)
     return Move(bot->GetAngle(boss), distance + distanceExtra);
 }
 
-bool IngvarSmashReturnAction::isUseful() { return AI_VALUE2(bool, "behind", "current target"); }
-bool IngvarSmashReturnAction::Execute(Event /*event*/)
+bool IngvarGetBehindAction::Execute(Event /*event*/)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
-    if (!boss) { return false; }
+    if (!boss || AI_VALUE(Unit*, "current target") != boss)
+        return false;
 
-    float distance = bot->GetExactDist2d(boss->GetPosition());
-    return Move(bot->GetAngle(boss), distance + bot->GetMeleeReach());
+    float const desiredRange = 7.0f;
+    float const distance = std::max(0.0f, desiredRange - boss->GetCombatReach());
+    float const angle = Position::NormalizeOrientation(boss->GetOrientation() + M_PI);
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    boss->GetNearPoint(bot, x, y, z, 0.0f, distance, angle);
+
+    if (!bot->GetMap()->CheckCollisionAndGetValidCoords(bot, bot->GetPositionX(), bot->GetPositionY(),
+                                                         bot->GetPositionZ(), x, y, z))
+        return false;
+
+    return MoveTo(bot->GetMapId(), x, y, z, false, false, false, true, MovementPriority::MOVEMENT_COMBAT);
+}
+
+bool IngvarAvoidShadowAxeAction::Execute(Event /*event*/)
+{
+    std::list<Creature*> axes;
+    bot->GetCreatureListWithEntryInGrid(axes, NPC_THROW, 20.0f);
+
+    Creature* nearest = nullptr;
+    for (Creature* axe : axes)
+        if (axe && axe->IsAlive() && (!nearest || bot->GetExactDist2d(axe) < bot->GetExactDist2d(nearest)))
+            nearest = axe;
+
+    if (!nearest)
+        return false;
+
+    if (nearest->GetGUID() == _avoidedAxe)
+        return false;
+
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
+    if (!boss)
+        return false;
+
+    float const desiredRange = 7.0f;
+    float const distance = std::max(0.0f, desiredRange - boss->GetCombatReach());
+    float const angularOffset = std::asin(std::min(1.0f, 5.0f / desiredRange));
+    float const angle = Position::NormalizeOrientation(boss->GetAngle(bot) + angularOffset);
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    boss->GetNearPoint(bot, x, y, z, 0.0f, distance, angle);
+
+    if (!bot->GetMap()->CheckCollisionAndGetValidCoords(bot, bot->GetPositionX(), bot->GetPositionY(),
+                                                         bot->GetPositionZ(), x, y, z))
+        return false;
+
+    if (!MoveTo(bot->GetMapId(), x, y, z, false, false, false, true, MovementPriority::MOVEMENT_COMBAT))
+        return false;
+
+    _avoidedAxe = nearest->GetGUID();
+    return true;
 }
