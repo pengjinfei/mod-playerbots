@@ -51,8 +51,13 @@ float IngvarThePlundererMultiplier::GetValue(Action* action)
     bool isTank = botAI->IsTank(bot);
     if (!boss) { return 1.0f; }
 
-    // Prevent movement actions overriding current movement, we're probably dodging a slam
-    if (isTank && bot->isMoving() && dynamic_cast<MovementAction*>(action))
+    // Prevent arbitrary movement from overriding a tank dodge, but keep both
+    // documented Ingvar responses available.  Shadow Axe can select the tank;
+    // excluding that response leaves the tank in repeated axe hits until the
+    // whole party loses its only stable target.
+    if (isTank && bot->isMoving() && dynamic_cast<MovementAction*>(action) &&
+        !dynamic_cast<IngvarDodgeSmashAction*>(action) &&
+        !dynamic_cast<IngvarAvoidShadowAxeAction*>(action))
     {
         return 0.0f;
     }
@@ -84,8 +89,10 @@ float IngvarThePlundererMultiplier::GetValue(Action* action)
             boss->FindCurrentSpellBySpellId(SPELL_DARK_SMASH))
         {
             // Prevent movement actions during smash which can mess up boss position.
-            // Allow through IngvarDodgeSmashAction only, as well as any non-movement actions.
-            if (dynamic_cast<MovementAction*>(action) && !dynamic_cast<IngvarDodgeSmashAction*>(action))
+            // Shadow Axe remains an immediate hazard, including when it is aimed
+            // at the tank, so allow both dedicated evasion actions through.
+            if (dynamic_cast<MovementAction*>(action) && !dynamic_cast<IngvarDodgeSmashAction*>(action) &&
+                !dynamic_cast<IngvarAvoidShadowAxeAction*>(action))
             {
                 return 0.0f;
             }

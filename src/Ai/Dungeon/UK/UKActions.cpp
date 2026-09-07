@@ -98,29 +98,20 @@ bool IngvarAvoidShadowAxeAction::Execute(Event /*event*/)
     if (!nearest)
         return false;
 
-    if (nearest->GetGUID() == _avoidedAxe)
-        return false;
+    // A thrown axe can cross the same bot's path more than once while travelling
+    // out and back. Do not remember a GUID as "handled": that suppresses every
+    // later evade from that still-dangerous axe. Move directly away, using the
+    // base movement helper's collision-safe candidate search.
+    return MoveAway(nearest, 8.0f);
+}
 
-    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
-    if (!boss)
-        return false;
+bool IngvarAvoidShadowAxeAction::isUseful()
+{
+    std::list<Creature*> axes;
+    bot->GetCreatureListWithEntryInGrid(axes, NPC_THROW, 12.0f);
 
-    float const desiredRange = 7.0f;
-    float const distance = std::max(0.0f, desiredRange - boss->GetCombatReach());
-    float const angularOffset = std::asin(std::min(1.0f, 5.0f / desiredRange));
-    float const angle = Position::NormalizeOrientation(boss->GetAngle(bot) + angularOffset);
-    float x = 0.0f;
-    float y = 0.0f;
-    float z = 0.0f;
-    boss->GetNearPoint(bot, x, y, z, 0.0f, distance, angle);
-
-    if (!bot->GetMap()->CheckCollisionAndGetValidCoords(bot, bot->GetPositionX(), bot->GetPositionY(),
-                                                         bot->GetPositionZ(), x, y, z))
-        return false;
-
-    if (!MoveTo(bot->GetMapId(), x, y, z, false, false, false, true, MovementPriority::MOVEMENT_COMBAT))
-        return false;
-
-    _avoidedAxe = nearest->GetGUID();
-    return true;
+    return std::any_of(axes.begin(), axes.end(), [this](Creature const* axe)
+    {
+        return axe && axe->IsAlive() && bot->GetExactDist2d(axe) <= 12.0f;
+    });
 }

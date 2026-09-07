@@ -48,9 +48,7 @@ class IngvarAvoidShadowAxeAction : public MovementAction
 public:
     IngvarAvoidShadowAxeAction(PlayerbotAI* ai) : MovementAction(ai, "ingvar avoid shadow axe") {}
     bool Execute(Event event) override;
-
-private:
-    ObjectGuid _avoidedAxe;
+    bool isUseful() override;
 };
 
 #endif

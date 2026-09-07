@@ -71,8 +71,6 @@ bool NotBehindIngvarTrigger::IsActive()
 
 bool IngvarShadowAxeTrigger::IsActive()
 {
-    if (botAI->IsTank(bot)) { return false; }
-
     std::list<Creature*> axes;
     bot->GetCreatureListWithEntryInGrid(axes, NPC_THROW, 20.0f);
     return std::any_of(axes.begin(), axes.end(), [](Creature const* axe)
