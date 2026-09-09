@@ -20,6 +20,29 @@ namespace
     constexpr float kIngvarDarkSmashConeRadians = 1.04719755f;
 }
 
+Unit* FindIngvarCrowdingMember(PlayerbotAI* botAI, Player* bot)
+{
+    Unit* nearest = nullptr;
+    float nearestDistance = kIngvarSpreadRadius;
+    for (ObjectGuid const& guid : botAI->GetAiObjectContext()->GetValue<GuidVector>("group members")->Get())
+    {
+        if (guid == bot->GetGUID())
+            continue;
+
+        Unit* member = botAI->GetUnit(guid);
+        if (!member || !member->IsAlive() || member->GetMapId() != bot->GetMapId())
+            continue;
+
+        float const distance = bot->GetExactDist2d(member);
+        if (distance < nearestDistance)
+        {
+            nearest = member;
+            nearestDistance = distance;
+        }
+    }
+    return nearest;
+}
+
 bool KelesethFrostTombTrigger::IsActive()
 {
     GuidVector members = AI_VALUE(GuidVector, "group members");
@@ -85,7 +108,10 @@ bool IngvarDarkSmashNonTankTrigger::IsActive()
     // effect 0 is the 60 degree front cone; move non-tanks out of that arc.
     // Do not require current target == boss: a healer or targetless member can
     // be in the cone even when it is not currently attacking Ingvar.
-    bool const inFrontCone = boss->HasInArc(kIngvarDarkSmashConeRadians, bot);
+    // HasInArc carries no range term. Effect 0 stops at 10 yd (SpellRadius index 13),
+    // so a member beyond that radius is not in the cone at all.
+    bool const inFrontCone = boss->HasInArc(kIngvarDarkSmashConeRadians, bot) &&
+        bot->GetExactDist2d(boss) <= kIngvarSmashConeRadius;
     if (inFrontCone)
     {
         Unit* currentTarget = AI_VALUE(Unit*, "current target");
@@ -114,7 +140,57 @@ bool NotBehindIngvarTrigger::IsActive()
     Unit* currentTarget = AI_VALUE(Unit*, "current target");
     if (!boss || currentTarget != boss || botAI->IsTank(bot) || botAI->IsHeal(bot)) { return false; }
 
+    // The rear arc is melee's answer to the 10 yd front cone, because melee cannot
+    // leave the cone's radius and keep contact. Members that do not need contact are
+    // handled by `ingvar ranged clearance` instead and must not be pulled inwards here.
+    if (botAI->IsRanged(bot))
+        return false;
+
     return !AI_VALUE2(bool, "behind", "current target");
+}
+
+bool IngvarRangedClearanceTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
+    if (!boss || botAI->IsTank(bot))
+        return false;
+
+    if (!botAI->IsRanged(bot) && !botAI->IsHeal(bot))
+        return false;
+
+    // Effect 0 of Smash / Dark Smash cannot select anything past 10 yd, and the boss
+    // turns to its victim constantly, so for these roles the safe criterion is range
+    // rather than the momentary rear arc.
+    if (!bot->IsInCombat() || !boss->IsInCombat())
+        return false;
+
+    bool const active = bot->GetExactDist2d(boss) < kIngvarRangedClearance;
+    if (active)
+        LOG_DEBUG("playerbots", "Ingvar diagnostic: ranged-clearance trigger bot={} distance={:.2f}",
+                  bot->GetName(), bot->GetExactDist2d(boss));
+    return active;
+}
+
+bool IngvarSpreadTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
+    if (!boss || botAI->IsTank(bot))
+        return false;
+
+    // Only hold a spread position once the encounter is running: before the pull the
+    // party is still on its prepared marks and must not scatter off them.
+    if (!bot->IsInCombat() || !boss->IsInCombat())
+        return false;
+
+    // Melee has to keep contact, so it cannot trade its position for separation.
+    if (!botAI->IsRanged(bot) && !botAI->IsHeal(bot))
+        return false;
+
+    Unit* crowd = FindIngvarCrowdingMember(botAI, bot);
+    if (crowd)
+        LOG_DEBUG("playerbots", "Ingvar diagnostic: spread trigger bot={} crowd={} distance={:.2f}",
+                  bot->GetName(), crowd->GetName(), bot->GetExactDist2d(crowd));
+    return crowd != nullptr;
 }
 
 bool IngvarShadowAxeTrigger::IsActive()

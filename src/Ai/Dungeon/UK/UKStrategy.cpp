@@ -37,6 +37,15 @@ void WotlkDungeonUKStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
             { NextAction("ingvar get behind", ACTION_MOVE + 1) }));
     triggers.push_back(new TriggerNode("ingvar shadow axe",
             { NextAction("ingvar avoid shadow axe", ACTION_MOVE + 6) }));
+    // Standing formation for members that do not need melee contact: leave the 10 yd
+    // radius of the smash cone entirely, instead of relying on the momentary rear arc.
+    triggers.push_back(new TriggerNode("ingvar ranged clearance",
+            { NextAction("ingvar keep range", ACTION_MOVE + 3) }));
+    // Standing formation: below both smash responses and the axe evade, above the
+    // ordinary rear-arc move. A single axe covers 5 yd, so members that do not need
+    // melee contact hold more than that from each other before one lands.
+    triggers.push_back(new TriggerNode("ingvar spread",
+            { NextAction("ingvar spread", ACTION_MOVE + 2) }));
 
 }
 

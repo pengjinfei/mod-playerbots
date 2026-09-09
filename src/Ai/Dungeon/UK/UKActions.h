@@ -63,6 +63,22 @@ public:
     bool isUseful() override;
 };
 
+class IngvarKeepRangeAction : public IngvarGetBehindAction
+{
+public:
+    IngvarKeepRangeAction(PlayerbotAI* ai) : IngvarGetBehindAction(ai, "ingvar keep range") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+class IngvarSpreadAction : public MovementAction
+{
+public:
+    IngvarSpreadAction(PlayerbotAI* ai) : MovementAction(ai, "ingvar spread") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
 class IngvarAvoidShadowAxeAction : public MovementAction
 {
 public:

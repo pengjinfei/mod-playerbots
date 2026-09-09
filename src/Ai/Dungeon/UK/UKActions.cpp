@@ -14,6 +14,7 @@
 #include "StringFormat.h"
 
 #include <algorithm>
+#include <cmath>
 #include <list>
 
 namespace
@@ -136,9 +137,19 @@ bool IngvarGetBehindAction::Execute(Event /*event*/)
 
 bool IngvarGetBehindAction::MoveBehind(Unit* boss, MovementPriority priority, char const* reason)
 {
-    float const desiredRange = 7.0f;
+    // Effect 0 of Smash / Dark Smash is a 10 yd cone. Melee has to stay in contact and
+    // therefore has to answer it by angle, from the rear arc. A member that does not
+    // need contact answers it by range instead: leaving the 10 yd radius on its current
+    // bearing is the shorter move and is safe at any angle, so ranged bots and healers
+    // are no longer walked into the arc behind the boss.
+    bool const keepsRange = !botAI->IsTank(bot) && (botAI->IsRanged(bot) || botAI->IsHeal(bot));
+    float const desiredRange = keepsRange ? kIngvarRangedClearance : 7.0f;
+    if (keepsRange && bot->GetExactDist2d(boss) >= desiredRange)
+        return false;
+
     float const distance = std::max(0.0f, desiredRange - boss->GetCombatReach());
-    float const angle = Position::NormalizeOrientation(boss->GetOrientation() + M_PI);
+    float const angle = keepsRange ? boss->GetAngle(bot)
+                                   : Position::NormalizeOrientation(boss->GetOrientation() + M_PI);
     bool const bossMovingAtSubmit = boss->isMoving();
     float x = 0.0f;
     float y = 0.0f;
@@ -150,6 +161,16 @@ bool IngvarGetBehindAction::MoveBehind(Unit* boss, MovementPriority priority, ch
     {
         LOG_DEBUG("playerbots", "Ingvar diagnostic: get-behind rejected bot={} reason={} priority={} collision=false",
                   bot->GetName(), reason, static_cast<uint32>(priority));
+        return false;
+    }
+
+    // The outward variant heads towards the open edges of the Keep platform. Ground and
+    // collision already ran; refuse anything that also changes level.
+    if (std::fabs(z - bot->GetPositionZ()) > 4.0f)
+    {
+        LOG_DEBUG("playerbots", "Ingvar diagnostic: get-behind rejected bot={} reason={} priority={} "
+                                   "vertical_delta={:.2f}",
+                  bot->GetName(), reason, static_cast<uint32>(priority), z - bot->GetPositionZ());
         return false;
     }
 
@@ -182,8 +203,11 @@ bool IngvarEvadeDarkSmashAction::isUseful()
 {
     constexpr float kIngvarDarkSmashConeRadians = 1.04719755f;
     Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
+    // HasInArc has no range term; effect 0 stops at 10 yd, so a member already outside
+    // that radius must not be moved by this response.
     bool const useful = boss && !botAI->IsTank(bot) && boss->GetDisplayId() == INGVAR_UNDEAD_DISPLAY_ID &&
-        boss->HasUnitState(UNIT_STATE_ROOT) && boss->HasInArc(kIngvarDarkSmashConeRadians, bot);
+        boss->HasUnitState(UNIT_STATE_ROOT) && boss->HasInArc(kIngvarDarkSmashConeRadians, bot) &&
+        bot->GetExactDist2d(boss) <= kIngvarSmashConeRadius;
     LOG_DEBUG("playerbots", "Ingvar diagnostic: dark-smash action useful bot={} useful={}", bot->GetName(), useful);
     return useful;
 }
@@ -215,6 +239,91 @@ bool IngvarClearContactAction::isUseful()
         LOG_DEBUG("playerbots", "Ingvar diagnostic: contact-clearance useful bot={} distance={:.2f}",
                   bot->GetName(), bot->GetExactDist2d(boss));
     return useful;
+}
+
+bool IngvarKeepRangeAction::Execute(Event /*event*/)
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
+    if (!boss)
+        return false;
+
+    return MoveBehind(boss, MovementPriority::MOVEMENT_COMBAT, "ranged_clearance");
+}
+
+bool IngvarKeepRangeAction::isUseful()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
+    return boss && !botAI->IsTank(bot) && (botAI->IsRanged(bot) || botAI->IsHeal(bot)) &&
+        bot->IsInCombat() && boss->IsInCombat() && bot->GetExactDist2d(boss) < kIngvarRangedClearance;
+}
+
+bool IngvarSpreadAction::Execute(Event /*event*/)
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
+    Unit* crowd = FindIngvarCrowdingMember(botAI, bot);
+    if (!boss || !crowd)
+        return false;
+
+    float const distance = bot->GetExactDist2d(crowd);
+    // One step that clears the axe radius with a margin, rather than repeated nudges.
+    float const step = std::max(3.0f, kIngvarSpreadRadius + 2.0f - distance);
+    float const angle = crowd->GetAngle(bot);
+    // Away from the crowding member first. On a platform with open edges and four other
+    // members that candidate can be invalid, so fan out through the same validation.
+    static constexpr float kOffsets[] = { 0.0f, float(M_PI_4), -float(M_PI_4), float(M_PI_2), -float(M_PI_2) };
+
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    bool selected = false;
+    float selectedBossDistance = 0.0f;
+    for (float offset : kOffsets)
+    {
+        float const candidateAngle = angle + offset;
+        float candidateX = bot->GetPositionX() + cos(candidateAngle) * step;
+        float candidateY = bot->GetPositionY() + sin(candidateAngle) * step;
+        float candidateZ = bot->GetMapWaterOrGroundLevel(candidateX, candidateY, bot->GetPositionZ());
+        bool const validGround = candidateZ != INVALID_HEIGHT && candidateZ != -100000.0f &&
+            candidateZ != -200000.0f && std::fabs(candidateZ - bot->GetPositionZ()) <= 4.0f;
+        if (!validGround || !bot->GetMap()->CheckCollisionAndGetValidCoords(bot, bot->GetPositionX(),
+                                                                            bot->GetPositionY(), bot->GetPositionZ(),
+                                                                            candidateX, candidateY, candidateZ))
+            continue;
+
+        float const crowdDistance = crowd->GetExactDist2d(candidateX, candidateY);
+        float const bossDistance = boss->GetExactDist2d(candidateX, candidateY);
+        // Separation must actually improve, the candidate must stay outside the smash
+        // cone, and it must not push the bot past its own working range: spreading is
+        // not allowed to buy safety by dropping out of the fight. A bot already beyond
+        // that range keeps its current distance as the ceiling instead of being pulled in.
+        float const rangeCeiling = std::max(bot->GetExactDist2d(boss),
+            (botAI->IsHeal(bot) ? sPlayerbotAIConfig.healDistance : sPlayerbotAIConfig.spellDistance) - 2.0f);
+        if (crowdDistance <= distance || bossDistance < kIngvarRangedClearance || bossDistance > rangeCeiling)
+            continue;
+
+        x = candidateX;
+        y = candidateY;
+        z = candidateZ;
+        selected = true;
+        selectedBossDistance = bossDistance;
+        break;
+    }
+
+    // Standing formation, not an emergency: combat priority so the axe evade and the
+    // front-cone response can still preempt it.
+    bool const moved = selected &&
+        MoveTo(bot->GetMapId(), x, y, z, false, false, true, true, MovementPriority::MOVEMENT_COMBAT, true);
+    LOG_DEBUG("playerbots", "Ingvar diagnostic: spread bot={} crowd={} distance={:.2f} step={:.2f} selected={} "
+                               "moved={} destination=({:.2f},{:.2f},{:.2f}) boss_dest_dist={:.2f}",
+              bot->GetName(), crowd->GetName(), distance, step, selected, moved, x, y, z, selectedBossDistance);
+    return moved;
+}
+
+bool IngvarSpreadAction::isUseful()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
+    return boss && !botAI->IsTank(bot) && bot->IsInCombat() && boss->IsInCombat() &&
+        (botAI->IsRanged(bot) || botAI->IsHeal(bot)) && FindIngvarCrowdingMember(botAI, bot) != nullptr;
 }
 
 bool IngvarAvoidShadowAxeAction::Execute(Event /*event*/)

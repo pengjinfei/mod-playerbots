@@ -33,6 +33,28 @@ enum UtgardeKeepIDs
     NPC_THROW                       = 23997,
 };
 
+// Measured from Spell.dbc / SpellRadius.dbc, not tuned by hand:
+//  - 42669/59706 and 42723/59709 effect 0 use radius index 13 = 10 yd. That is the
+//    front-cone one-shot (37,000-43,000 in P1, 26,250-33,750 in heroic P2), so any
+//    member farther than 10 yd from Ingvar cannot be selected by it at all.
+//  - the thrown axe carries aura 42750, which ticks 42751 once per second with
+//    radius index 8 = 5 yd around the axe. Keeping members more than 5 yd apart
+//    means one axe can only ever reach the member it landed on.
+// 59709 effect 1 (stun, radius 200 yd) and effect 2 (damage, radius 200 yd), and
+// Dreadful Roar (radius 60 yd), have no positional answer and are left alone.
+constexpr float kIngvarSmashConeRadius = 10.0f;
+constexpr float kIngvarShadowAxeRadius = 5.0f;
+constexpr float kIngvarSpreadRadius = kIngvarShadowAxeRadius + 3.0f;
+constexpr float kIngvarRangedClearance = kIngvarSmashConeRadius + 3.0f;
+
+class Player;
+class PlayerbotAI;
+class Unit;
+
+// Nearest living group member crowding this bot inside the axe spread radius, or
+// nullptr. Shared so the trigger and its action cannot drift apart.
+Unit* FindIngvarCrowdingMember(PlayerbotAI* botAI, Player* bot);
+
 #define SPELL_STAGGERING_ROAR       DUNGEON_MODE(bot, SPELL_STAGGERING_ROAR_N, SPELL_STAGGERING_ROAR_H)
 #define SPELL_DREADFUL_ROAR         DUNGEON_MODE(bot, SPELL_DREADFUL_ROAR_N, SPELL_DREADFUL_ROAR_H)
 #define SPELL_SMASH                 DUNGEON_MODE(bot, SPELL_SMASH_N, SPELL_SMASH_H)
@@ -91,6 +113,20 @@ class IngvarShadowAxeTrigger : public Trigger
 {
 public:
     IngvarShadowAxeTrigger(PlayerbotAI* ai) : Trigger(ai, "ingvar shadow axe") {}
+    bool IsActive() override;
+};
+
+class IngvarRangedClearanceTrigger : public Trigger
+{
+public:
+    IngvarRangedClearanceTrigger(PlayerbotAI* ai) : Trigger(ai, "ingvar ranged clearance") {}
+    bool IsActive() override;
+};
+
+class IngvarSpreadTrigger : public Trigger
+{
+public:
+    IngvarSpreadTrigger(PlayerbotAI* ai) : Trigger(ai, "ingvar spread") {}
     bool IsActive() override;
 };
 

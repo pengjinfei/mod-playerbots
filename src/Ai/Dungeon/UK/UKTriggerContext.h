@@ -23,6 +23,8 @@ class WotlkDungeonUKTriggerContext : public NamedObjectContext<Trigger>
             creators["ingvar contact clearance"] = &WotlkDungeonUKTriggerContext::ingvar_contact_clearance;
             creators["not behind ingvar"] = &WotlkDungeonUKTriggerContext::not_behind_ingvar;
             creators["ingvar shadow axe"] = &WotlkDungeonUKTriggerContext::ingvar_shadow_axe;
+            creators["ingvar spread"] = &WotlkDungeonUKTriggerContext::ingvar_spread;
+            creators["ingvar ranged clearance"] = &WotlkDungeonUKTriggerContext::ingvar_ranged_clearance;
         }
     private:
         static Trigger* keleseth_frost_tomb(PlayerbotAI* ai) { return new KelesethFrostTombTrigger(ai); }
@@ -33,6 +35,8 @@ class WotlkDungeonUKTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* ingvar_contact_clearance(PlayerbotAI* ai) { return new IngvarContactClearanceTrigger(ai); }
         static Trigger* not_behind_ingvar(PlayerbotAI* ai) { return new NotBehindIngvarTrigger(ai); }
         static Trigger* ingvar_shadow_axe(PlayerbotAI* ai) { return new IngvarShadowAxeTrigger(ai); }
+        static Trigger* ingvar_spread(PlayerbotAI* ai) { return new IngvarSpreadTrigger(ai); }
+        static Trigger* ingvar_ranged_clearance(PlayerbotAI* ai) { return new IngvarRangedClearanceTrigger(ai); }
 };
 
 #endif
