@@ -6,10 +6,14 @@
 
 #include "UKMultipliers.h"
 #include "ChooseTargetActions.h"
+#include "Creature.h"
 #include "GenericSpellActions.h"
 #include "MovementActions.h"
 #include "UKActions.h"
 #include "UKTriggers.h"
+
+#include <algorithm>
+#include <list>
 
 float PrinceKelesethMultiplier::GetValue(Action* action)
 {
@@ -51,6 +55,30 @@ float IngvarThePlundererMultiplier::GetValue(Action* action)
     Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
     bool isTank = botAI->IsTank(bot);
     if (!boss) { return 1.0f; }
+
+    // 暗影斧落在随机成员脚下，光环 42750 每秒在 5 码内触发一次 42751。麻烦不在规避
+    // 动作本身——它被执行时是有效的——而在 `PlayerbotAI::UpdateAI`：自身施法处于
+    // `SPELL_STATE_PREPARING` 时它会在跑引擎之前直接 return，于是那几个 tick 里
+    // 触发器和动作一个都不会被求值。run250 的法师因此在斧上原地站了 4 秒、承受
+    // 4 跳共 13,675。这里不打断已在读条的法术（那需要改 UpdateAI），而是在斧已经
+    // 进入挨伤害的那一圈时不再起手**新的**非瞬发法术，让下一个 tick 能落到规避动作上。
+    // 瞬发法术不受影响，半径也比规避动作的 12 码执行半径更紧，尽量少影响输出与治疗。
+    if (dynamic_cast<CastSpellAction*>(action))
+    {
+        std::list<Creature*> axes;
+        bot->GetCreatureListWithEntryInGrid(axes, NPC_THROW, kIngvarShadowAxeCastBlockRadius);
+        bool const axeInDangerBand = std::any_of(axes.begin(), axes.end(), [](Creature const* axe)
+        {
+            return axe && axe->IsAlive();
+        });
+        if (axeInDangerBand)
+        {
+            uint32 const spellId = AI_VALUE2(uint32, "spell id", action->getName());
+            if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId))
+                if (spellInfo->CalcCastTime(bot) != 0)
+                    return 0.0f;
+        }
+    }
 
     // Ingvar has a dedicated rear-position action with a validated 7-yard
     // stand-off.  The generic side-step action calculates its radius from the

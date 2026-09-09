@@ -143,7 +143,10 @@ bool IngvarGetBehindAction::MoveBehind(Unit* boss, MovementPriority priority, ch
     // bearing is the shorter move and is safe at any angle, so ranged bots and healers
     // are no longer walked into the arc behind the boss.
     bool const keepsRange = !botAI->IsTank(bot) && (botAI->IsRanged(bot) || botAI->IsHeal(bot));
-    float const desiredRange = keepsRange ? kIngvarRangedClearance : 7.0f;
+    // 近战落点改为 3.5 码：在 2.0 码 boundary 旁路之外、5.0 码近战射程之内。原来的
+    // 7.0 码在射程之外，必然被 `reach melee` 再拉回来，这段往返正是近战反复越过
+    // 旁路半径的来源。
+    float const desiredRange = keepsRange ? kIngvarRangedClearance : kIngvarMeleeStandoff;
     if (keepsRange && bot->GetExactDist2d(boss) >= desiredRange)
         return false;
 
@@ -225,7 +228,7 @@ bool IngvarEvadeDarkSmashAction::isPossible()
 bool IngvarClearContactAction::Execute(Event /*event*/)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
-    if (!boss || botAI->IsTank(bot) || bot->GetExactDist2d(boss) > 1.5f)
+    if (!boss || botAI->IsTank(bot) || bot->GetExactDist2d(boss) >= kIngvarMeleeClearance)
         return false;
 
     return MoveBehind(boss, MovementPriority::MOVEMENT_FORCED, "contact_clearance");
@@ -234,7 +237,7 @@ bool IngvarClearContactAction::Execute(Event /*event*/)
 bool IngvarClearContactAction::isUseful()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
-    bool const useful = boss && !botAI->IsTank(bot) && bot->GetExactDist2d(boss) <= 1.5f;
+    bool const useful = boss && !botAI->IsTank(bot) && bot->GetExactDist2d(boss) < kIngvarMeleeClearance;
     if (useful)
         LOG_DEBUG("playerbots", "Ingvar diagnostic: contact-clearance useful bot={} distance={:.2f}",
                   bot->GetName(), bot->GetExactDist2d(boss));
@@ -443,7 +446,7 @@ bool IngvarAvoidShadowAxeAction::isUseful()
     }
 
     float const distance = bot->GetExactDist2d(nearest);
-    bool const useful = distance <= 12.0f;
+    bool const useful = distance <= kIngvarShadowAxeActionRadius;
     if (_lastLoggedAxe != nearest->GetGUID())
     {
         _lastLoggedAxe = nearest->GetGUID();

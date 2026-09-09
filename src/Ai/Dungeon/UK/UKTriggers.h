@@ -42,8 +42,23 @@ enum UtgardeKeepIDs
 //    means one axe can only ever reach the member it landed on.
 // 59709 effect 1 (stun, radius 200 yd) and effect 2 (damage, radius 200 yd), and
 // Dreadful Roar (radius 60 yd), have no positional answer and are left alone.
+// `WorldObjectSpellConeTargetCheck::operator()` 选中目标的条件是
+// `IsWithinBoundaryRadius(target) || isInFront(target, coneAngle)`，两者取或。
+// `Unit::IsWithinBoundaryRadius` 用的是 `max(目标 bounding 半径, MIN_MELEE_REACH)`，
+// 对玩家即 **2.0 码**，并且**完全绕过角度判断**。因此站在 Ingvar 身上的近战无论在哪一侧
+// 都会被 Smash / Dark Smash 的 effect 0 选中——这也是坦克每次 effect-0 记录都是
+// `front_60=false` 的原因。`Unit::GetMeleeRange` 对玩家打 Ingvar 为 5.0 码，
+// 所以近战的安全带是中心距 (2.0, 5.0)，取其中段站定。
+constexpr float kIngvarConeBypassRadius = 2.0f;
+constexpr float kIngvarMeleeClearance = kIngvarConeBypassRadius + 1.0f;
+constexpr float kIngvarMeleeStandoff = kIngvarConeBypassRadius + 1.5f;
 constexpr float kIngvarSmashConeRadius = 10.0f;
 constexpr float kIngvarShadowAxeRadius = 5.0f;
+// 斧规避动作的执行半径，以及「不再起手新的非瞬发法术」的更紧半径：
+// `PlayerbotAI::UpdateAI` 在自身施法处于 `SPELL_STATE_PREPARING` 时直接 return，
+// 引擎与规避动作那几个 tick 根本不会被执行，所以真正在挨伤害的那一圈必须先不起手。
+constexpr float kIngvarShadowAxeActionRadius = 12.0f;
+constexpr float kIngvarShadowAxeCastBlockRadius = kIngvarShadowAxeRadius + 2.0f;
 constexpr float kIngvarSpreadRadius = kIngvarShadowAxeRadius + 3.0f;
 constexpr float kIngvarRangedClearance = kIngvarSmashConeRadius + 3.0f;
 

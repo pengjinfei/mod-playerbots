@@ -127,7 +127,9 @@ bool IngvarDarkSmashNonTankTrigger::IsActive()
 bool IngvarContactClearanceTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
-    bool const active = boss && !botAI->IsTank(bot) && bot->GetExactDist2d(boss) <= 1.5f;
+    // 阈值必须覆盖整条 2.0 码 boundary 旁路带并留余量：此前的 1.5 码低于旁路半径，
+    // 停在 1.7–1.99 码的近战既不会触发清理、又照样被 effect 0 选中。
+    bool const active = boss && !botAI->IsTank(bot) && bot->GetExactDist2d(boss) < kIngvarMeleeClearance;
     if (active)
         LOG_DEBUG("playerbots", "Ingvar diagnostic: contact-clearance trigger bot={} distance={:.2f}",
                   bot->GetName(), bot->GetExactDist2d(boss));
