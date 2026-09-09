@@ -28,14 +28,6 @@ public:
     bool Execute(Event event) override;
 };
 
-class IngvarDodgeSmashAction : public MovementAction
-{
-public:
-    IngvarDodgeSmashAction(PlayerbotAI* ai) : MovementAction(ai, "ingvar dodge smash") {}
-    bool Execute(Event event) override;
-    bool isUseful() override;
-};
-
 class IngvarGetBehindAction : public MovementAction
 {
 public:
@@ -44,6 +36,14 @@ public:
 
 protected:
     bool MoveBehind(Unit* boss, MovementPriority priority, char const* reason);
+};
+
+class IngvarDodgeSmashAction : public IngvarGetBehindAction
+{
+public:
+    IngvarDodgeSmashAction(PlayerbotAI* ai) : IngvarGetBehindAction(ai, "ingvar dodge smash") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
 };
 
 class IngvarEvadeDarkSmashAction : public IngvarGetBehindAction

@@ -102,28 +102,36 @@ bool AttackDalronnAction::Execute(Event /*event*/)
 
 bool IngvarDodgeSmashAction::isUseful()
 {
-    bool const behind = AI_VALUE2(bool, "behind", "current target");
-    LOG_DEBUG("playerbots", "Ingvar diagnostic: smash dodge evaluated bot={} behind={} useful={}",
-              bot->GetName(), behind, !behind);
-    return !behind;
+    constexpr float kIngvarSmashConeRadians = 1.04719755f;
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
+    if (!boss)
+        return false;
+
+    // `behind` was the wrong criterion. `WorldObjectSpellConeTargetCheck` selects on
+    // `IsWithinBoundaryRadius(target) || isInFront(target, coneAngle)`, and the boundary
+    // radius (2.0 yd for a player) skips the angle check entirely, so a tank standing in
+    // contact behind Ingvar is still picked by effect 0. Ask the two real conditions.
+    float const distance = bot->GetExactDist2d(boss);
+    bool const insideBypass = distance < kIngvarMeleeClearance;
+    bool const insideCone = distance <= kIngvarSmashConeRadius && boss->HasInArc(kIngvarSmashConeRadians, bot);
+    bool const useful = insideBypass || insideCone;
+    LOG_DEBUG("playerbots", "Ingvar diagnostic: smash dodge evaluated bot={} distance={:.2f} "
+                               "inside_bypass={} inside_cone={} useful={}",
+              bot->GetName(), distance, insideBypass, insideCone, useful);
+    return useful;
 }
 bool IngvarDodgeSmashAction::Execute(Event /*event*/)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
     if (!boss) { return false; }
 
-    float const distance = bot->GetExactDist2d(boss->GetPosition());
-    // Extra units to move into the boss, instead of being just 1 pixel past his midpoint.
-    // Can be adjusted - this value tends to mirror how a human would play,
-    // and visibly ensures you won't get hit while not creating excessive movements.
-    float const distanceExtra = 2.0f;
-    bool const moved = Move(bot->GetAngle(boss), distance + distanceExtra);
-    LOG_DEBUG("playerbots", "Ingvar diagnostic: smash dodge bot={} boss={} distance={:.2f} moved={} "
-                               "bot=({:.2f},{:.2f},{:.2f}) boss=({:.2f},{:.2f},{:.2f})",
-             bot->GetName(), boss->GetGUID().ToString(), distance, moved,
-             bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(),
-             boss->GetPositionX(), boss->GetPositionY(), boss->GetPositionZ());
-    return moved;
+    // The script roots Ingvar for 3.75 s and disables its rotation for the whole 3 s cast,
+    // and the raid-wide stun only lands on resolution, so the rear arc at the melee
+    // stand-off satisfies both selection conditions and stays inside the 5.0 yd melee
+    // range. The previous implementation walked through the boss to exactly 2.0 yd past
+    // its centre, which is the boundary radius itself and left no margin at all.
+    // Forced priority: this is a telegraphed lethal hit with a bounded window.
+    return MoveBehind(boss, MovementPriority::MOVEMENT_FORCED, "smash_dodge");
 }
 
 bool IngvarGetBehindAction::Execute(Event /*event*/)
