@@ -26,6 +26,13 @@ void WotlkDungeonUKStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     //          { NextAction("ingvar hide los", ACTION_RAID + 1) }));
     triggers.push_back(new TriggerNode("ingvar smash tank",
             { NextAction("ingvar dodge smash", ACTION_MOVE + 5) }));
+    triggers.push_back(new TriggerNode("ingvar dark smash non tank",
+            { NextAction("ingvar evade dark smash", ACTION_MOVE + 5) }));
+    triggers.push_back(new TriggerNode("ingvar contact clearance",
+            // Healer's generic close-range flee is ACTION_MOVE + 9.  Once a
+            // non-tank is inside the safety ring, use the validated rear
+            // point instead of allowing that generic movement to win.
+            { NextAction("ingvar clear contact", ACTION_MOVE + 10) }));
     triggers.push_back(new TriggerNode("not behind ingvar",
             { NextAction("ingvar get behind", ACTION_MOVE + 1) }));
     triggers.push_back(new TriggerNode("ingvar shadow axe",

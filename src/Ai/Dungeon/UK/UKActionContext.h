@@ -20,6 +20,8 @@ class WotlkDungeonUKActionContext : public NamedObjectContext<Action>
             creators["attack frost tomb"] = &WotlkDungeonUKActionContext::attack_frost_tomb;
             creators["attack dalronn"] = &WotlkDungeonUKActionContext::attack_dalronn;
             creators["ingvar get behind"] = &WotlkDungeonUKActionContext::ingvar_get_behind;
+            creators["ingvar evade dark smash"] = &WotlkDungeonUKActionContext::ingvar_evade_dark_smash;
+            creators["ingvar clear contact"] = &WotlkDungeonUKActionContext::ingvar_clear_contact;
             // creators["ingvar hide los"] = &WotlkDungeonUKActionContext::ingvar_hide_los;
             creators["ingvar dodge smash"] = &WotlkDungeonUKActionContext::ingvar_dodge_smash;
             creators["ingvar avoid shadow axe"] = &WotlkDungeonUKActionContext::ingvar_avoid_shadow_axe;
@@ -28,6 +30,8 @@ class WotlkDungeonUKActionContext : public NamedObjectContext<Action>
         static Action* attack_frost_tomb(PlayerbotAI* ai) { return new AttackFrostTombAction(ai); }
         static Action* attack_dalronn(PlayerbotAI* ai) { return new AttackDalronnAction(ai); }
         static Action* ingvar_get_behind(PlayerbotAI* ai) { return new IngvarGetBehindAction(ai); }
+        static Action* ingvar_evade_dark_smash(PlayerbotAI* ai) { return new IngvarEvadeDarkSmashAction(ai); }
+        static Action* ingvar_clear_contact(PlayerbotAI* ai) { return new IngvarClearContactAction(ai); }
         // static Action* ingvar_hide_los(PlayerbotAI* ai) { return new TellLosAction(ai); }
         static Action* ingvar_dodge_smash(PlayerbotAI* ai) { return new IngvarDodgeSmashAction(ai); }
         static Action* ingvar_avoid_shadow_axe(PlayerbotAI* ai) { return new IngvarAvoidShadowAxeAction(ai); }

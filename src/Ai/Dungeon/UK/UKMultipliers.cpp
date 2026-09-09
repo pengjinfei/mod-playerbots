@@ -7,6 +7,7 @@
 #include "UKMultipliers.h"
 #include "ChooseTargetActions.h"
 #include "GenericSpellActions.h"
+#include "MovementActions.h"
 #include "UKActions.h"
 #include "UKTriggers.h"
 
@@ -50,6 +51,14 @@ float IngvarThePlundererMultiplier::GetValue(Action* action)
     Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
     bool isTank = botAI->IsTank(bot);
     if (!boss) { return 1.0f; }
+
+    // Ingvar has a dedicated rear-position action with a validated 7-yard
+    // stand-off.  The generic side-step action calculates its radius from the
+    // bot's current melee overlap; during a moving boss transition that can
+    // submit a point inside Ingvar's model.  Do not let that second controller
+    // compete only while this bot is actually attacking Ingvar.
+    if (!isTank && AI_VALUE(Unit*, "current target") == boss && dynamic_cast<SetBehindTargetAction*>(action))
+        return 0.0f;
 
     // Prevent arbitrary movement from overriding a tank dodge, but keep both
     // documented Ingvar responses available.  Shadow Axe can select the tank;

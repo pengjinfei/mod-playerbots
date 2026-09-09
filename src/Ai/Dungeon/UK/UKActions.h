@@ -39,8 +39,28 @@ public:
 class IngvarGetBehindAction : public MovementAction
 {
 public:
-    IngvarGetBehindAction(PlayerbotAI* ai) : MovementAction(ai, "ingvar get behind") {}
+    IngvarGetBehindAction(PlayerbotAI* ai, std::string const& name = "ingvar get behind") : MovementAction(ai, name) {}
     bool Execute(Event event) override;
+
+protected:
+    bool MoveBehind(Unit* boss, MovementPriority priority, char const* reason);
+};
+
+class IngvarEvadeDarkSmashAction : public IngvarGetBehindAction
+{
+public:
+    IngvarEvadeDarkSmashAction(PlayerbotAI* ai) : IngvarGetBehindAction(ai, "ingvar evade dark smash") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+    bool isPossible() override;
+};
+
+class IngvarClearContactAction : public IngvarGetBehindAction
+{
+public:
+    IngvarClearContactAction(PlayerbotAI* ai) : IngvarGetBehindAction(ai, "ingvar clear contact") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
 };
 
 class IngvarAvoidShadowAxeAction : public MovementAction
@@ -49,6 +69,10 @@ public:
     IngvarAvoidShadowAxeAction(PlayerbotAI* ai) : MovementAction(ai, "ingvar avoid shadow axe") {}
     bool Execute(Event event) override;
     bool isUseful() override;
+
+private:
+    // Diagnostic-only: log the 20 yd trigger / 12 yd execution threshold once per axe.
+    ObjectGuid _lastLoggedAxe;
 };
 
 #endif

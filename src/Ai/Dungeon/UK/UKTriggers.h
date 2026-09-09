@@ -29,6 +29,7 @@ enum UtgardeKeepIDs
     SPELL_WOE_STRIKE_H              = 59735,
     SPELL_DARK_SMASH_N              = 42723,
     SPELL_DARK_SMASH_H              = 59709,
+    INGVAR_UNDEAD_DISPLAY_ID         = 26351,
     NPC_THROW                       = 23997,
 };
 
@@ -62,6 +63,20 @@ class IngvarSmashTankTrigger : public Trigger
 {
 public:
     IngvarSmashTankTrigger(PlayerbotAI* ai) : Trigger(ai, "ingvar smash tank") {}
+    bool IsActive() override;
+};
+
+class IngvarDarkSmashNonTankTrigger : public Trigger
+{
+public:
+    IngvarDarkSmashNonTankTrigger(PlayerbotAI* ai) : Trigger(ai, "ingvar dark smash non tank") {}
+    bool IsActive() override;
+};
+
+class IngvarContactClearanceTrigger : public Trigger
+{
+public:
+    IngvarContactClearanceTrigger(PlayerbotAI* ai) : Trigger(ai, "ingvar contact clearance") {}
     bool IsActive() override;
 };
 

@@ -10,6 +10,7 @@
 #include "FleeManager.h"
 #include "GameObject.h"
 #include "LastMovementValue.h"
+#include "Log.h"
 #include "LootObjectStack.h"
 #include "Map.h"
 #include "MotionMaster.h"
@@ -38,6 +39,23 @@
 #include <cstdlib>
 #include <iomanip>
 #include <string>
+
+namespace
+{
+constexpr uint32 INGVAR_THE_PLUNDERER_ENTRY = 23954;
+
+void LogIngvarMove(PlayerbotAI* botAI, Player* bot, std::string const& action, uint32 mapId, float x, float y,
+                   float z, MovementPriority priority, char const* route)
+{
+    Unit* boss = botAI->GetAiObjectContext()->GetValue<Unit*>("find target", "ingvar the plunderer")->Get();
+    if (!boss || boss->GetEntry() != INGVAR_THE_PLUNDERER_ENTRY)
+        return;
+
+    LOG_DEBUG("playerbots",
+              "Ingvar diagnostic: move submit bot={} action={} route={} map={} destination=({:.2f},{:.2f},{:.2f}) priority={}",
+              bot->GetName(), action, route, mapId, x, y, z, static_cast<uint32>(priority));
+}
+} // namespace
 
 MovementAction::MovementAction(PlayerbotAI* botAI, std::string const name) : Action(botAI, name)
 {
@@ -208,6 +226,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
             delay = std::max(.0f, delay);
             delay = std::min((float)sPlayerbotAIConfig.maxWaitForMove, delay);
             AI_VALUE(LastMovement&, "last movement").Set(mapId, x, y, z, bot->GetOrientation(), delay, priority);
+            LogIngvarMove(botAI, bot, getName(), mapId, x, y, z, priority, "vehicle");
             return true;
         }
     }
@@ -230,6 +249,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
             delay = std::max(.0f, delay);
             delay = std::min((float)sPlayerbotAIConfig.maxWaitForMove, delay);
             AI_VALUE(LastMovement&, "last movement").Set(mapId, x, y, z, bot->GetOrientation(), delay, priority);
+            LogIngvarMove(botAI, bot, getName(), mapId, x, y, z, priority, "direct");
             return true;
         }
     }
@@ -258,6 +278,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
             delay = std::min((float)sPlayerbotAIConfig.maxWaitForMove, delay);
             AI_VALUE(LastMovement&, "last movement")
                 .Set(mapId, x, y, modifiedZ, bot->GetOrientation(), delay, priority);
+            LogIngvarMove(botAI, bot, getName(), mapId, x, y, modifiedZ, priority, "path");
             return true;
         }
     }
@@ -839,8 +860,17 @@ bool MovementAction::ReachCombatTo(Unit* target, float distance)
 
     path.ShortenPathUntilDist(G3D::Vector3(tx, ty, tz), shortenTo);
     G3D::Vector3 endPos = path.GetPath().back();
-    return MoveTo(target->GetMapId(), endPos.x, endPos.y, endPos.z, false, false, false, false,
-                  MovementPriority::MOVEMENT_COMBAT, true);
+    bool const moved = MoveTo(target->GetMapId(), endPos.x, endPos.y, endPos.z, false, false, false, false,
+                              MovementPriority::MOVEMENT_COMBAT, true);
+    if (target->GetEntry() == INGVAR_THE_PLUNDERER_ENTRY)
+    {
+        LOG_DEBUG("playerbots", "Ingvar diagnostic: reach-melee bot={} moved={} bot_dist={:.2f} "
+                                   "requested_dist={:.2f} boss_moving={} endpoint=({:.2f},{:.2f},{:.2f}) "
+                                   "boss_endpoint_dist={:.2f}",
+                  bot->GetName(), moved, bot->GetExactDist2d(target), distance, target->isMoving(), endPos.x, endPos.y,
+                  endPos.z, target->GetExactDist2d(endPos.x, endPos.y));
+    }
+    return moved;
 }
 
 float MovementAction::GetFollowAngle()

@@ -19,6 +19,8 @@ class WotlkDungeonUKTriggerContext : public NamedObjectContext<Trigger>
             creators["dalronn priority"] = &WotlkDungeonUKTriggerContext::dalronn_priority_target;
             creators["ingvar dreadful roar"] = &WotlkDungeonUKTriggerContext::ingvar_dreadful_roar;
             creators["ingvar smash tank"] = &WotlkDungeonUKTriggerContext::ingvar_smash_tank;
+            creators["ingvar dark smash non tank"] = &WotlkDungeonUKTriggerContext::ingvar_dark_smash_non_tank;
+            creators["ingvar contact clearance"] = &WotlkDungeonUKTriggerContext::ingvar_contact_clearance;
             creators["not behind ingvar"] = &WotlkDungeonUKTriggerContext::not_behind_ingvar;
             creators["ingvar shadow axe"] = &WotlkDungeonUKTriggerContext::ingvar_shadow_axe;
         }
@@ -27,6 +29,8 @@ class WotlkDungeonUKTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* dalronn_priority_target(PlayerbotAI* ai) { return new DalronnDpsTrigger(ai); }
         static Trigger* ingvar_dreadful_roar(PlayerbotAI* ai) { return new IngvarDreadfulRoarTrigger(ai); }
         static Trigger* ingvar_smash_tank(PlayerbotAI* ai) { return new IngvarSmashTankTrigger(ai); }
+        static Trigger* ingvar_dark_smash_non_tank(PlayerbotAI* ai) { return new IngvarDarkSmashNonTankTrigger(ai); }
+        static Trigger* ingvar_contact_clearance(PlayerbotAI* ai) { return new IngvarContactClearanceTrigger(ai); }
         static Trigger* not_behind_ingvar(PlayerbotAI* ai) { return new NotBehindIngvarTrigger(ai); }
         static Trigger* ingvar_shadow_axe(PlayerbotAI* ai) { return new IngvarShadowAxeTrigger(ai); }
 };
