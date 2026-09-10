@@ -268,6 +268,23 @@ bool IngvarKeepRangeAction::isUseful()
         bot->IsInCombat() && boss->IsInCombat() && bot->GetExactDist2d(boss) < kIngvarRangedClearance;
 }
 
+namespace
+{
+// 点到线段的 2D 距离。散开只校验落点是不够的：bot 走的是直线，途中可以贴到 boss。
+float SegmentDistance2d(float ax, float ay, float bx, float by, float px, float py)
+{
+    float const dx = bx - ax;
+    float const dy = by - ay;
+    float const lengthSq = dx * dx + dy * dy;
+    if (lengthSq <= 0.0f)
+        return std::hypot(px - ax, py - ay);
+
+    float t = ((px - ax) * dx + (py - ay) * dy) / lengthSq;
+    t = std::clamp(t, 0.0f, 1.0f);
+    return std::hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+}  // namespace
+
 bool IngvarSpreadAction::Execute(Event /*event*/)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
@@ -278,7 +295,12 @@ bool IngvarSpreadAction::Execute(Event /*event*/)
     float const distance = bot->GetExactDist2d(crowd);
     // One step that clears the axe radius with a margin, rather than repeated nudges.
     float const step = std::max(3.0f, kIngvarSpreadRadius + 2.0f - distance);
-    float const angle = crowd->GetAngle(bot);
+    // 两名成员完全重叠时 `crowd->GetAngle(bot)` 是 `atan2(0, 0)`，恒为 0——散开方向
+    // 退化成「正东」，与 boss 在哪无关。run317/seq4 的治疗正是这样：与法师重叠
+    // （日志 `distance=0.00 step=10.00`）后朝正东走，而 boss 就在正东。重叠时改用
+    // 「背离 boss」作为基准方向，这个方向任何时候都是安全的。
+    constexpr float kDegenerateOverlap = 0.5f;
+    float const angle = distance > kDegenerateOverlap ? crowd->GetAngle(bot) : boss->GetAngle(bot);
     // Away from the crowding member first. On a platform with open edges and four other
     // members that candidate can be invalid, so fan out through the same validation.
     static constexpr float kOffsets[] = { 0.0f, float(M_PI_4), -float(M_PI_4), float(M_PI_2), -float(M_PI_2) };
@@ -310,6 +332,16 @@ bool IngvarSpreadAction::Execute(Event /*event*/)
         float const rangeCeiling = std::max(bot->GetExactDist2d(boss),
             (botAI->IsHeal(bot) ? sPlayerbotAIConfig.healDistance : sPlayerbotAIConfig.spellDistance) - 2.0f);
         if (crowdDistance <= distance || bossDistance < kIngvarRangedClearance || bossDistance > rangeCeiling)
+            continue;
+
+        // 落点合格不代表路上合格：提交的是 direct route，bot 走直线。run317/seq4 的
+        // 治疗落点 boss 距离达标，却在途中贴到 boss 1.38 码——穿过了 2.0 码 boundary
+        // 旁路（`IsWithinBoundaryRadius` 用纯 3D 中心距，角度判定被完全绕过），随后
+        // 被磨到 1,670/16,500 并被 Dreadful Roar 收掉，是那一场唯一的团灭起点。
+        // 散开是站位调整，不该让人在途中比出发时更靠近 boss。
+        float const pathClearance = std::min(bot->GetExactDist2d(boss), kIngvarRangedClearance);
+        if (SegmentDistance2d(bot->GetPositionX(), bot->GetPositionY(), candidateX, candidateY,
+                              boss->GetPositionX(), boss->GetPositionY()) < pathClearance)
             continue;
 
         x = candidateX;
@@ -465,3 +497,4 @@ bool IngvarAvoidShadowAxeAction::isUseful()
 
     return useful;
 }
+

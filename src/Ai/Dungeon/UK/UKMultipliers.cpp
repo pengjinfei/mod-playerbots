@@ -118,6 +118,38 @@ float IngvarThePlundererMultiplier::GetValue(Action* action)
                 }
             }
         }
+        if (boss->FindCurrentSpellBySpellId(SPELL_SMASH) ||
+            boss->FindCurrentSpellBySpellId(SPELL_DARK_SMASH))
+        {
+            // 近战 DPS 在猛击读条期间不得起手「把自己送到 boss 身边、且期间无法自主
+            // 移动」的位移技能。核心的锥形判定是
+            // `IsWithinBoundaryRadius(target) || isInFront(target, coneAngle)`，而
+            // `IsWithinBoundaryRadius` 取 `max(目标 bounding, MIN_MELEE_REACH=2.0)`
+            // 的**纯 3D 中心距**，不加体积——即中心距 < 2.0 码时角度判定被完全绕过。
+            //
+            // run316 三场团灭是同一条链：盗贼本已稳在后弧 3.50 码，Killing Spree
+            // 把它瞬移到 1.99–2.00 码并锁住约 3 秒，正好落在暗影猛击的 3 秒读条内
+            // （读条起点 99023/68383/95636，位移分别在 +1.26s/+0.42s/+1.22s），
+            // 结算时它既在 2.0 码内又动不了，effect 0 打出 25,102–39,232，
+            // 而普通档盗贼血上限只有 14,644 —— 必死，且诊断里 front_60 恒为 false，
+            // 正是旁路特征。这不是走位逻辑没写好，是位移技能把已正确的站位推翻了。
+            //
+            // 只在读条窗口内抑制，窗口外照常释放，不影响输出循环。残留风险是读条
+            // 开始前 0.5 秒左右起手的位移仍会有小段重叠，样本里未出现，先不臆造处理。
+            if (!isTank)
+            {
+                static char const* const kSelfDisplacingMeleeActions[] = {
+                    "killing spree",   // 51690，5 次瞬移连击，期间不可操控
+                    "charge",
+                    "intercept",
+                    "feral charge",
+                };
+                for (char const* name : kSelfDisplacingMeleeActions)
+                    if (action->getName() == name)
+                        return 0.0f;
+            }
+        }
+
         // Done with non-tank logic
         if (!isTank) { return 1.0f; }
 
