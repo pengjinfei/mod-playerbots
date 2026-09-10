@@ -30,11 +30,18 @@ enum NexusIDs
 
     // Anomalus
     BUFF_RIFT_SHIELD                = 47748,
+    NPC_CHAOTIC_RIFT                = 26918,
+    NPC_CHAOTIC_RIFT_HEROIC         = 30522,
 
     // Ormorok the Tree Shaper
     // NPC_CRYSTAL_SPIKE               = 27099,
     GO_CRYSTAL_SPIKE                = 188537,
 };
+
+// Anomalus 的混乱空间裂隙不在仇恨表里，AI_VALUE2("find target") 找不到它，
+// 因此按 entry 扫描 "possible targets no los" 取最近的一只存活裂隙。
+// trigger 与 action 共用同一判据，避免「触发了但选不出目标」这类静默失败。
+Unit* FindNearestChaoticRift(PlayerbotAI* botAI, Player* bot, AiObjectContext* context);
 
 class FactionCommanderWhirlwindTrigger : public Trigger
 {

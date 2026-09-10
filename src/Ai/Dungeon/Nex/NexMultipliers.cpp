@@ -70,13 +70,23 @@ float TelestraMultiplier::GetValue(Action* action)
 float AnomalusMultiplier::GetValue(Action* action)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "anomalus");
-    if (boss && boss->HasAura(BUFF_RIFT_SHIELD))
-    {
-        if (dynamic_cast<DpsAssistAction*>(action))
-        {
-            return 0.0f;
-        }
-    }
+    if (!boss)
+        return 1.0f;
+
+    if (!dynamic_cast<DpsAssistAction*>(action))
+        return 1.0f;
+
+    // 护盾期 boss 免疫，自动选怪必须让路（原有行为）。
+    if (boss->HasAura(BUFF_RIFT_SHIELD))
+        return 0.0f;
+
+    // 裂隙存活期也要让路，但只对非坦克：ChaoticRiftTrigger 的判据放宽到「场上有存活裂隙」
+    // 之后，转火会发生在 boss 可被攻击的窗口里，此时 dps assist 每个 tick 都会把目标
+    // 拉回坦克的目标（boss），与 ACTION_RAID 的转火动作来回顶，裂隙一直打不死。
+    // 坦克不受影响，必须继续抓 boss 仇恨。
+    if (!botAI->IsTank(bot) && FindNearestChaoticRift(botAI, bot, context))
+        return 0.0f;
+
     return 1.0f;
 }
 

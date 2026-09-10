@@ -5,6 +5,7 @@
  */
 
 #include "NexActions.h"
+#include "NexTriggers.h"
 #include "Playerbots.h"
 
 bool MoveFromWhirlwindAction::Execute(Event /*event*/)
@@ -115,24 +116,14 @@ bool TelestraSplitTargetAction::Execute(Event /*event*/)
     return false;
 }
 
-bool ChaoticRiftTargetAction::isUseful() { return !botAI->IsHeal(bot); }
+// 坦克排除在外：判据放宽到「场上有存活裂隙」后，转火不再只发生在 boss 免疫的护盾期，
+// 坦克若一起转火就会在 boss 可被攻击的窗口丢掉 boss 仇恨。治疗照旧排除。
+bool ChaoticRiftTargetAction::isUseful() { return !botAI->IsHeal(bot) && !botAI->IsTank(bot); }
 bool ChaoticRiftTargetAction::Execute(Event /*event*/)
 {
-    Unit* chaoticRift = nullptr;
-
-    // Target is not findable from threat table using AI_VALUE2(),
-    // therefore need to search manually for the unit name
-    GuidVector targets = AI_VALUE(GuidVector, "possible targets no los");
-
-    for (auto i = targets.begin(); i != targets.end(); ++i)
-    {
-        Unit* unit = botAI->GetUnit(*i);
-        if (unit && unit->GetName() == "Chaotic Rift")
-        {
-            chaoticRift = unit;
-            break;
-        }
-    }
+    // 取最近的存活裂隙，与 ChaoticRiftTrigger 共用同一判据（原来是遍历到第一个同名单位
+    // 就停，可能选到已死的或更远的那一个）。
+    Unit* chaoticRift = FindNearestChaoticRift(botAI, bot, context);
     if (!chaoticRift || AI_VALUE(Unit*, "current target") == chaoticRift)
         return false;
 
