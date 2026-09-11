@@ -110,3 +110,11 @@ float OrmorokMultiplier::GetValue(Action* action)
         }
     return 1.0f;
 }
+
+float NexusNoKnockbackMultiplier::GetValue(Action* action)
+{
+    if (action && action->getName() == "thunderstorm")
+        return 0.0f;
+
+    return 1.0f;
+}

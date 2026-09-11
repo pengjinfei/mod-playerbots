@@ -21,8 +21,6 @@ namespace
     constexpr float kCcSpellRange = 30.0f;
     // 控制迟迟不落地时，第一个控制图标打上多久后照样标骷髅（要小于编排层的等待上限）。
     constexpr uint32 kSkullDeadlineMs = 12000;
-    // 闷棍出手位置：目标背后多少码。
-    constexpr float kSapStandOff = 10.0f;
 }
 
 bool MoveFromWhirlwindAction::Execute(Event /*event*/)
@@ -375,32 +373,17 @@ bool TrashCcSapAction::Execute(Event /*event*/)
     if (!bot->HasStealthAura())
         return botAI->CastSpell("stealth", bot);
 
-    // 潜行识破要求观察者把盗贼放在正面 180 度弧内、且约 10.5 码以内（同级）。所以不是径直走向
-    // 目标，而是绕到它**背后** 10 码处再出手：从 (509,62) 直走时，Ascendant(朝 161°) 与 Steward(朝 333°)
-    // 都把盗贼放在正面弧内约 80°，run411 就是这样在 8.5 秒被发现的（run409 五场落地 4 次也是运气）。
-    // 闷棍射程 10 码 + 双方 combat reach 约 3 码，10 码处够得着。
-    float const back = target->GetOrientation() + float(M_PI);
-    float const destX = target->GetPositionX() + kSapStandOff * std::cos(back);
-    float const destY = target->GetPositionY() + kSapStandOff * std::sin(back);
-    bool const behind = !target->HasInArc(float(M_PI), bot);
-    float const dist = bot->GetExactDist2d(target);
+    // 闷棍射程 10 码，核心 CheckRange 还会加上双方的 combat reach（约 +3 码）；同级怪正面约 10.5 码
+    // 就能看穿潜行，所以停在 11 码。曾试过「绕到目标背后 10 码」（run412/413 共 4 场闷棍 0 次落地，
+    // 此前径直走是 5 场 4 次），绕行路线反而穿过怪堆，已退回径直接近。
+    if (bot->GetExactDist2d(target) > 11.5f)
+        return MoveNear(target, 11.0f);
 
-    if (dist <= kSapStandOff + 1.5f && behind)
-    {
-        // 先走 CanCastSpell：失败原因会进 Playerbots.log（LogInGroupOnly = 0 时），直接 CastSpell 失败是静默的。
-        if (!botAI->CanCastSpell("sap", target))
-            return false;
-        return botAI->CastSpell("sap", target);
-    }
+    // 先走 CanCastSpell：失败原因会进 Playerbots.log（LogInGroupOnly = 0 时），直接 CastSpell 失败是静默的。
+    if (!botAI->CanCastSpell("sap", target))
+        return false;
 
-    if (bot->GetExactDist2d(destX, destY) > 2.0f)
-        return MoveTo(target->GetMapId(), destX, destY, target->GetPositionZ());
-
-    // 已经到背后落点但目标转身了：在射程内就出手，别在它眼前站着等。
-    if (dist <= kSapStandOff + 1.5f && botAI->CanCastSpell("sap", target))
-        return botAI->CastSpell("sap", target);
-
-    return false;
+    return botAI->CastSpell("sap", target);
 }
 
 bool DodgeSpikesAction::Execute(Event /*event*/)

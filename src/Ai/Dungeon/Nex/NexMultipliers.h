@@ -36,6 +36,17 @@ class AnomalusMultiplier : public Multiplier
         float GetValue(Action* action) override;
 };
 
+// 魔枢到处是平台与深坑：雷霆风暴的击退会把怪打下平台（run402/403/412 实测 z 掉到 -22 / -47），
+// 怪再绕路爬回来时穿过 boss 房间、把 boss 一起带回，队伍也会追着掉下去。这个副本里干脆不放。
+class NexusNoKnockbackMultiplier : public Multiplier
+{
+    public:
+        NexusNoKnockbackMultiplier(PlayerbotAI* ai) : Multiplier(ai, "nexus no knockback") {}
+
+    public:
+        float GetValue(Action* action) override;
+};
+
 class OrmorokMultiplier : public Multiplier
 {
     public:

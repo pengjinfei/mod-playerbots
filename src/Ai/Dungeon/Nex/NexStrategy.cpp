@@ -71,6 +71,7 @@ void WotlkDungeonNexStrategy::InitMultipliers(std::vector<Multiplier*> &multipli
     multipliers.push_back(new TelestraMultiplier(botAI));
     multipliers.push_back(new AnomalusMultiplier(botAI));
     multipliers.push_back(new OrmorokMultiplier(botAI));
+    multipliers.push_back(new NexusNoKnockbackMultiplier(botAI));
 }
 
 // 被控制图标钉住的怪对 DPS 选目标不可见：上游的 smart 选目标只硬编码跳过月亮，不认 "rti cc"，
