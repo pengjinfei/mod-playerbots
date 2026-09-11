@@ -32,6 +32,8 @@ void WotlkDungeonNexStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     // 优先级放在普通输出之上、移动与打断之下。
     triggers.push_back(new TriggerNode("trash healer hex",
         { NextAction("trash healer hex", ACTION_HIGH + 2) }));
+    triggers.push_back(new TriggerNode("trash healer polymorph",
+        { NextAction("trash healer polymorph", ACTION_HIGH + 2) }));
 
     // Ormorok the Tree-Shaper
     // Tank trigger to stack inside boss. Can also add return action to prevent boss repositioning

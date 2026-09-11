@@ -137,6 +137,33 @@ bool DodgeSpikesAction::isUseful()
 
     return bot->GetExactDist2d(boss) > 0.5f;
 }
+Unit* TrashHealerCcAction::GetTarget()
+{
+    Unit* target = FindCcableTrashHealer(botAI, bot, context, spell, casterClass, farthest);
+    if (!target)
+        return nullptr;
+
+    auto const itr = lastCast.find(target->GetGUID());
+    if (itr != lastCast.end() && getMSTimeDiff(itr->second, getMSTime()) < kRetryCooldownMs)
+        return nullptr;
+
+    return target;
+}
+
+bool TrashHealerCcAction::Execute(Event event)
+{
+    Unit* target = GetTarget();
+    if (!target)
+        return false;
+
+    ObjectGuid const guid = target->GetGUID();
+    if (!CastSpellAction::Execute(event))
+        return false;
+
+    lastCast[guid] = getMSTime();
+    return true;
+}
+
 bool DodgeSpikesAction::Execute(Event /*event*/)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "ormorok the tree-shaper");

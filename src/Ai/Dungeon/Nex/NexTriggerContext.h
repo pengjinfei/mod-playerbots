@@ -20,6 +20,7 @@ class WotlkDungeonNexTriggerContext : public NamedObjectContext<Trigger>
             creators["telestra split phase"] = &WotlkDungeonNexTriggerContext::telestra_split_phase;
             creators["chaotic rift"] = &WotlkDungeonNexTriggerContext::chaotic_rift;
             creators["trash healer hex"] = &WotlkDungeonNexTriggerContext::trash_healer_hex;
+            creators["trash healer polymorph"] = &WotlkDungeonNexTriggerContext::trash_healer_polymorph;
             creators["ormorok spikes"] = &WotlkDungeonNexTriggerContext::ormorok_spikes;
             creators["ormorok stack"] = &WotlkDungeonNexTriggerContext::ormorok_stack;
             creators["intense cold"] = &WotlkDungeonNexTriggerContext::intense_cold;
@@ -31,6 +32,7 @@ class WotlkDungeonNexTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* telestra_split_phase(PlayerbotAI* ai) { return new TelestraSplitPhaseTrigger(ai); }
         static Trigger* chaotic_rift(PlayerbotAI* ai) { return new ChaoticRiftTrigger(ai); }
         static Trigger* trash_healer_hex(PlayerbotAI* ai) { return new TrashHealerHexTrigger(ai); }
+        static Trigger* trash_healer_polymorph(PlayerbotAI* ai) { return new TrashHealerPolymorphTrigger(ai); }
         static Trigger* ormorok_spikes(PlayerbotAI* ai) { return new OrmorokSpikesTrigger(ai); }
         static Trigger* ormorok_stack(PlayerbotAI* ai) { return new OrmorokStackTrigger(ai); }
         static Trigger* intense_cold(PlayerbotAI* ai) { return new IntenseColdTrigger(ai); }

@@ -50,12 +50,17 @@ enum NexusIDs
 // trigger 与 action 共用同一判据，避免「触发了但选不出目标」这类静默失败。
 Unit* FindNearestChaoticRift(PlayerbotAI* botAI, Player* bot, AiObjectContext* context);
 
-// 挑一只值得妖术(51514)的治疗小怪。只在魔枢的前置守卫组里用：这两个治疗的法术
+// 挑一只值得控住的治疗小怪。只在魔枢的前置守卫组里用：这两个治疗的法术
 // **本质上打不断**（宁静的引导标志位不满足核心 EffectInterruptCast 的要求；恢复是瞬发），
 // 而「优先击杀治疗」实测更差（把 DPS 锁到坦克没抓的怪身上，丢掉坦克保护）。
-// 妖术是瞬发、45 秒冷却，实测成本是每场 1 次 GCD。
 // trigger 与 action 共用同一判据，避免「触发了但选不出目标」这类静默失败。
-Unit* FindHexableTrashHealer(PlayerbotAI* botAI, Player* bot, AiObjectContext* context);
+//
+// spell：按名字在运行时查（"hex" / "polymorph"），学不会就不触发。
+// casterClass：只让该职业出手，避免把判据散进各职业文件。
+// farthest：萨满取最近、法师取最远。守卫组只有两只治疗，这样两个控制不会撞同一只；
+//   顺带也符合真人习惯（远程羊离近战最远的那只）。
+Unit* FindCcableTrashHealer(PlayerbotAI* botAI, Player* bot, AiObjectContext* context,
+                            std::string const& spell, uint8 casterClass, bool farthest);
 
 class FactionCommanderWhirlwindTrigger : public Trigger
 {
@@ -89,6 +94,13 @@ class TrashHealerHexTrigger : public Trigger
 {
 public:
     TrashHealerHexTrigger(PlayerbotAI* ai) : Trigger(ai, "trash healer hex") {}
+    bool IsActive() override;
+};
+
+class TrashHealerPolymorphTrigger : public Trigger
+{
+public:
+    TrashHealerPolymorphTrigger(PlayerbotAI* ai) : Trigger(ai, "trash healer polymorph") {}
     bool IsActive() override;
 };
 

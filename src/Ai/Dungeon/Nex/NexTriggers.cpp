@@ -117,13 +117,14 @@ bool ChaoticRiftTrigger::IsActive()
     return FindNearestChaoticRift(botAI, bot, context) != nullptr;
 }
 
-Unit* FindHexableTrashHealer(PlayerbotAI* botAI, Player* bot, AiObjectContext* context)
+Unit* FindCcableTrashHealer(PlayerbotAI* botAI, Player* bot, AiObjectContext* context,
+                            std::string const& spell, uint8 casterClass, bool farthest)
 {
-    if (bot->getClass() != CLASS_SHAMAN)
+    if (bot->getClass() != casterClass)
         return nullptr;
 
     // 名字解析失败（没学会/不在 spellmap）就别让触发器每 tick 空转。
-    if (!AI_VALUE2(uint32, "spell id", "hex"))
+    if (!AI_VALUE2(uint32, "spell id", spell))
         return nullptr;
 
     // 只在成组的怪里花这个 GCD。落单的怪直接 A 掉更快。
@@ -157,13 +158,13 @@ Unit* FindHexableTrashHealer(PlayerbotAI* botAI, Player* bot, AiObjectContext* c
                 continue;
         }
 
-        // 已经被控住就跳过。run373 实测这条判据让妖术每场只放 1 次、不重复。
+        // 已经被控住就跳过。run390 实测这条判据让妖术每场只放 1 次、不重复。
         if (unit->HasAuraType(SPELL_AURA_MOD_PACIFY_SILENCE) || unit->HasAuraType(SPELL_AURA_TRANSFORM) ||
             unit->HasAuraType(SPELL_AURA_MOD_CONFUSE) || unit->HasAuraType(SPELL_AURA_MOD_STUN))
             continue;
 
         float const distance = bot->GetDistance(unit);
-        if (!best || distance < bestDistance)
+        if (!best || (farthest ? distance > bestDistance : distance < bestDistance))
         {
             best = unit;
             bestDistance = distance;
@@ -175,7 +176,12 @@ Unit* FindHexableTrashHealer(PlayerbotAI* botAI, Player* bot, AiObjectContext* c
 
 bool TrashHealerHexTrigger::IsActive()
 {
-    return FindHexableTrashHealer(botAI, bot, context) != nullptr;
+    return FindCcableTrashHealer(botAI, bot, context, "hex", CLASS_SHAMAN, false) != nullptr;
+}
+
+bool TrashHealerPolymorphTrigger::IsActive()
+{
+    return FindCcableTrashHealer(botAI, bot, context, "polymorph", CLASS_MAGE, true) != nullptr;
 }
 
 bool OrmorokSpikesTrigger::IsActive()
