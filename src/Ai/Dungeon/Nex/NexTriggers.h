@@ -36,12 +36,26 @@ enum NexusIDs
     // Ormorok the Tree Shaper
     // NPC_CRYSTAL_SPIKE               = 27099,
     GO_CRYSTAL_SPIKE                = 188537,
+
+    // 前置守卫组里的治疗小怪（普通/英雄两个 entry）。这两组 4 只等级 80 精英是
+    // 泰蕾斯特拉与奥莫洛克完整链路的实测瓶颈，见 docs/testing/bosses/heroic-nexus/TRASH-TACTICS.md。
+    NPC_CRYSTALLINE_TENDER          = 28231,  // 引导群疗：宁静(57054)，打不断（引导标志位不满足）
+    NPC_CRYSTALLINE_TENDER_HEROIC   = 30525,
+    NPC_MAGE_HUNTER_INITIATE        = 26728,  // 瞬发单奶：恢复(25058)，定义上无法打断
+    NPC_MAGE_HUNTER_INITIATE_HEROIC = 30478,
 };
 
 // Anomalus 的混乱空间裂隙不在仇恨表里，AI_VALUE2("find target") 找不到它，
 // 因此按 entry 扫描 "possible targets no los" 取最近的一只存活裂隙。
 // trigger 与 action 共用同一判据，避免「触发了但选不出目标」这类静默失败。
 Unit* FindNearestChaoticRift(PlayerbotAI* botAI, Player* bot, AiObjectContext* context);
+
+// 挑一只值得妖术(51514)的治疗小怪。只在魔枢的前置守卫组里用：这两个治疗的法术
+// **本质上打不断**（宁静的引导标志位不满足核心 EffectInterruptCast 的要求；恢复是瞬发），
+// 而「优先击杀治疗」实测更差（把 DPS 锁到坦克没抓的怪身上，丢掉坦克保护）。
+// 妖术是瞬发、45 秒冷却，实测成本是每场 1 次 GCD。
+// trigger 与 action 共用同一判据，避免「触发了但选不出目标」这类静默失败。
+Unit* FindHexableTrashHealer(PlayerbotAI* botAI, Player* bot, AiObjectContext* context);
 
 class FactionCommanderWhirlwindTrigger : public Trigger
 {
@@ -68,6 +82,13 @@ class ChaoticRiftTrigger : public Trigger
 {
 public:
     ChaoticRiftTrigger(PlayerbotAI* ai) : Trigger(ai, "chaotic rift") {}
+    bool IsActive() override;
+};
+
+class TrashHealerHexTrigger : public Trigger
+{
+public:
+    TrashHealerHexTrigger(PlayerbotAI* ai) : Trigger(ai, "trash healer hex") {}
     bool IsActive() override;
 };
 

@@ -17,6 +17,9 @@ public:
     CombatStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
 
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    // 所有职业的战斗策略都派生自这里（MeleeCombatStrategy / RangedCombatStrategy），
+    // 所以这一个接入点就能给全职业挂上「别用自家 AoE 打破自家控制」。
+    void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
     uint32 GetType() const override { return STRATEGY_TYPE_COMBAT; }
 };
 

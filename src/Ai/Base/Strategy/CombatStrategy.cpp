@@ -5,7 +5,13 @@
  */
 
 #include "CombatStrategy.h"
+#include "CrowdControlProtectionMultiplier.h"
 #include "Strategy.h"
+
+void CombatStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
+{
+    multipliers.push_back(new CrowdControlProtectionMultiplier(botAI));
+}
 
 void CombatStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {

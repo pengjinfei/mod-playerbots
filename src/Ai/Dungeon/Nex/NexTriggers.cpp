@@ -117,6 +117,67 @@ bool ChaoticRiftTrigger::IsActive()
     return FindNearestChaoticRift(botAI, bot, context) != nullptr;
 }
 
+Unit* FindHexableTrashHealer(PlayerbotAI* botAI, Player* bot, AiObjectContext* context)
+{
+    if (bot->getClass() != CLASS_SHAMAN)
+        return nullptr;
+
+    // 名字解析失败（没学会/不在 spellmap）就别让触发器每 tick 空转。
+    if (!AI_VALUE2(uint32, "spell id", "hex"))
+        return nullptr;
+
+    // 只在成组的怪里花这个 GCD。落单的怪直接 A 掉更快。
+    GuidVector attackers = AI_VALUE(GuidVector, "attackers");
+    if (attackers.size() < 3)
+        return nullptr;
+
+    // 不要控坦克正在抓的那只，也不要控自己正在打的那只——那等于让队伍的输出空转。
+    Unit* tankTarget = nullptr;
+    if (Unit* tank = AI_VALUE(Unit*, "main tank"))
+        tankTarget = tank->GetVictim();
+
+    Unit* const ownTarget = AI_VALUE(Unit*, "current target");
+
+    Unit* best = nullptr;
+    float bestDistance = 0.0f;
+    for (ObjectGuid const& guid : attackers)
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (!unit || !unit->IsAlive() || unit == tankTarget || unit == ownTarget)
+            continue;
+
+        switch (unit->GetEntry())
+        {
+            case NPC_CRYSTALLINE_TENDER:
+            case NPC_CRYSTALLINE_TENDER_HEROIC:
+            case NPC_MAGE_HUNTER_INITIATE:
+            case NPC_MAGE_HUNTER_INITIATE_HEROIC:
+                break;
+            default:
+                continue;
+        }
+
+        // 已经被控住就跳过。run373 实测这条判据让妖术每场只放 1 次、不重复。
+        if (unit->HasAuraType(SPELL_AURA_MOD_PACIFY_SILENCE) || unit->HasAuraType(SPELL_AURA_TRANSFORM) ||
+            unit->HasAuraType(SPELL_AURA_MOD_CONFUSE) || unit->HasAuraType(SPELL_AURA_MOD_STUN))
+            continue;
+
+        float const distance = bot->GetDistance(unit);
+        if (!best || distance < bestDistance)
+        {
+            best = unit;
+            bestDistance = distance;
+        }
+    }
+
+    return best;
+}
+
+bool TrashHealerHexTrigger::IsActive()
+{
+    return FindHexableTrashHealer(botAI, bot, context) != nullptr;
+}
+
 bool OrmorokSpikesTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "ormorok the tree-shaper");

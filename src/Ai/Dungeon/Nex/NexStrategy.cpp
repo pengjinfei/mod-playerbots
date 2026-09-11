@@ -27,6 +27,12 @@ void WotlkDungeonNexStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     triggers.push_back(new TriggerNode("chaotic rift",
         { NextAction("chaotic rift target", ACTION_RAID + 1) }));
 
+    // 前置守卫组的治疗小怪：萨满妖术(51514)。只有瞬发控制放在这里，
+    // 因为它不可能出现「读条自我取消」，实测成本是每场 1 次 GCD（run373）。
+    // 优先级放在普通输出之上、移动与打断之下。
+    triggers.push_back(new TriggerNode("trash healer hex",
+        { NextAction("trash healer hex", ACTION_HIGH + 2) }));
+
     // Ormorok the Tree-Shaper
     // Tank trigger to stack inside boss. Can also add return action to prevent boss repositioning
     // if it becomes too much of a problem. He usually dies before he's up against a wall though
