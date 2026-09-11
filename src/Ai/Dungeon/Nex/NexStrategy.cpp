@@ -6,6 +6,8 @@
 
 #include "NexStrategy.h"
 #include "NexMultipliers.h"
+#include "NexTriggers.h"
+#include "PlayerbotAI.h"
 
 void WotlkDungeonNexStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
 {
@@ -27,13 +29,19 @@ void WotlkDungeonNexStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     triggers.push_back(new TriggerNode("chaotic rift",
         { NextAction("chaotic rift target", ACTION_RAID + 1) }));
 
-    // 前置守卫组的治疗小怪：萨满妖术(51514)。只有瞬发控制放在这里，
-    // 因为它不可能出现「读条自我取消」，实测成本是每场 1 次 GCD（run373）。
-    // 优先级放在普通输出之上、移动与打断之下。
-    triggers.push_back(new TriggerNode("trash healer hex",
-        { NextAction("trash healer hex", ACTION_HIGH + 2) }));
-    triggers.push_back(new TriggerNode("trash healer polymorph",
-        { NextAction("trash healer polymorph", ACTION_HIGH + 2) }));
+    // 前置守卫组的清怪控制链（docs/testing/TRASH-CC-PULL-DESIGN.md）。
+    // 副本策略同时挂在 combat / non-combat 两个引擎上，所以这四条既管开怪前的
+    // 指派与首次上控，也管战斗中的挪骷髅与重新上控。
+    // 标记是瞬时的、放最高；上控放在移动之上、打断与紧急之下——开怪前它是这一刻唯一
+    // 要做的事，战斗中则不能压过奥莫洛克躲尖刺(ACTION_MOVE + 5)这类保命走位。
+    triggers.push_back(new TriggerNode("trash cc mark",
+        { NextAction("trash cc mark", ACTION_RAID) }));
+    triggers.push_back(new TriggerNode("trash cc polymorph",
+        { NextAction("trash cc polymorph", ACTION_MOVE + 3) }));
+    triggers.push_back(new TriggerNode("trash cc hex",
+        { NextAction("trash cc hex", ACTION_MOVE + 3) }));
+    triggers.push_back(new TriggerNode("trash cc sap",
+        { NextAction("trash cc sap", ACTION_MOVE + 3) }));
 
     // Ormorok the Tree-Shaper
     // Tank trigger to stack inside boss. Can also add return action to prevent boss repositioning
@@ -63,4 +71,33 @@ void WotlkDungeonNexStrategy::InitMultipliers(std::vector<Multiplier*> &multipli
     multipliers.push_back(new TelestraMultiplier(botAI));
     multipliers.push_back(new AnomalusMultiplier(botAI));
     multipliers.push_back(new OrmorokMultiplier(botAI));
+}
+
+// 被控制图标钉住的怪对 DPS 选目标不可见：上游的 smart 选目标只硬编码跳过月亮，不认 "rti cc"，
+// 这里把三个控制图标都排除掉——DPS 一律留在骷髅上，被控的怪掉了控制也由控制职业补，不由 DPS 打。
+// 坦克只排除**此刻真的被控着**的：控制掉了、或者压根没放出来（run393/attempt2 的闷棍目标一直
+// 在打治疗，坦克却因为它有图标而不去抓），松掉的怪就是坦克的活。
+// 坦克把骷髅挪到某只被控的怪上时，核心会顺手清掉它的控制图标，于是它自然回到可选范围——
+// 这就是「被控的最后杀」。
+void WotlkDungeonNexStrategy::AppendTargetExclusions(GuidSet& exclusions, TargetValueExclusionType type)
+{
+    // 开怪前骷髅也要排除：上游 AttackersValue 会把骷髅目标塞进 "attackers"，于是坦克一打标记，
+    // 治疗就用魔杖射了骷髅（run402 attempt1/2：5019 Shoot 在 7.5 秒/2.9 秒把整组拉起来，
+    // 控制一个都没落地）。开怪指令由编排层下达，之前谁都不该碰它。
+    Player* bot = botAI->GetBot();
+    if (!bot->IsInCombat() && TrashCcPullInProgress(botAI))
+        if (Unit* skull = TrashCcIconUnit(botAI, TRASH_CC_ICON_SKULL))
+            exclusions.insert(skull->GetGUID());
+
+    for (uint8 icon : { TRASH_CC_ICON_MOON, TRASH_CC_ICON_SQUARE, TRASH_CC_ICON_CROSS })
+    {
+        Unit* unit = TrashCcIconUnit(botAI, icon);
+        if (!unit)
+            continue;
+
+        if (type == TargetValueExclusionType::Tank && !TrashCcIncapacitated(unit, bot))
+            continue;
+
+        exclusions.insert(unit->GetGUID());
+    }
 }

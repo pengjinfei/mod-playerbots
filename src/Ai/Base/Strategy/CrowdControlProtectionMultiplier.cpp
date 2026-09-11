@@ -6,65 +6,111 @@
 
 #include "CrowdControlProtectionMultiplier.h"
 #include "GenericSpellActions.h"
+#include "Group.h"
+#include "Log.h"
+#include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
+#include "SpellAuraEffects.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
 
+#include <set>
+
 namespace
 {
-    // 落点判定留的余量：控住的怪与队伍都可能在挪动，边界上宁可保守一点。
-    constexpr float kAoeMargin = 2.0f;
+    // 「附近」的口径：一次拉怪的范围。再远的被控怪不属于这场战斗。
+    constexpr float kProtectRange = 45.0f;
+
+    // 与 RtiTargetValue::GetRtiIndex 一致：月亮(4) / 方块(5) / 十字(6) 是控制图标，骷髅(7) 是击杀。
+    constexpr uint8 kCcIcons[] = { 4, 5, 6 };
 }
 
-bool CrowdControlProtectionMultiplier::HasBreakableFriendlyCc(Unit* unit) const
+bool CrowdControlProtectionMultiplier::IsMultiTargetSpell(SpellInfo const* spellInfo, std::string const& actionSpell) const
+{
+    // IsTargetingArea：目标从区域里选（烈焰风暴、冰霜新星、刀扇、锥形）。
+    // IsAffectingArea：还包括持续性地面 AoE（奉献、暴风雪、烈焰风暴的余烬）——run393/attempt2 里
+    // 暴风雪(42940) 的效果是 PERSISTENT_AREA_AURA，IsTargetingArea 对它是 false，羊被自家暴风雪
+    // 一跳打掉。
+    if (spellInfo->IsTargetingArea() || spellInfo->IsAffectingArea())
+        return true;
+
+    // 链式跳转（闪电链、正义之锤、顺劈、复仇者之盾）同样会砸到旁边被控的怪。
+    for (uint8 effect = EFFECT_0; effect <= EFFECT_2; ++effect)
+        if (spellInfo->Effects[effect].ChainTarget > 1)
+            return true;
+
+    return IsIndirectAoe(actionSpell);
+}
+
+bool CrowdControlProtectionMultiplier::IsIndirectAoe(std::string const& actionSpell) const
+{
+    // 法术数据上看不出来的间接 AoE：施放本身是单体/自身增益，伤害在之后落到周围的怪身上。
+    // 这份名单按 bot 实际会用的动作名列，而不是想穷举游戏里的所有法术。
+    static char const* const kIndirectAoe[] =
+    {
+        "living bomb",          // 到期爆炸，10 码范围
+        "blade flurry",         // 每次攻击额外打一个邻近目标
+        "killing spree",        // 在周围敌人之间跳
+        "magma totem",          // 持续脉冲
+        "fire elemental totem",
+        "sweeping strikes",
+        "bladestorm",
+        "starfall",
+        "seed of corruption",
+    };
+    for (char const* name : kIndirectAoe)
+        if (actionSpell == name)
+            return true;
+
+    return false;
+}
+
+bool CrowdControlProtectionMultiplier::IsCrowdControlIconTarget(Unit* unit) const
+{
+    Group* group = bot->GetGroup();
+    if (!group)
+        return false;
+
+    for (uint8 icon : kCcIcons)
+        if (group->GetTargetIcon(icon) == unit->GetGUID())
+            return true;
+
+    return false;
+}
+
+bool CrowdControlProtectionMultiplier::HasFriendlyCrowdControl(Unit* unit) const
 {
     for (auto const& applied : unit->GetAppliedAuras())
     {
         AuraApplication const* application = applied.second;
-        if (!application)
+        Aura* aura = application ? application->GetBase() : nullptr;
+        SpellInfo const* auraInfo = aura ? aura->GetSpellInfo() : nullptr;
+        if (!auraInfo)
             continue;
 
-        Aura* aura = application->GetBase();
-        if (!aura)
+        // 只保护友方施加的控制。怪物自己身上的变形/潜行不是我们要护着的东西。
+        Unit* caster = aura->GetCaster();
+        if (!caster || !bot->IsFriendlyTo(caster))
             continue;
 
-        SpellInfo const* auraInfo = aura->GetSpellInfo();
-        if (!auraInfo || !(auraInfo->AuraInterruptFlags & AURA_INTERRUPT_FLAG_NOT_VICTIM))
-            continue;
-
-        // 判据与核心的官方定义同源：Unit::HasBreakableByDamageCrowdControlAura()
-        // （Unit.cpp:949-970）用的就是 AuraInterruptFlags & AURA_INTERRUPT_FLAG_TAKE_DAMAGE
-        // 加上 {CONFUSE, FEAR, STUN, ROOT, TRANSFORM} 这组光环类型。
-        // 这里**故意去掉 MOD_ROOT**：被定住的怪照样在打人，用 AoE 打破它是正常打法，
-        // 护着它等于白亏输出。
-        // 实测（mod-raidtest run385/attempt1）：最初只判「受伤即掉」这一个标志位时，
-        // 冰霜新星(42917) 的 8 秒定身把全队 AoE 压死了整整 8.3 秒
-        // （14.3 秒新星 -> 22.6 秒才出现下一个奉献），奥莫洛克那组随之从 6/8 掉到 1/4。
-        bool incapacitates = false;
-        for (uint8 effect = EFFECT_0; effect <= EFFECT_2 && !incapacitates; ++effect)
+        for (uint8 effect = EFFECT_0; effect <= EFFECT_2; ++effect)
         {
             switch (auraInfo->Effects[effect].ApplyAuraName)
             {
                 case SPELL_AURA_MOD_CONFUSE:          // 变形术、致盲
                 case SPELL_AURA_MOD_FEAR:             // 恐惧类
-                case SPELL_AURA_MOD_STUN:             // 闷棍、冰冻陷阱
                 case SPELL_AURA_MOD_PACIFY_SILENCE:   // 妖术
                 case SPELL_AURA_TRANSFORM:            // 变形术、妖术的变形部分
-                    incapacitates = true;
+                    return true;
+                case SPELL_AURA_MOD_STUN:             // 只认闷棍；制裁之锤/肾击是输出手段
+                    if (auraInfo->Mechanic == MECHANIC_SAPPED ||
+                        auraInfo->Effects[effect].Mechanic == MECHANIC_SAPPED)
+                        return true;
                     break;
                 default:
                     break;
             }
         }
-
-        if (!incapacitates)
-            continue;
-
-        // 只保护友方施加的控制。怪物自己身上「受伤即掉」的光环（例如某些伪装/潜行）
-        // 不是我们要护着的东西，压住 AoE 反而是白亏输出。
-        Unit* caster = aura->GetCaster();
-        if (caster && bot->IsFriendlyTo(caster))
-            return true;
     }
 
     return false;
@@ -81,35 +127,44 @@ float CrowdControlProtectionMultiplier::GetValue(Action* action)
         return 1.0f;
 
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
-    if (!spellInfo || !spellInfo->IsTargetingArea() || spellInfo->IsPositive())
+    if (!spellInfo)
         return 1.0f;
 
-    float radius = 0.0f;
-    for (uint8 effect = EFFECT_0; effect <= EFFECT_2; ++effect)
-        radius = std::max(radius, spellInfo->Effects[effect].CalcRadius(bot));
-
-    if (radius <= 0.0f)
+    // 先查名单再看正负：剑刃乱舞/杀戮盛宴/活体炸弹这类间接 AoE 的施放本身是**正面**自身增益，
+    // 用 IsPositive() 先放行会把它们漏掉（run404–407 每场开怪 15 秒左右剑刃乱舞都放出来了）。
+    if (!IsMultiTargetSpell(spellInfo, cast->getSpell()))
+        return 1.0f;
+    if (spellInfo->IsPositive() && !IsIndirectAoe(cast->getSpell()))
         return 1.0f;
 
-    // 圆心：以自身为中心的（新星/奉献/刀扇）与以目标为中心的（暴风雪/烈焰风暴）两类都存在，
-    // 而施法前无法确知地面法术的落点。两个圆心都查一遍，宁可多让路。
-    Unit* const currentTarget = action->GetTarget();
+    // 候选：仇恨表里的怪 + 三个控制图标所指（被控住、没进过仇恨表的怪不在 "attackers" 里）。
+    std::set<ObjectGuid> candidates;
+    for (ObjectGuid const& guid : AI_VALUE(GuidVector, "attackers"))
+        candidates.insert(guid);
 
-    GuidVector attackers = AI_VALUE(GuidVector, "attackers");
-    for (ObjectGuid const& guid : attackers)
+    if (Group* group = bot->GetGroup())
+        for (uint8 icon : kCcIcons)
+            if (ObjectGuid guid = group->GetTargetIcon(icon))
+                candidates.insert(guid);
+
+    Unit* const actionTarget = action->GetTarget();
+    for (ObjectGuid const& guid : candidates)
     {
         Unit* unit = botAI->GetUnit(guid);
-        if (!unit || !unit->IsAlive() || unit == currentTarget)
+        if (!unit || !unit->IsAlive() || unit->IsFriendlyTo(bot) || unit == actionTarget)
             continue;
 
-        if (!HasBreakableFriendlyCc(unit))
+        if (bot->GetDistance(unit) > kProtectRange)
             continue;
 
-        if (bot->GetDistance(unit) <= radius + kAoeMargin)
+        if (IsCrowdControlIconTarget(unit) || HasFriendlyCrowdControl(unit))
+        {
+            // 与上游 CanCastSpell 的失败日志同一开关（AiPlayerbot.LogInGroupOnly = 0 时可见）。
+            if (!sPlayerbotAIConfig.logInGroupOnly)
+                LOG_DEBUG("playerbots", "cc protection: {} holds {} because {} is crowd controlled",
+                          bot->GetName(), cast->getSpell(), unit->GetName());
             return 0.0f;
-
-        if (currentTarget && currentTarget->GetDistance(unit) <= radius + kAoeMargin)
-            return 0.0f;
+        }
     }
 
     return 1.0f;

@@ -9,35 +9,36 @@
 
 #include "Multiplier.h"
 
+#include <string>
+
 class Action;
 class PlayerbotAI;
+class SpellInfo;
 class Unit;
 
-// 别用自家的 AoE 打破自家的控制。
+// 有控制在，全队就不放 AoE。
 //
-// 上游已有的是「选谁来 CC」（CcTargetValue），而且它里面那条「不要 CC 已经在 AoE 团里的怪」
-// 只作用于兜底路径 —— 被团队标记指定的目标会在该排除之前就命中。也就是说一旦开始用标记
-// 分配控制，就没有任何东西阻止队伍的 AoE 砸到已经被控住的怪；唯一名字相近的
-// AvoidAoeStrategy 讲的是「bot 躲开敌方 AoE」，它的 InitMultipliers 是空实现。
+// 这是清怪控制链（docs/testing/TRASH-CC-PULL-DESIGN.md）的第 4 步，真人打法里的一句话：
+// 「只要还有一只被控住，全队一律不放 AoE，单体一个一个杀。」
 //
-// 判据完全由法术数据驱动，不维护任何动作名清单（这个代码库里 AoE 动作没有公共基类，
-// 由 "light aoe" / "medium aoe" 这类触发器驱动、各职业各写各的）：
-//   * 动作是 CastSpellAction 派生，且其法术 SpellInfo::IsTargetingArea() 为真、非正面法术；
-//   * 附近有敌对单位带着「受击/受伤即移除」的光环（AURA_INTERRUPT_FLAG_NOT_VICTIM =
-//     HITBYSPELL | TAKE_DAMAGE | DIRECT_DAMAGE），该光环由友方施加，**且它是真正让怪
-//     脱离战斗的那几类**（confuse / fear / stun / pacify-silence / transform）——
-//     定身与减速不算，被定住的怪照样在打人，护着它等于白亏输出；
-//   * 该单位落在这个 AoE 的半径内（同时按自身与当前目标两个圆心检查）。
-// 满足则返回 0，让位给单体输出。
-//
-// 注意两点取舍：
-//   * 昏迷类控制（制裁之锤、肾击）不吃伤害就不会掉，它们的光环没有那组中断标志位，
-//     所以不会被这条误伤。
-//   * 只判「受伤即掉」是不够的：冰霜新星(42917) 的定身也带这个标志，实测会把全队 AoE
-//     压死整整 8 秒（run385，奥莫洛克那组从 6/8 掉到 1/4），所以还要再过一道
-//     「是否让怪脱离战斗」的筛。
-//   * 坦克的 AoE 仇恨技（奉献、正义之锤）同样会被压住。这是真人也会做的取舍：
-//     控住一只的时候用单体仇恨，不要为了铺仇恨把控制打破。
+// 上一版（run385–392）的形状是几何判据：只在「AoE 半径盖到被控的怪」时让路。它被
+// run392/attempt3 决定性地推翻——羊上身 2 毫秒就被**已经铺在地上**的奉献打掉：乘子只能压
+// 「要不要发起新的 AoE 施法」，压不住存量地面 AoE。所以判据改成本次拉怪的全局状态：
+//   * 动作是 CastSpellAction 派生、其法术为负面，且是多目标法术——
+//     SpellInfo::IsTargetingArea() / IsAffectingArea()（烈焰风暴、刀扇、新星，以及奉献、暴风雪这类
+//     PERSISTENT_AREA_AURA 的地面 AoE）、任一效果 ChainTarget > 1（闪电链、正义之锤、顺劈、
+//     复仇者之盾——链式跳转同样会砸到被控的怪），或名单里的间接 AoE（活体炸弹、剑刃乱舞、
+//     杀戮盛宴、熔岩图腾等：施放本身是单体/自身增益，伤害之后才落到周围）；
+//   * 附近有敌对单位满足二者之一：
+//       - 被队伍的控制图标（月亮/方块/十字）钉住——即使控制此刻掉了、正在等重新上控，
+//         也不能在它身边铺 AoE，否则新控制一落地就会像 run392 那样被存量 AoE 打掉；
+//       - 身上有友方施加的「让它脱离战斗」的控制光环（变形/妖术/致盲/恐惧/闷棍）。
+//         不要求 AURA_INTERRUPT_FLAG_TAKE_DAMAGE：妖术(51514) 没有这一位却实测 1–4 秒就掉
+//         （台账 2026-09-11），核心 HasBreakableByDamageCrowdControlAura() 对它会漏判。
+//         定身与减速不算（被定住的怪照样在打人，run385 冰霜新星压死全队 AoE 8.3 秒）；
+//         普通昏迷（制裁之锤、肾击）不算，只认 MECHANIC_SAPPED 的闷棍。
+// 满足则返回 0，让位给单体输出。坦克的 AoE 仇恨技（奉献、正义之锤）同样被压住——
+// 控住一只的时候用单体仇恨，不要为了铺仇恨把控制打破。
 class CrowdControlProtectionMultiplier : public Multiplier
 {
 public:
@@ -46,8 +47,10 @@ public:
     float GetValue(Action* action) override;
 
 private:
-    // 该敌对单位身上是否有「友方施加、且会被伤害打破」的光环。
-    bool HasBreakableFriendlyCc(Unit* unit) const;
+    bool IsMultiTargetSpell(SpellInfo const* spellInfo, std::string const& actionSpell) const;
+    bool IsIndirectAoe(std::string const& actionSpell) const;
+    bool HasFriendlyCrowdControl(Unit* unit) const;
+    bool IsCrowdControlIconTarget(Unit* unit) const;
 };
 
 #endif

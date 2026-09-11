@@ -17,6 +17,8 @@ public:
     virtual std::string const getName() override { return "nexus"; }
     virtual void InitTriggers(std::vector<TriggerNode*> &triggers) override;
     virtual void InitMultipliers(std::vector<Multiplier*> &multipliers) override;
+    bool HasTargetExclusions() const override { return true; }
+    void AppendTargetExclusions(GuidSet& exclusions, TargetValueExclusionType type) override;
 };
 
 #endif

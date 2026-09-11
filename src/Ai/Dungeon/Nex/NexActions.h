@@ -10,11 +10,10 @@
 #include "Action.h"
 #include "AttackAction.h"
 #include "GenericSpellActions.h"
+#include "MovementActions.h"
 #include "NexTriggers.h"
 #include "PlayerbotAI.h"
 #include "Playerbots.h"
-
-#include <map>
 
 class MoveFromWhirlwindAction : public MovementAction
 {
@@ -46,49 +45,68 @@ public:
     bool isUseful() override;
 };
 
+// ---- 清怪控制链（docs/testing/TRASH-CC-PULL-DESIGN.md）----
+
+// 坦克指派：开怪前把骷髅/月亮/方块/十字钉到成组的怪身上；战斗中骷髅目标死后
+// 把骷髅挪到下一只（先未被控的，都控着就按 十字→方块→月亮 放出来打，被控的最后杀）。
+class TrashCcMarkAction : public Action
+{
+public:
+    TrashCcMarkAction(PlayerbotAI* ai) : Action(ai, "trash cc mark") {}
+    bool Execute(Event event) override;
+    bool isUseful() override { return TrashCcMarkNeeded(botAI, bot); }
+
+private:
+    bool AssignPrePull(Group* group);
+    bool AdvanceKillOrder(Group* group);
+    void SetIcon(Group* group, uint8 icon, Unit* target);
+};
+
 // 继承 CastSpellAction（而不是裸 Action）是刻意的：上游的 isPossible() 会走
 // botAI->CanCastSpell()，它会在已有读条时返回 false。run374 里自建的裸 Action 版变形术
 // 因为绕过这条保护，每 1.4 秒把自己的读条顶掉一次、78 次施放零成功。
 // 妖术与变形术都有读条（实测 1082-1407 ms），这条保护是必需的。
-class TrashHealerCcAction : public CastSpellAction
+// 目标不走共享的 "cc target"（它基于仇恨表，脱战为空），而是直接读队伍图标：
+// 开怪前首次上控与战斗中重新上控是同一个动作。
+class TrashCcCastAction : public CastSpellAction
 {
 public:
-    TrashHealerCcAction(PlayerbotAI* ai, std::string const spell, uint8 casterClass, bool farthest,
-                        std::string const name)
-        : CastSpellAction(ai, spell), casterClass(casterClass), farthest(farthest), name(name) {}
+    TrashCcCastAction(PlayerbotAI* ai, TrashCcRole const& role, std::string const name)
+        : CastSpellAction(ai, role.spell), role(role), name(name) {}
 
-    // 目标不走共享的 "cc target"：那条取值里「不要 CC 已经在 AoE 团里的怪」对普通小怪是
-    // 正确默认，但守卫组 4 只是叠在一起的，这条会把治疗全部排除掉。让 AoE 给控制让路这件事
-    // 由 CrowdControlProtectionMultiplier 负责，不是靠放弃控制来回避。
-    Unit* GetTarget() override;
-    bool Execute(Event event) override;
+    Unit* GetTarget() override { return TrashCcCastTarget(botAI, bot, role); }
+    bool isUseful() override { return GetTarget() != nullptr; }
     std::string const getName() override { return name; }
     ActionThreatType getThreatType() override { return ActionThreatType::None; }
 
 protected:
-    // 控制被打破后的重试间隔。run390 实测妖术只撑 1-4 秒，不设这个间隔的话
-    // 「掉了就补」会把整段清怪的 GCD 全花在控制上（run374 的空转是另一个原因，
-    // 但后果一样）。同一只怪在这个窗口内不再尝试。
-    static constexpr uint32 kRetryCooldownMs = 10000;
-
-    uint8 casterClass;
-    bool farthest;
+    TrashCcRole const& role;
     std::string name;
-    std::map<ObjectGuid, uint32> lastCast;
 };
 
-class TrashHealerHexAction : public TrashHealerCcAction
+class TrashCcPolymorphAction : public TrashCcCastAction
 {
 public:
-    TrashHealerHexAction(PlayerbotAI* ai)
-        : TrashHealerCcAction(ai, "hex", CLASS_SHAMAN, false, "trash healer hex") {}
+    TrashCcPolymorphAction(PlayerbotAI* ai)
+        : TrashCcCastAction(ai, *TrashCcRoleForClass(CLASS_MAGE), "trash cc polymorph") {}
 };
 
-class TrashHealerPolymorphAction : public TrashHealerCcAction
+class TrashCcHexAction : public TrashCcCastAction
 {
 public:
-    TrashHealerPolymorphAction(PlayerbotAI* ai)
-        : TrashHealerCcAction(ai, "polymorph", CLASS_MAGE, true, "trash healer polymorph") {}
+    TrashCcHexAction(PlayerbotAI* ai)
+        : TrashCcCastAction(ai, *TrashCcRoleForClass(CLASS_SHAMAN), "trash cc hex") {}
+};
+
+// 闷棍要求潜行、10 码内、目标未进战斗，所以是一个带走位的动作：
+// 先潜行，再贴近，最后出手。战斗中不可用（判据里已排除）。
+class TrashCcSapAction : public MovementAction
+{
+public:
+    TrashCcSapAction(PlayerbotAI* ai) : MovementAction(ai, "trash cc sap") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+    ActionThreatType getThreatType() override { return ActionThreatType::None; }
 };
 
 class DodgeSpikesAction : public MovementAction
