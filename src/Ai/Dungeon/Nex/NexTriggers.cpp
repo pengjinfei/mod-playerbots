@@ -142,8 +142,8 @@ namespace
     constexpr size_t kTrashPackMinSize = 3;
     // 控制职业离坦克多远以内算「在场」。
     constexpr float kCasterPresenceRange = 60.0f;
-    // 羊/妖术最多等闷棍先落地多久（盗贼潜行走 25–33 码约 5 秒）。
-    constexpr uint32 kSapLeadMs = 9000;
+    // 羊/妖术最多等闷棍先落地多久（盗贼潜行绕到目标背后约 30 码，6–9 秒）。
+    constexpr uint32 kSapLeadMs = 12000;
 
     bool IsCcablePackMember(Unit* unit, Player* bot)
     {
