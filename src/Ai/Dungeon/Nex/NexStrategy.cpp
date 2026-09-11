@@ -100,4 +100,13 @@ void WotlkDungeonNexStrategy::AppendTargetExclusions(GuidSet& exclusions, Target
 
         exclusions.insert(unit->GetGUID());
     }
+
+    // 「放出来打」的那只（骷髅挪到它身上、控制还在）：近战与坦克**不追**，由远程先打破控制，
+    // 怪自己会跑到队伍这边来，坦克在原地接。追过去等于把全队带进它乱走到的地方——run407 a1 萨满
+    // 就是追被羊的最后一只时进了泰蕾斯特拉 22 码仇恨半径死的；链式场景里这会直接把 boss 拉进来。
+    bool const melee = type == TargetValueExclusionType::Tank || !PlayerbotAI::IsRanged(bot);
+    if (melee)
+        if (Unit* skull = TrashCcIconUnit(botAI, TRASH_CC_ICON_SKULL))
+            if (TrashCcIncapacitated(skull, bot))
+                exclusions.insert(skull->GetGUID());
 }
