@@ -180,6 +180,10 @@ public:
         creators["no travel target"] = &TriggerContext::no_travel_target;
         creators["far from travel target"] = &TriggerContext::far_from_travel_target;
         creators["no rti target"] = &TriggerContext::no_rti;
+        creators["trash cc mark"] = &TriggerContext::trash_cc_mark;
+        creators["trash cc polymorph"] = &TriggerContext::trash_cc_polymorph;
+        creators["trash cc hex"] = &TriggerContext::trash_cc_hex;
+        creators["trash cc sap"] = &TriggerContext::trash_cc_sap;
 
         creators["give food"] = &TriggerContext::give_food;
         creators["give water"] = &TriggerContext::give_water;
@@ -256,6 +260,10 @@ private:
     static Trigger* give_food(PlayerbotAI* botAI) { return new GiveFoodTrigger(botAI); }
     static Trigger* give_water(PlayerbotAI* botAI) { return new GiveWaterTrigger(botAI); }
     static Trigger* no_rti(PlayerbotAI* botAI) { return new NoRtiTrigger(botAI); }
+    static Trigger* trash_cc_mark(PlayerbotAI* botAI) { return new TrashCcMarkTrigger(botAI); }
+    static Trigger* trash_cc_polymorph(PlayerbotAI* botAI) { return new TrashCcCastTrigger(botAI, "trash cc polymorph", CLASS_MAGE); }
+    static Trigger* trash_cc_hex(PlayerbotAI* botAI) { return new TrashCcCastTrigger(botAI, "trash cc hex", CLASS_SHAMAN); }
+    static Trigger* trash_cc_sap(PlayerbotAI* botAI) { return new TrashCcCastTrigger(botAI, "trash cc sap", CLASS_ROGUE); }
     static Trigger* _return(PlayerbotAI* botAI) { return new ReturnTrigger(botAI); }
     static Trigger* return_to_stay_position(PlayerbotAI* ai) { return new ReturnToStayPositionTrigger(ai); }
     static Trigger* sit(PlayerbotAI* botAI) { return new SitTrigger(botAI); }

@@ -779,3 +779,9 @@ bool ForceRebuffPendingTrigger::IsActive()
 {
     return botAI->forceRebuff.IsPending();
 }
+
+bool TrashCcCastTrigger::IsActive()
+{
+    TrashCcRole const* role = TrashCcRoleForClass(casterClass);
+    return role && TrashCcCastTarget(botAI, bot, *role) != nullptr;
+}

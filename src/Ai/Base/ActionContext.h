@@ -78,6 +78,10 @@ public:
     ActionContext()
     {
         creators["mark rti"] = &ActionContext::mark_rti;
+        creators["trash cc mark"] = &ActionContext::trash_cc_mark;
+        creators["trash cc polymorph"] = &ActionContext::trash_cc_polymorph;
+        creators["trash cc hex"] = &ActionContext::trash_cc_hex;
+        creators["trash cc sap"] = &ActionContext::trash_cc_sap;
         creators["set return position"] = &ActionContext::set_return_position;
         creators["rpg"] = &ActionContext::rpg;
         creators["crpg"] = &ActionContext::crpg;
@@ -286,6 +290,10 @@ private:
     static Action* give_food(PlayerbotAI* botAI) { return new GiveFoodAction(botAI); }
     static Action* ra(PlayerbotAI* botAI) { return new RemoveAuraAction(botAI); }
     static Action* mark_rti(PlayerbotAI* botAI) { return new MarkRtiAction(botAI); }
+    static Action* trash_cc_mark(PlayerbotAI* botAI) { return new TrashCcMarkAction(botAI); }
+    static Action* trash_cc_polymorph(PlayerbotAI* botAI) { return new TrashCcPolymorphAction(botAI); }
+    static Action* trash_cc_hex(PlayerbotAI* botAI) { return new TrashCcHexAction(botAI); }
+    static Action* trash_cc_sap(PlayerbotAI* botAI) { return new TrashCcSapAction(botAI); }
     static Action* set_return_position(PlayerbotAI* botAI) { return new SetReturnPositionAction(botAI); }
     static Action* rpg(PlayerbotAI* botAI) { return new RpgAction(botAI); }
     static Action* crpg(PlayerbotAI* botAI) { return new CRpgAction(botAI); }

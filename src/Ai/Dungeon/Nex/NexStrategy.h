@@ -7,18 +7,18 @@
 #ifndef PLAYERBOTS_NEXSTRATEGY_H
 #define PLAYERBOTS_NEXSTRATEGY_H
 
+#include "MarkRtiStrategy.h"
 #include "Multiplier.h"
 #include "Strategy.h"
 
-class WotlkDungeonNexStrategy : public Strategy
+// 继承 TrashCcPullStrategy：清怪控制链（指派/上控/不放 AoE/按序击杀）是共享能力，这里挂上并登记本副本的治疗小怪。
+class WotlkDungeonNexStrategy : public TrashCcPullStrategy
 {
 public:
-    WotlkDungeonNexStrategy(PlayerbotAI* ai) : Strategy(ai) {}
+    WotlkDungeonNexStrategy(PlayerbotAI* ai);
     virtual std::string const getName() override { return "nexus"; }
     virtual void InitTriggers(std::vector<TriggerNode*> &triggers) override;
     virtual void InitMultipliers(std::vector<Multiplier*> &multipliers) override;
-    bool HasTargetExclusions() const override { return true; }
-    void AppendTargetExclusions(GuidSet& exclusions, TargetValueExclusionType type) override;
 };
 
 #endif

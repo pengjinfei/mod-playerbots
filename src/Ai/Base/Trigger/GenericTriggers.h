@@ -10,6 +10,7 @@
 #include "HealthTriggers.h"
 #include "Player.h"
 #include "RangeTriggers.h"
+#include "RtiTargetValue.h"
 #include "Trigger.h"
 #include <utility>
 
@@ -992,6 +993,25 @@ public:
     ForceRebuffPendingTrigger(PlayerbotAI* botAI) : Trigger(botAI, "force rebuff pending") {}
 
     bool IsActive() override;
+};
+
+// ---- 清怪控制链（TrashCcPullStrategy 用）----
+class TrashCcMarkTrigger : public Trigger
+{
+public:
+    TrashCcMarkTrigger(PlayerbotAI* ai) : Trigger(ai, "trash cc mark") {}
+    bool IsActive() override { return TrashCcMarkNeeded(botAI, bot); }
+};
+
+class TrashCcCastTrigger : public Trigger
+{
+public:
+    TrashCcCastTrigger(PlayerbotAI* ai, std::string const name, uint8 casterClass)
+        : Trigger(ai, name), casterClass(casterClass) {}
+    bool IsActive() override;
+
+private:
+    uint8 casterClass;
 };
 
 #endif

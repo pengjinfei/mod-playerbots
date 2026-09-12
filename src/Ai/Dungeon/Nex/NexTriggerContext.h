@@ -19,10 +19,6 @@ class WotlkDungeonNexTriggerContext : public NamedObjectContext<Trigger>
             creators["telestra firebomb"] = &WotlkDungeonNexTriggerContext::telestra_firebomb;
             creators["telestra split phase"] = &WotlkDungeonNexTriggerContext::telestra_split_phase;
             creators["chaotic rift"] = &WotlkDungeonNexTriggerContext::chaotic_rift;
-            creators["trash cc mark"] = &WotlkDungeonNexTriggerContext::trash_cc_mark;
-            creators["trash cc polymorph"] = &WotlkDungeonNexTriggerContext::trash_cc_polymorph;
-            creators["trash cc hex"] = &WotlkDungeonNexTriggerContext::trash_cc_hex;
-            creators["trash cc sap"] = &WotlkDungeonNexTriggerContext::trash_cc_sap;
             creators["ormorok spikes"] = &WotlkDungeonNexTriggerContext::ormorok_spikes;
             creators["ormorok stack"] = &WotlkDungeonNexTriggerContext::ormorok_stack;
             creators["intense cold"] = &WotlkDungeonNexTriggerContext::intense_cold;
@@ -33,10 +29,6 @@ class WotlkDungeonNexTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* telestra_firebomb(PlayerbotAI* ai) { return new TelestraFirebombTrigger(ai); }
         static Trigger* telestra_split_phase(PlayerbotAI* ai) { return new TelestraSplitPhaseTrigger(ai); }
         static Trigger* chaotic_rift(PlayerbotAI* ai) { return new ChaoticRiftTrigger(ai); }
-        static Trigger* trash_cc_mark(PlayerbotAI* ai) { return new TrashCcMarkTrigger(ai); }
-        static Trigger* trash_cc_polymorph(PlayerbotAI* ai) { return new TrashCcCastTrigger(ai, "trash cc polymorph", CLASS_MAGE); }
-        static Trigger* trash_cc_hex(PlayerbotAI* ai) { return new TrashCcCastTrigger(ai, "trash cc hex", CLASS_SHAMAN); }
-        static Trigger* trash_cc_sap(PlayerbotAI* ai) { return new TrashCcCastTrigger(ai, "trash cc sap", CLASS_ROGUE); }
         static Trigger* ormorok_spikes(PlayerbotAI* ai) { return new OrmorokSpikesTrigger(ai); }
         static Trigger* ormorok_stack(PlayerbotAI* ai) { return new OrmorokStackTrigger(ai); }
         static Trigger* intense_cold(PlayerbotAI* ai) { return new IntenseColdTrigger(ai); }
