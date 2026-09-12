@@ -64,6 +64,18 @@ bool KrikthirWatchersTrigger::IsActive()
 //     return false;
 // }
 
+Unit* FindNearestImpaleSpike(Player* bot, float range)
+{
+    // 尖刺带 UNIT_FLAG_NOT_SELECTABLE，不会出现在 "possible targets no los" 里，
+    // 所以直接按 entry 就近搜，不走选目标那套。
+    return bot->FindNearestCreature(NPC_IMPALE_TARGET, range);
+}
+
+bool AnubarakImpaleTrigger::IsActive()
+{
+    return FindNearestImpaleSpike(bot, kImpaleTriggerRadius) != nullptr;
+}
+
 bool AnubarakPoundTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "anub'arak");

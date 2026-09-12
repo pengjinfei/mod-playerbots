@@ -99,6 +99,21 @@ bool WatchersTargetAction::Execute(Event /*event*/)
     return false;
 }
 
+bool AnubarakDodgeImpaleAction::Execute(Event /*event*/)
+{
+    Unit* spike = FindNearestImpaleSpike(bot, kImpaleTriggerRadius);
+    if (!spike)
+        return false;
+
+    float const distance = bot->GetExactDist2d(spike->GetPosition());
+    float const step = kImpaleSafeDistance - distance;
+    if (step <= 0.0f)
+        return false;
+
+    // 朝「尖刺 -> 自己」的方向走开。Move() 自带碰撞与坐标校验，不会把 bot 推下平台。
+    return Move(spike->GetAngle(bot), step);
+}
+
 bool AnubarakDodgePoundAction::isUseful() { return !AI_VALUE2(bool, "behind", "current target"); }
 bool AnubarakDodgePoundAction::Execute(Event /*event*/)
 {

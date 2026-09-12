@@ -18,11 +18,13 @@ class WotlkDungeonANActionContext : public NamedObjectContext<Action>
             creators["attack web wrap"] = &WotlkDungeonANActionContext::attack_web_wrap;
             creators["krik'thir priority"] = &WotlkDungeonANActionContext::krikthir_priority;
             creators["dodge pound"] = &WotlkDungeonANActionContext::dodge_pound;
+            creators["dodge impale"] = &WotlkDungeonANActionContext::dodge_impale;
         }
     private:
         static Action* attack_web_wrap(PlayerbotAI* ai) { return new AttackWebWrapAction(ai); }
         static Action* krikthir_priority(PlayerbotAI* ai) { return new WatchersTargetAction(ai); }
         static Action* dodge_pound(PlayerbotAI* ai) { return new AnubarakDodgePoundAction(ai); }
+        static Action* dodge_impale(PlayerbotAI* ai) { return new AnubarakDodgeImpaleAction(ai); }
 };
 
 #endif
