@@ -54,6 +54,15 @@ public:
     bool IsActive() override;
 };
 
+// 践踏（英雄 59433 读条 3,200 毫秒 -> 对每个命中者补 59432 伤害，满额不分摊，BasePoints 47,124）。
+// 命中判定不是圆，是 **boss 正面的窄锥**：59433 的 EffectImplicitTargetA = 24
+// (TARGET_UNIT_CONE_ENEMY_24)，Spell.cpp:1251 给这个目标类型写死 cone_degrees = 24，
+// HasInArc 取半角 => **±12°**；EffectRadiusIndex 给出锥长 **15 码**。
+// boss 在 DoCast 前先 SELF_ROOT + DisableRotate(3,300 毫秒)，所以读条期间锥子方向锁死不转。
+// 实测布甲挨过 27,502 / 32,603 / 35,953 / 37,154 —— 约 2.5 倍血量上限，必死；坦克 17,153 能扛。
+constexpr float kPoundConeRadius = 15.0f;
+constexpr float kPoundConeArc = 24.0f * float(M_PI) / 180.0f;   // HasInArc 收全角
+
 // 伤害半径 4.0 码；触发半径留 2 码余量，让 bot 有时间挪出去；挪到 8 码再留一档。
 constexpr float kImpaleDamageRadius  = 4.0f;
 constexpr float kImpaleTriggerRadius = 6.0f;

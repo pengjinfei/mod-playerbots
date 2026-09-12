@@ -114,16 +114,44 @@ bool AnubarakDodgeImpaleAction::Execute(Event /*event*/)
     return Move(spike->GetAngle(bot), step);
 }
 
-bool AnubarakDodgePoundAction::isUseful() { return !AI_VALUE2(bool, "behind", "current target"); }
+bool AnubarakDodgePoundAction::isUseful()
+{
+    // 坦克不动：它得维持仇恨，而且正面本来就是它，扛得住实测 17,153。
+    if (botAI->IsTank(bot))
+        return false;
+
+    Unit* boss = AI_VALUE2(Unit*, "find target", "anub'arak");
+    if (!boss)
+        return false;
+
+    // 只有真站在锥子里的人才需要挪。±12° 的窄锥，大多数时候远程本来就是安全的——
+    // 上一版不判角度、让所有人一律往外撤，结果是全队每次践踏都白跑一趟。
+    return bot->GetExactDist2d(boss->GetPosition()) <= kPoundConeRadius &&
+           boss->HasInArc(kPoundConeArc, bot);
+}
+
 bool AnubarakDodgePoundAction::Execute(Event /*event*/)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "anub'arak");
     if (!boss) { return false; }
 
-    float distance = bot->GetExactDist2d(boss->GetPosition());
-    // Extra units to move into the boss, instead of being just 1 pixel past his midpoint.
-    // Can be adjusted - this value tends to mirror how a human would play,
-    // and visibly ensures you won't get hit while not creating excessive movements.
-    float distanceExtra = 2.0f;
-    return Move(bot->GetAngle(boss), distance + distanceExtra);
+    float const distance = bot->GetExactDist2d(boss->GetPosition());
+    if (distance < 1.0f)
+        return false;
+
+    // 往**侧面**让，不是往后退。
+    // 锥子是以 boss 朝向为轴的 ±12° 窄扇形：沿轴线后撤等于一路待在锥子里，要跑满 15 码才出得去
+    // （run450 就是这么干的，三场 7 次重击、单次最高 39,254，比不动还差）；
+    // 而垂直于 boss->自己 连线横移 L 码，夹角直接加 atan(L / d)，在 d 码处只要 d*tan(12°)≈0.21d
+    // 就出锥了。取 0.45d 留一倍余量，并给近战一个 6 码下限（贴脸时 0.21d 太小，抖一下就抖回去）。
+    // 横移还有个好处：距离基本不变，远程不掉输出距离、近战不掉仇恨位置。
+    float const lateral = std::max(6.0f, distance * 0.45f);
+
+    // 朝偏离锥轴的那一侧让——本来偏左就继续往左，避免横穿锥心。
+    float delta = Position::NormalizeOrientation(boss->GetAngle(bot) - boss->GetOrientation());
+    if (delta > float(M_PI))
+        delta -= 2.0f * float(M_PI);
+    float const side = (delta >= 0.0f) ? (float(M_PI) / 2.0f) : (-float(M_PI) / 2.0f);
+
+    return Move(boss->GetAngle(bot) + side, lateral);
 }
