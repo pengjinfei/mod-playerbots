@@ -81,6 +81,7 @@ public:
         creators["trash cc mark"] = &ActionContext::trash_cc_mark;
         creators["trash cc polymorph"] = &ActionContext::trash_cc_polymorph;
         creators["trash cc hex"] = &ActionContext::trash_cc_hex;
+        creators["trash cc shackle"] = &ActionContext::trash_cc_shackle;
         creators["trash cc sap"] = &ActionContext::trash_cc_sap;
         creators["set return position"] = &ActionContext::set_return_position;
         creators["rpg"] = &ActionContext::rpg;
@@ -293,6 +294,7 @@ private:
     static Action* trash_cc_mark(PlayerbotAI* botAI) { return new TrashCcMarkAction(botAI); }
     static Action* trash_cc_polymorph(PlayerbotAI* botAI) { return new TrashCcPolymorphAction(botAI); }
     static Action* trash_cc_hex(PlayerbotAI* botAI) { return new TrashCcHexAction(botAI); }
+    static Action* trash_cc_shackle(PlayerbotAI* botAI) { return new TrashCcShackleAction(botAI); }
     static Action* trash_cc_sap(PlayerbotAI* botAI) { return new TrashCcSapAction(botAI); }
     static Action* set_return_position(PlayerbotAI* botAI) { return new SetReturnPositionAction(botAI); }
     static Action* rpg(PlayerbotAI* botAI) { return new RpgAction(botAI); }

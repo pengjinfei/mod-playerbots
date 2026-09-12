@@ -160,16 +160,11 @@ bool TrashCcMarkAction::AssignPrePull(Group* group)
 
     // 十字（闷棍）先分：盗贼要潜行走过去，只能闷离它最近的那只，否则要穿过整组怪
     //（run405 attempt1/3：闷棍目标在怪堆深处，盗贼走到一半被发现，整组直接进战斗）。
-    static uint8 const kIconOrder[] = { TRASH_CC_ICON_CROSS, TRASH_CC_ICON_MOON, TRASH_CC_ICON_SQUARE };
+    static uint8 const kIconOrder[] = { TRASH_CC_ICON_CROSS, TRASH_CC_ICON_MOON, TRASH_CC_ICON_TRIANGLE,
+                                       TRASH_CC_ICON_SQUARE };
     for (uint8 icon : kIconOrder)
     {
-        TrashCcRole const* role = nullptr;
-        switch (icon)
-        {
-            case TRASH_CC_ICON_MOON:   role = TrashCcRoleForClass(CLASS_MAGE);   break;
-            case TRASH_CC_ICON_SQUARE: role = TrashCcRoleForClass(CLASS_SHAMAN); break;
-            default:                   role = TrashCcRoleForClass(CLASS_ROGUE);  break;
-        }
+        TrashCcRole const* role = TrashCcRoleForIcon(icon);
 
         Player* caster = role ? TrashCcFindCaster(bot, *role) : nullptr;
         if (!caster)
@@ -177,7 +172,7 @@ bool TrashCcMarkAction::AssignPrePull(Group* group)
 
         // 已经有合法目标的图标原样保留——控制职业可能已经在读条了，别把它的目标换掉。
         Unit* current = TrashCcIconUnit(botAI, icon);
-        if (inPack(current) && TrashCcSpellFits(*role, current->ToCreature()))
+        if (inPack(current) && TrashCcSpellFits(caster, *role, current->ToCreature()))
         {
             assigned.insert(current->GetGUID());
             continue;
@@ -192,7 +187,7 @@ bool TrashCcMarkAction::AssignPrePull(Group* group)
         Creature* pick = nullptr;
         for (Creature* creature : pack)
         {
-            if (assigned.count(creature->GetGUID()) || !TrashCcSpellFits(*role, creature))
+            if (assigned.count(creature->GetGUID()) || !TrashCcSpellFits(caster, *role, creature))
                 continue;
 
             if (icon == TRASH_CC_ICON_CROSS)
@@ -284,7 +279,8 @@ bool TrashCcMarkAction::AdvanceKillOrder(Group* group)
             continue;
 
         bool ccIcon = false;
-        for (uint8 icon : { TRASH_CC_ICON_MOON, TRASH_CC_ICON_SQUARE, TRASH_CC_ICON_CROSS })
+        for (uint8 icon : { TRASH_CC_ICON_MOON, TRASH_CC_ICON_SQUARE, TRASH_CC_ICON_CROSS,
+                            TRASH_CC_ICON_TRIANGLE })
             if (group->GetTargetIcon(icon) == guid)
                 ccIcon = true;
         if (ccIcon)
@@ -302,7 +298,8 @@ bool TrashCcMarkAction::AdvanceKillOrder(Group* group)
 
     // 其次：有控制图标但**此刻没被控住**、而且在打我们的（控制没放出来/被打掉了还没补上）。
     // 它本来就在战斗里，先杀它不破坏任何控制。
-    for (uint8 icon : { TRASH_CC_ICON_CROSS, TRASH_CC_ICON_SQUARE, TRASH_CC_ICON_MOON })
+    for (uint8 icon : { TRASH_CC_ICON_CROSS, TRASH_CC_ICON_SQUARE, TRASH_CC_ICON_MOON,
+                        TRASH_CC_ICON_TRIANGLE })
     {
         Unit* unit = TrashCcIconUnit(botAI, icon);
         if (unit && unit->IsInCombat() && !TrashCcIncapacitated(unit, bot))
@@ -312,8 +309,9 @@ bool TrashCcMarkAction::AdvanceKillOrder(Group* group)
         }
     }
 
-    // 只剩被控的：闷棍（只能用一次）→ 妖术（45 秒冷却）→ 变形术（可反复）依次放出来打。
-    for (uint8 icon : { TRASH_CC_ICON_CROSS, TRASH_CC_ICON_SQUARE, TRASH_CC_ICON_MOON })
+    // 只剩被控的：闷棍（只能用一次）→ 妖术（45 秒冷却）→ 变形术 / 束缚亡灵（都可反复）依次放出来打。
+    for (uint8 icon : { TRASH_CC_ICON_CROSS, TRASH_CC_ICON_SQUARE, TRASH_CC_ICON_MOON,
+                        TRASH_CC_ICON_TRIANGLE })
     {
         if (Unit* unit = TrashCcIconUnit(botAI, icon))
         {

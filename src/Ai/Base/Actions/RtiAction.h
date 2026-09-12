@@ -79,6 +79,15 @@ public:
         : TrashCcCastAction(ai, *TrashCcRoleForClass(CLASS_MAGE), "trash cc polymorph") {}
 };
 
+// 牧师束缚亡灵：亡灵副本（艾卓-尼鲁布、安卡赫特…）里唯一能落在小怪身上的控制，
+// 变形/妖术/闷棍的 TargetCreatureType 都不含亡灵。牧师同时是治疗，但这一控只发生在开怪前。
+class TrashCcShackleAction : public TrashCcCastAction
+{
+public:
+    TrashCcShackleAction(PlayerbotAI* ai)
+        : TrashCcCastAction(ai, *TrashCcRoleForClass(CLASS_PRIEST), "trash cc shackle") {}
+};
+
 class TrashCcHexAction : public TrashCcCastAction
 {
 public:

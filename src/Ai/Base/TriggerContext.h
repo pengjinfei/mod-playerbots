@@ -183,6 +183,7 @@ public:
         creators["trash cc mark"] = &TriggerContext::trash_cc_mark;
         creators["trash cc polymorph"] = &TriggerContext::trash_cc_polymorph;
         creators["trash cc hex"] = &TriggerContext::trash_cc_hex;
+        creators["trash cc shackle"] = &TriggerContext::trash_cc_shackle;
         creators["trash cc sap"] = &TriggerContext::trash_cc_sap;
 
         creators["give food"] = &TriggerContext::give_food;
@@ -263,6 +264,7 @@ private:
     static Trigger* trash_cc_mark(PlayerbotAI* botAI) { return new TrashCcMarkTrigger(botAI); }
     static Trigger* trash_cc_polymorph(PlayerbotAI* botAI) { return new TrashCcCastTrigger(botAI, "trash cc polymorph", CLASS_MAGE); }
     static Trigger* trash_cc_hex(PlayerbotAI* botAI) { return new TrashCcCastTrigger(botAI, "trash cc hex", CLASS_SHAMAN); }
+    static Trigger* trash_cc_shackle(PlayerbotAI* botAI) { return new TrashCcCastTrigger(botAI, "trash cc shackle", CLASS_PRIEST); }
     static Trigger* trash_cc_sap(PlayerbotAI* botAI) { return new TrashCcCastTrigger(botAI, "trash cc sap", CLASS_ROGUE); }
     static Trigger* _return(PlayerbotAI* botAI) { return new ReturnTrigger(botAI); }
     static Trigger* return_to_stay_position(PlayerbotAI* ai) { return new ReturnToStayPositionTrigger(ai); }

@@ -12,6 +12,7 @@
 #include "ServerFacade.h"
 #include "SpellAuraEffects.h"
 #include "SpellInfo.h"
+#include "SpellMgr.h"
 #include "Timer.h"
 
 #include <algorithm>
@@ -92,11 +93,13 @@ namespace
 {
     TrashCcRole const kTrashCcRoles[] =
     {
-        // 顺序即控制质量：变形术可反复上，妖术 45 秒冷却，闷棍只能在脱战时用一次。
+        // 顺序即控制质量：变形术与束缚亡灵都可反复上，妖术 45 秒冷却，闷棍只能在脱战时用一次。
         // 指派时按这个顺序把最值得控的怪（治疗）分给最可靠的控制。
-        { TRASH_CC_ICON_MOON,   "moon",   "polymorph", CLASS_MAGE },
-        { TRASH_CC_ICON_SQUARE, "square", "hex",       CLASS_SHAMAN },
-        { TRASH_CC_ICON_CROSS,  "cross",  "sap",       CLASS_ROGUE },
+        // 末列是 Spell.dbc 的 TargetCreatureType 掩码，按法术数据填（见头文件注释）。
+        { TRASH_CC_ICON_MOON,     "moon",     "polymorph",      CLASS_MAGE,   193 },  // 野兽+人形+小动物
+        { TRASH_CC_ICON_TRIANGLE, "triangle", "shackle undead", CLASS_PRIEST,  32 },  // 只对亡灵
+        { TRASH_CC_ICON_SQUARE,   "square",   "hex",            CLASS_SHAMAN,  65 },  // 野兽+人形
+        { TRASH_CC_ICON_CROSS,    "cross",    "sap",            CLASS_ROGUE,   71 },  // 野兽+龙类+恶魔+人形
     };
 
     // 同一组怪的判定半径：拉怪目标周围这个距离内的敌人算一组。
@@ -153,19 +156,49 @@ TrashCcRole const* TrashCcRoleForClass(uint8 playerClass)
     return nullptr;
 }
 
-bool TrashCcSpellFits(TrashCcRole const& role, Creature* creature)
+TrashCcRole const* TrashCcRoleForIcon(uint8 icon)
 {
-    uint32 const type = creature->GetCreatureType();
-    switch (role.icon)
+    for (TrashCcRole const& role : kTrashCcRoles)
+        if (role.icon == icon)
+            return &role;
+
+    return nullptr;
+}
+
+bool TrashCcSpellFits(Player* caster, TrashCcRole const& role, Creature* creature)
+{
+    if (!caster || !creature)
+        return false;
+
+    // 第一关：生物类型。直接用法术自己的 TargetCreatureType 掩码判，不再手写清单——
+    // 手写那版把妖术记成「没有生物类型限制」，实际它是 65（野兽+人形），对元素和亡灵都无效。
+    if (role.targetTypeMask)
     {
-        case TRASH_CC_ICON_MOON:    // 变形术
-            return type == CREATURE_TYPE_HUMANOID || type == CREATURE_TYPE_BEAST || type == CREATURE_TYPE_CRITTER;
-        case TRASH_CC_ICON_CROSS:   // 闷棍
-            return type == CREATURE_TYPE_HUMANOID || type == CREATURE_TYPE_BEAST || type == CREATURE_TYPE_DEMON ||
-                   type == CREATURE_TYPE_DRAGONKIN;
-        default:                    // 妖术没有生物类型限制
-            return type != CREATURE_TYPE_MECHANICAL;
+        uint32 const type = creature->GetCreatureType();
+        if (!type || type > 32 || !(role.targetTypeMask & (1u << (type - 1))))
+            return false;
     }
+
+    // 第二关：机制免疫。类型合法不代表控得住。艾卓-尼鲁布门厅的三个守望者
+    // （creature_immunities -361）MechanicsMask = 0x26CB3F7F，含
+    // POLYMORPH|BANISH|SHACKLE|SAPPED|STUN|FEAR|ROOT…，对全部控制免疫；
+    // 同组的蛛魔小怪（-93）只免疫 FEAR|HORROR，束缚亡灵能落。不查这一关就会把唯一的控制
+    // 分给那只永远控不住的：run439 实测三角分到 Watcher Narjil，牧师每 tick 都是
+    // "target is immuned to spell"，整条控制链空转。
+    PlayerbotAI* casterAI = GET_PLAYERBOT_AI(caster);
+    uint32 const spellId =
+        casterAI ? casterAI->GetAiObjectContext()->GetValue<uint32>("spell id", role.spell)->Get() : 0;
+    if (!spellId)
+        return false;
+
+    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    if (!spellInfo)
+        return false;
+
+    // 经 Unit* 调用：Creature 覆写了 IsImmunedToSpell(SpellInfo const*, Spell const*) 这个虚函数，
+    // 会把基类那个取 Unit const* 施法者的重载名字隐藏掉。
+    Unit* const target = creature;
+    return !target->IsImmunedToSpell(spellInfo, static_cast<Unit const*>(caster));
 }
 
 bool TrashCcIncapacitated(Unit* unit, Player* bot)
@@ -193,9 +226,11 @@ bool TrashCcIncapacitated(Unit* unit, Player* bot)
                 case SPELL_AURA_TRANSFORM:            // 变形术、妖术的变形部分
                     return true;
                 case SPELL_AURA_MOD_STUN:
-                    // 闷棍是昏迷，但制裁之锤/肾击也是昏迷——那些是输出手段，不是控制链的一部分。
-                    if (auraInfo->Mechanic == MECHANIC_SAPPED || auraInfo->Effects[effect].Mechanic == MECHANIC_SAPPED)
-                        return true;
+                    // 闷棍与束缚亡灵都是昏迷类光环，但制裁之锤/肾击也是昏迷——那些是输出手段，
+                    // 不是控制链的一部分。所以只认这两个机制。
+                    for (uint32 mechanic : { uint32(MECHANIC_SAPPED), uint32(MECHANIC_SHACKLE) })
+                        if (auraInfo->Mechanic == mechanic || auraInfo->Effects[effect].Mechanic == mechanic)
+                            return true;
                     break;
                 default:
                     break;
@@ -294,6 +329,11 @@ Unit* TrashCcCastTarget(PlayerbotAI* botAI, Player* bot, TrashCcRole const& role
     Unit* unit = TrashCcIconUnit(botAI, role.icon);
     if (!unit || !AttackersValue::IsValidTarget(unit, bot))
         return nullptr;
+
+    // 图标可能是上一场留下的或别处设的：真要施法前再确认这只控得住，别每 tick 空转。
+    if (Creature* creature = unit->ToCreature())
+        if (!TrashCcSpellFits(bot, role, creature))
+            return nullptr;
 
     // 已经控住就不重复上（run390 实测这条判据让妖术每场只放 1 次、不重复）。
     if (TrashCcIncapacitated(unit, bot))
@@ -404,7 +444,15 @@ bool TrashCcMarkNeeded(PlayerbotAI* botAI, Player* bot)
     size_t casters = 0;
     for (TrashCcRole const& role : kTrashCcRoles)
     {
-        if (!TrashCcFindCaster(bot, role))
+        Player* const caster = TrashCcFindCaster(bot, role);
+        if (!caster)
+            continue;
+
+        // 控制职业在场，但它的控制对这一组没有任何一只落得下去（整组亡灵时的变形/妖术/闷棍、
+        // 或整组机制免疫）就不该算进「分工」——否则 assigned 永远追不上 casters，
+        // 坦克会每个 tick 重标、永不开怪。
+        if (std::none_of(pack.begin(), pack.end(),
+                [caster, &role](Creature* creature) { return TrashCcSpellFits(caster, role, creature); }))
             continue;
 
         ++casters;

@@ -23,6 +23,7 @@ void TrashCcPullStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     triggers.push_back(new TriggerNode("trash cc mark", { NextAction("trash cc mark", ACTION_RAID) }));
     triggers.push_back(new TriggerNode("trash cc polymorph", { NextAction("trash cc polymorph", ACTION_MOVE + 3) }));
     triggers.push_back(new TriggerNode("trash cc hex", { NextAction("trash cc hex", ACTION_MOVE + 3) }));
+    triggers.push_back(new TriggerNode("trash cc shackle", { NextAction("trash cc shackle", ACTION_MOVE + 3) }));
     triggers.push_back(new TriggerNode("trash cc sap", { NextAction("trash cc sap", ACTION_MOVE + 3) }));
 }
 
@@ -42,7 +43,8 @@ void TrashCcPullStrategy::AppendTargetExclusions(GuidSet& exclusions, TargetValu
         if (Unit* skull = TrashCcIconUnit(botAI, TRASH_CC_ICON_SKULL))
             exclusions.insert(skull->GetGUID());
 
-    for (uint8 icon : { TRASH_CC_ICON_MOON, TRASH_CC_ICON_SQUARE, TRASH_CC_ICON_CROSS })
+    for (uint8 icon : { TRASH_CC_ICON_MOON, TRASH_CC_ICON_SQUARE, TRASH_CC_ICON_CROSS,
+                        TRASH_CC_ICON_TRIANGLE })
     {
         Unit* unit = TrashCcIconUnit(botAI, icon);
         if (!unit)
