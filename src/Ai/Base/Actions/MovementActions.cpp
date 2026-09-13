@@ -35,6 +35,7 @@
 #include "Vehicle.h"
 #include "WaypointMovementGenerator.h"
 #include "G3D/Vector3.h"
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iomanip>
@@ -69,6 +70,22 @@ void MovementAction::RecordLastMovement(uint32 mapId, float x, float y, float z,
     lastMove.Set(mapId, x, y, z, bot->GetOrientation(), delay, priority);
     lastMove.intent = GetMovementIntent();
     lastMove.issuer = getName();
+}
+
+bool MovementAction::IsSameFloorDestination(float x, float y, float z)
+{
+    if (bot->IsFlying() || bot->isSwimming())
+        return true;
+    float const dist2d = bot->GetExactDist2d(x, y);
+    if (dist2d >= 30.0f)
+        return true;  // long moves legitimately change floors; the path search owns those
+    float const dz = std::fabs(z - bot->GetPositionZ());
+    if (dz <= std::max(6.0f, 0.8f * dist2d))
+        return true;
+    if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
+        LOG_DEBUG("playerbots", "floor-guard bot={} action={} refused dest=({:.1f},{:.1f},{:.1f}) from=({:.1f},{:.1f},{:.1f}) dist2d={:.1f} dz={:.1f}",
+                  bot->GetName(), getName(), x, y, z, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), dist2d, dz);
+    return false;
 }
 
 void MovementAction::CreateWp(Player* wpOwner, float x, float y, float z, float o, uint32 entry, bool important)
@@ -210,6 +227,13 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
         return false;
     }
 
+    // Floor-level guard. A short move whose destination sits far above or below the bot is almost always the
+    // navmesh/vmap snapping the point to another floor (a pit under a ledge, a ramp overhead): on heroic
+    // Anub'arak six bots walked backwards off the platform at MOVE_RUN_BACK speed because "flee" asked for a point
+    // 5 yd away whose z came back 100+ yd lower. Real stairs within 30 yd rarely climb more than 0.8 yd per yd.
+    if (!IsSameFloorDestination(x, y, z))
+        return false;
+
     bool generatePath = !bot->IsFlying() && !bot->isSwimming();
     bool disableMoveSplinePath =
         sPlayerbotAIConfig.disableMoveSplinePath >= 2 ||
@@ -268,6 +292,8 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
         Movement::PointsArray path =
             SearchForBestPath(x, y, z, modifiedZ, sPlayerbotAIConfig.maxMovementSearchTime, normal_only);
         if (modifiedZ == INVALID_HEIGHT)
+            return false;
+        if (!IsSameFloorDestination(x, y, modifiedZ))
             return false;
         float distance = bot->GetExactDist(x, y, modifiedZ);
         if (distance > 0.01f)
