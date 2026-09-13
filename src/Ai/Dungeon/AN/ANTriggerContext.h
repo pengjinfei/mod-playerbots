@@ -19,12 +19,16 @@ class WotlkDungeonANTriggerContext : public NamedObjectContext<Trigger>
             creators["krik'thir watchers"] = &WotlkDungeonANTriggerContext::krikthir_watchers;
             creators["anub'arak impale"] = &WotlkDungeonANTriggerContext::anubarak_impale;
             creators["anub'arak pound"] = &WotlkDungeonANTriggerContext::anubarak_pound;
+            creators["anub'arak rim"] = &WotlkDungeonANTriggerContext::anubarak_rim;
+            creators["anub'arak ranged too close"] = &WotlkDungeonANTriggerContext::anubarak_ranged_too_close;
         }
     private:
         static Trigger* krikthir_web_wrap(PlayerbotAI* ai) { return new KrikthirWebWrapTrigger(ai); }
         static Trigger* krikthir_watchers(PlayerbotAI* ai) { return new KrikthirWatchersTrigger(ai); }
         static Trigger* anubarak_impale(PlayerbotAI* ai) { return new AnubarakImpaleTrigger(ai); }
         static Trigger* anubarak_pound(PlayerbotAI* ai) { return new AnubarakPoundTrigger(ai); }
+        static Trigger* anubarak_rim(PlayerbotAI* ai) { return new AnubarakRimTrigger(ai); }
+        static Trigger* anubarak_ranged_too_close(PlayerbotAI* ai) { return new AnubarakRangedTooCloseTrigger(ai); }
 };
 
 #endif

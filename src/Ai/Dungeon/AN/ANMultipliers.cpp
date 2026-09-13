@@ -58,3 +58,31 @@ float KrikthirMultiplier::GetValue(Action* action)
     }
     return 1.0f;
 }
+
+float AnubarakMageManaMultiplier::GetValue(Action* action)
+{
+    if (!action || bot->getClass() != CLASS_MAGE)
+        return 1.0f;
+
+    // 注意动作实例名是 "living bomb on attacker"（CastDebuffSpellOnAttackerAction 拼的单数），
+    // 策略节点/注册名才是 "living bomb on attackers"。run 469 之前按复数匹配一次都没压住：32 次炸弹里 24 次铺在小怪上，约 17k 蓝。
+    std::string const& name = action->getName();
+    bool const aoe = name == "blizzard" || name == "flamestrike" || name == "living bomb on attacker" ||
+                     name == "living bomb on attackers";
+    bool const singleBomb = name == "living bomb";
+    if (!aoe && !singleBomb)
+        return 1.0f;
+
+    Unit* boss = AI_VALUE2(Unit*, "find target", "anub'arak");
+    if (!boss)
+        return 1.0f;
+
+    if (singleBomb)
+    {
+        // 单体炸弹只留给 boss：run 462 仍每场 22–34 次，跟着当前目标换到哪只小怪就往哪只上，约 720 蓝一个。
+        Unit* target = action->GetTarget();
+        return (target && target->GetEntry() == kAnubarakEntry) ? 1.0f : 0.0f;
+    }
+
+    return 0.0f;
+}

@@ -83,3 +83,29 @@ bool AnubarakPoundTrigger::IsActive()
 
     return boss->HasUnitState(UNIT_STATE_CASTING) && boss->FindCurrentSpellBySpellId(SPELL_POUND);
 }
+
+bool AnubarakRimTrigger::IsActive()
+{
+    if (!bot->IsAlive())
+        return false;
+    Unit* boss = AI_VALUE2(Unit*, "find target", "anub'arak");
+    if (!boss)
+        return false;
+    if (bot->GetPositionX() < kArenaSafeMinX)
+        return true;
+    float const dx = bot->GetPositionX() - kArenaCenterX;
+    float const dy = bot->GetPositionY() - kArenaCenterY;
+    return dx * dx + dy * dy > kArenaSafeRadius * kArenaSafeRadius;
+}
+
+bool AnubarakRangedTooCloseTrigger::IsActive()
+{
+    // 战斗中才拉开：run 466/1 里开怪前就把牧师挪走，它没进战斗状态，整场留在非战斗引擎里。
+    // 只管远程 DPS：治疗靠躲踏（10 码内）保命，别让它为拉开距离浪费治疗 GCD。
+    if (!bot->IsAlive() || !bot->IsInCombat() || !botAI->IsRangedDps(bot))
+        return false;
+    Unit* boss = AI_VALUE2(Unit*, "find target", "anub'arak");
+    if (!boss || !boss->IsAlive() || boss->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE))  // 潜地期没有践踏
+        return false;
+    return bot->GetExactDist(boss) < kRangedKeepDistance + bot->GetObjectSize();
+}

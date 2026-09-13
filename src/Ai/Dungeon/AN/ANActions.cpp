@@ -6,6 +6,40 @@
 
 #include "ANActions.h"
 #include "Playerbots.h"
+#include "MotionMaster.h"
+#include "Log.h"
+#include "PlayerbotAIConfig.h"
+#include <algorithm>
+#include <cmath>
+
+namespace
+{
+// 取目标点的 vmap 地面高度并要求与脚下同一层（平台是平的，z 221–224）。
+// 不用 Map::CheckCollisionAndGetValidCoords / MoveTo 的路径搜索：run 463/464 证明这一带 mmap 会把终点吸附到
+// 平台下层（沿 spline 匀速走进深渊）或上层（为了到 6 码外的点绕行 80 码跑上北面坡道）。
+bool ResolveGround(Player* bot, float x, float y, float& z)
+{
+    z = bot->GetMapHeight(x, y, bot->GetPositionZ() + 2.0f);
+    return z > INVALID_HEIGHT && std::fabs(z - bot->GetPositionZ()) <= 3.0f;
+}
+
+// 场地内 5–20 码的短距离移动：直线 spline，不经 mmap（generatePath=false）。返回预计耗时（毫秒）。
+float MoveStraightNoPath(Player* bot, float x, float y, float z)
+{
+    MotionMaster* mm = bot->GetMotionMaster();
+    mm->Clear();
+    mm->MovePoint(0, x, y, z, FORCED_MOVEMENT_NONE, 0.f, 0.f, /*generatePath*/ false, /*forceDestination*/ false);
+    float const speed = bot->GetSpeed(MOVE_RUN);
+    return speed > 0.1f ? 1000.0f * bot->GetExactDist(x, y, z) / speed : 1000.0f;
+}
+
+void LogArenaMove(PlayerbotAI* botAI, Player* bot, char const* action, char const* result, float x, float y, float z)
+{
+    if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
+        LOG_DEBUG("playerbots", "an-move bot={} action={} result={} from=({:.1f},{:.1f},{:.1f}) to=({:.1f},{:.1f},{:.1f})",
+                  bot->GetName(), action, result, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), x, y, z);
+}
+}  // namespace
 
 bool AttackWebWrapAction::isUseful() { return !botAI->IsHeal(bot); }
 bool AttackWebWrapAction::Execute(Event /*event*/)
@@ -124,10 +158,14 @@ bool AnubarakDodgePoundAction::isUseful()
     if (!boss)
         return false;
 
-    // 只有真站在锥子里的人才需要挪。±12° 的窄锥，大多数时候远程本来就是安全的——
-    // 上一版不判角度、让所有人一律往外撤，结果是全队每次践踏都白跑一趟。
-    return bot->GetExactDist2d(boss->GetPosition()) <= kPoundConeRadius &&
-           boss->HasInArc(kPoundConeArc, bot);
+    // 距离按 core 的口径：WorldObjectSpellAreaTargetCheck -> IsWithinDist3d(pos, range) = 三维距离 < range + 目标 GetObjectSize()。
+    // run 467/1 之前用二维精确距离 <= 15，站在 15–17 码的人一律 USELESS，然后被 27k 打死。
+    // **不再看朝向**：践踏目标是 10 码内随机一人，boss 读条时会朝它转（FocusTarget），服务端 GetOrientation 与锥的真实方向
+    // 不一致——run 471/1 盗贼在"背后"被判 8 次 USELESS 后被 30k 秒杀（457/3、459/1、466/1 同）。践踏每 ~75 秒一次、
+    // 读条 3.2 秒，退出 15 码只损失约 3 秒近战输出，代价远小于一次秒杀。
+    // 治疗只在可能成为践踏目标的 10 码内才躲：run 472/2、472/4 牧师在坦克吃 16–20k 践踏的同一刻跑位、0 治疗，坦克倒下。
+    float const reach = botAI->IsHeal(bot) ? kPoundTargetRadius : kPoundConeRadius;
+    return bot->GetExactDist(boss) <= reach + bot->GetObjectSize();
 }
 
 bool AnubarakDodgePoundAction::Execute(Event /*event*/)
@@ -136,22 +174,128 @@ bool AnubarakDodgePoundAction::Execute(Event /*event*/)
     if (!boss) { return false; }
 
     float const distance = bot->GetExactDist2d(boss->GetPosition());
-    if (distance < 1.0f)
+
+    // ±60° 的宽锥下横移出锥要走 d·tan(60°)≈1.7d，径向退出 15 码锥长只要 15-d：d>6 时径向更短，
+    // 而且退到 15 码外以后践踏永远打不到。近战（或贴脸）则绕到 boss 背后——锥只朝前。
+    float x, y, z;
+    if (botAI->IsMelee(bot) || distance < 6.0f)
+    {
+        float const back = boss->GetOrientation() + float(M_PI);
+        x = boss->GetPositionX() + std::cos(back) * kPoundMeleeBehindDistance;
+        y = boss->GetPositionY() + std::sin(back) * kPoundMeleeBehindDistance;
+        if (x < kArenaSafeMinX)
+            x = kArenaSafeMinX;
+    }
+    else if (!AnubarakKeepRangeAction::PickPointAwayFromBoss(boss, bot, kPoundConeRadius + 3.0f, x, y, z))
+    {
+        LogArenaMove(botAI, bot, getName().c_str(), "no_candidate", boss->GetPositionX(), boss->GetPositionY(), 0.f);
         return false;
+    }
 
-    // 往**侧面**让，不是往后退。
-    // 锥子是以 boss 朝向为轴的 ±12° 窄扇形：沿轴线后撤等于一路待在锥子里，要跑满 15 码才出得去
-    // （run450 就是这么干的，三场 7 次重击、单次最高 39,254，比不动还差）；
-    // 而垂直于 boss->自己 连线横移 L 码，夹角直接加 atan(L / d)，在 d 码处只要 d*tan(12°)≈0.21d
-    // 就出锥了。取 0.45d 留一倍余量，并给近战一个 6 码下限（贴脸时 0.21d 太小，抖一下就抖回去）。
-    // 横移还有个好处：距离基本不变，远程不掉输出距离、近战不掉仇恨位置。
-    float const lateral = std::max(6.0f, distance * 0.45f);
+    if (!botAI->CanMove())
+    {
+        LogArenaMove(botAI, bot, getName().c_str(), "cannot_move", x, y, 0.f);
+        return false;
+    }
+    if (!(botAI->IsMelee(bot) || distance < 6.0f) || ResolveGround(bot, x, y, z))
+    {
+        // 远程分支的点已在 PickPointAwayFromBoss 里校验过地面；近战分支在这里校验
+    }
+    else
+    {
+        LogArenaMove(botAI, bot, getName().c_str(), "ground_reject", x, y, z);
+        return false;
+    }
+    float const delay = MoveStraightNoPath(bot, x, y, z);
+    RecordLastMovement(bot->GetMapId(), x, y, z, delay, MovementPriority::MOVEMENT_FORCED);
+    LogArenaMove(botAI, bot, getName().c_str(), "ok", x, y, z);
+    return true;
+}
 
-    // 朝偏离锥轴的那一侧让——本来偏左就继续往左，避免横穿锥心。
-    float delta = Position::NormalizeOrientation(boss->GetAngle(bot) - boss->GetOrientation());
-    if (delta > float(M_PI))
-        delta -= 2.0f * float(M_PI);
-    float const side = (delta >= 0.0f) ? (float(M_PI) / 2.0f) : (-float(M_PI) / 2.0f);
+bool AnubarakRimGuardAction::Execute(Event /*event*/)
+{
+    if (bot->isMoving() && AI_VALUE(LastMovement&, "last movement").issuer == getName())
+        return false;  // 已经在往回走
+    if (!botAI->CanMove())
+    {
+        LogArenaMove(botAI, bot, getName().c_str(), "cannot_move", 0.f, 0.f, 0.f);
+        return false;
+    }
+    // 沿"中心->自己"的半径拉回到 kArenaGuardRadius；那个点不合法就退而求其次只把 x 拉回西沿护栏线。
+    float dx = bot->GetPositionX() - kArenaCenterX;
+    float dy = bot->GetPositionY() - kArenaCenterY;
+    float const len = std::sqrt(dx * dx + dy * dy);
+    float x, y, z;
+    bool ok = false;
+    if (len > 0.5f)
+    {
+        x = kArenaCenterX + dx / len * kArenaGuardRadius;
+        y = kArenaCenterY + dy / len * kArenaGuardRadius;
+        ok = x >= kArenaGuardX && ResolveGround(bot, x, y, z);
+    }
+    if (!ok)
+    {
+        x = std::max(kArenaGuardX, bot->GetPositionX());
+        y = bot->GetPositionY();
+        ok = ResolveGround(bot, x, y, z);
+    }
+    if (!ok)
+    {
+        LogArenaMove(botAI, bot, getName().c_str(), "ground_reject", x, y, z);
+        return false;
+    }
+    float const delay = MoveStraightNoPath(bot, x, y, z);
+    RecordLastMovement(bot->GetMapId(), x, y, z, delay, MovementPriority::MOVEMENT_FORCED);
+    LogArenaMove(botAI, bot, getName().c_str(), "ok", x, y, z);
+    return true;
+}
 
-    return Move(boss->GetAngle(bot) + side, lateral);
+bool AnubarakKeepRangeAction::PickPointAwayFromBoss(Unit* boss, Player* bot, float radius, float& x, float& y, float& z)
+{
+    float const bx = boss->GetPositionX();
+    float const by = boss->GetPositionY();
+    float base = std::atan2(bot->GetPositionY() - by, bot->GetPositionX() - bx);
+    if (bot->GetExactDist2d(boss->GetPosition()) < 0.5f)  // 贴脸时沿 boss 背后方向退
+        base = boss->GetOrientation() + float(M_PI);
+
+    static constexpr int kSteps[] = {0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6};
+    for (int k : kSteps)
+    {
+        float const ang = base + float(k) * 15.0f * float(M_PI) / 180.0f;
+        x = bx + std::cos(ang) * radius;
+        y = by + std::sin(ang) * radius;
+        if (x < kArenaGuardX)
+            continue;
+        float const cx = x - kArenaCenterX;
+        float const cy = y - kArenaCenterY;
+        if (cx * cx + cy * cy > kArenaSafeRadius * kArenaSafeRadius)
+            continue;
+        if (ResolveGround(bot, x, y, z))
+            return true;
+    }
+    return false;
+}
+
+bool AnubarakKeepRangeAction::Execute(Event /*event*/)
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "anub'arak");
+    if (!boss)
+        return false;
+    if (bot->isMoving() && AI_VALUE(LastMovement&, "last movement").issuer == getName())
+        return false;  // 已经在退，别每 tick 重发一条新 spline（run 463 单场 31–36 次）
+    if (!botAI->CanMove())
+    {
+        LogArenaMove(botAI, bot, getName().c_str(), "cannot_move", 0.f, 0.f, 0.f);
+        return false;
+    }
+    float x, y, z;
+    if (!PickPointAwayFromBoss(boss, bot, kRangedKeepTarget, x, y, z))
+    {
+        LogArenaMove(botAI, bot, getName().c_str(), "no_candidate", boss->GetPositionX(), boss->GetPositionY(), 0.f);
+        return false;
+    }
+    float const delay = MoveStraightNoPath(bot, x, y, z);
+    RecordLastMovement(bot->GetMapId(), x, y, z, delay, MovementPriority::MOVEMENT_FORCED);
+    LogArenaMove(botAI, bot, getName().c_str(), "ok", x, y, z);
+    return true;
 }
