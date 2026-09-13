@@ -25,8 +25,14 @@ public:
     std::string const GetTargetName() override;
     // Closing distance is positioning: if another target can be cast on right now, stop and cast.
     MovementIntent GetMovementIntent() const override { return MovementIntent::POSITIONING; }
+    // True when the target is an enemy the bot wants to attack (reach spell / reach melee). Enemy chasing is
+    // leashed to the main tank's fight for non-tanks; reaching a party member to heal or resurrect is not.
+    virtual bool ChasesEnemy() const { return true; }
 
 protected:
+    // Is the target outside the main tank's fight (heal range around the tank) for a non-tank bot?
+    bool IsChaseLeashed(Unit* target) const;
+
     float distance;
 };
 
@@ -62,6 +68,7 @@ public:
     ReachPartyMemberToHealAction(PlayerbotAI* botAI);
 
     std::string const GetTargetName() override;
+    bool ChasesEnemy() const override { return false; }
 };
 
 class ReachPartyMemberToResurrectAction : public ReachTargetAction
@@ -70,6 +77,7 @@ public:
     ReachPartyMemberToResurrectAction(PlayerbotAI* botAI);
 
     std::string const GetTargetName() override;
+    bool ChasesEnemy() const override { return false; }
 };
 
 #endif

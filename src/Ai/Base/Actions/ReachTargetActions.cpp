@@ -6,6 +6,8 @@
 
 #include "ReachTargetActions.h"
 #include "Event.h"
+#include "Group.h"
+#include "Log.h"
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
@@ -27,9 +29,41 @@ bool ReachTargetAction::isUseful()
     }
     Unit* target = GetTarget();
     // float dis = distance + CONTACT_DISTANCE;
-    return target &&
-           !bot->IsWithinCombatRange(target, distance);  // ServerFacade::instance().IsDistanceGreaterThan(AI_VALUE2(float,
-                                                         // "distance", GetTargetName()), distance);
+    if (!target || bot->IsWithinCombatRange(target, distance))  // ServerFacade::instance().IsDistanceGreaterThan(
+        return false;                                            // AI_VALUE2(float, "distance", GetTargetName()), distance)
+
+    if (ChasesEnemy() && IsChaseLeashed(target))
+        return false;
+
+    return true;
+}
+
+// A non-tank that runs after a dps target leaves the group's fight: freshly spawned adds are valid attackers as soon
+// as they threaten anyone in the group (AttackersValue looks up to sightDistance away) and "reach spell"/"reach melee"
+// have no upper bound, so casters and melee end up alone at the spawn point and the healer follows them there.
+// The fight's footprint is heal range around the main tank: an enemy farther than that is not part of the tank's
+// fight yet, so nobody but the tank goes to fetch it. Tanks are exempt because picking adds up is their job.
+bool ReachTargetAction::IsChaseLeashed(Unit* target) const
+{
+    if (!target || !bot->GetGroup() || !bot->IsInCombat())
+        return false;
+
+    if (PlayerbotAI::IsTank(bot))
+        return false;
+
+    Unit* anchor = AI_VALUE(Unit*, "main tank");
+    if (!anchor || anchor == bot || !anchor->IsAlive() || anchor->GetMapId() != bot->GetMapId())
+        return false;
+
+    float const leash = botAI->GetRange("heal");
+    float const anchorDist = anchor->GetExactDist(target);
+    if (anchorDist <= leash)
+        return false;
+
+    LOG_DEBUG("playerbots", "reach-leash bot={} action={} target={} refused: anchor={} anchorDist={:.1f} leash={:.1f} "
+              "toTarget={:.1f}",
+              bot->GetName(), name, target->GetName(), anchor->GetName(), anchorDist, leash, bot->GetExactDist(target));
+    return true;
 }
 
 std::string const ReachTargetAction::GetTargetName() { return "current target"; }
