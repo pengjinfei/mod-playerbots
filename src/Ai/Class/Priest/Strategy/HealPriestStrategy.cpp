@@ -86,7 +86,9 @@ void HealPriestStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         new TriggerNode(
             "party member almost full health",
             {
-                NextAction("power word: shield on party", ACTION_LIGHT_HEAL + 3),
+                // No Power Word: Shield here: at ~890 mana a shield on an almost-full target is the single
+                // biggest mana sink (26 casts / 227 s on heroic Anub'arak, healer OOM at ~180 s). The shield
+                // stays in the medium / low / critical nodes where the absorb is actually needed.
                 NextAction("prayer of mending on party", ACTION_LIGHT_HEAL + 2),
                 NextAction("renew on party", ACTION_LIGHT_HEAL + 1)
             }
