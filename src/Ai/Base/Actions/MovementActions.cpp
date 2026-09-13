@@ -62,6 +62,15 @@ MovementAction::MovementAction(PlayerbotAI* botAI, std::string const name) : Act
     bot = botAI->GetBot();
 }
 
+void MovementAction::RecordLastMovement(uint32 mapId, float x, float y, float z, float delay,
+                                        MovementPriority priority)
+{
+    LastMovement& lastMove = AI_VALUE(LastMovement&, "last movement");
+    lastMove.Set(mapId, x, y, z, bot->GetOrientation(), delay, priority);
+    lastMove.intent = GetMovementIntent();
+    lastMove.issuer = getName();
+}
+
 void MovementAction::CreateWp(Player* wpOwner, float x, float y, float z, float o, uint32 entry, bool important)
 {
     float dist = wpOwner->GetDistance(x, y, z);
@@ -93,7 +102,7 @@ bool MovementAction::JumpTo(uint32 mapId, float x, float y, float z, MovementPri
     MotionMaster& mm = *bot->GetMotionMaster();
     mm.Clear();
     mm.MoveJump(x, y, z, speed, speed, 1);
-    AI_VALUE(LastMovement&, "last movement").Set(mapId, x, y, z, bot->GetOrientation(), 1000, priority);
+    RecordLastMovement(mapId, x, y, z, 1000, priority);
     return true;
 }
 
@@ -225,7 +234,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
             }
             delay = std::max(.0f, delay);
             delay = std::min((float)sPlayerbotAIConfig.maxWaitForMove, delay);
-            AI_VALUE(LastMovement&, "last movement").Set(mapId, x, y, z, bot->GetOrientation(), delay, priority);
+            RecordLastMovement(mapId, x, y, z, delay, priority);
             LogIngvarMove(botAI, bot, getName(), mapId, x, y, z, priority, "vehicle");
             return true;
         }
@@ -248,7 +257,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
             }
             delay = std::max(.0f, delay);
             delay = std::min((float)sPlayerbotAIConfig.maxWaitForMove, delay);
-            AI_VALUE(LastMovement&, "last movement").Set(mapId, x, y, z, bot->GetOrientation(), delay, priority);
+            RecordLastMovement(mapId, x, y, z, delay, priority);
             LogIngvarMove(botAI, bot, getName(), mapId, x, y, z, priority, "direct");
             return true;
         }
@@ -276,8 +285,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
             }
             delay = std::max(.0f, delay);
             delay = std::min((float)sPlayerbotAIConfig.maxWaitForMove, delay);
-            AI_VALUE(LastMovement&, "last movement")
-                .Set(mapId, x, y, modifiedZ, bot->GetOrientation(), delay, priority);
+            RecordLastMovement(mapId, x, y, modifiedZ, delay, priority);
             LogIngvarMove(botAI, bot, getName(), mapId, x, y, modifiedZ, priority, "path");
             return true;
         }

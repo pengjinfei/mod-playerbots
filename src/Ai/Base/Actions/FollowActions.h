@@ -19,6 +19,8 @@ public:
     bool Execute(Event event) override;
     bool isUseful() override;
     bool CanDeadFollow(Unit* target);
+    // Catching up with the leader gives way to a cast (buffs, resurrects, mounting while following).
+    MovementIntent GetMovementIntent() const override { return MovementIntent::POSITIONING; }
 };
 
 class FleeToGroupLeaderAction : public FollowAction
@@ -28,6 +30,8 @@ public:
 
     bool Execute(Event event) override;
     bool isUseful() override;
+    // Running to the leader is an escape, not positioning: keep it uninterruptible.
+    MovementIntent GetMovementIntent() const override { return MovementIntent::TACTICAL; }
 };
 
 #endif

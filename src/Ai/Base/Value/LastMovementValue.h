@@ -24,6 +24,17 @@ enum class MovementPriority
     MOVEMENT_FORCED
 };
 
+// Why a movement was issued. Orthogonal to MovementPriority (which only orders the movement lock):
+// it tells the casting code whether the movement may be interrupted so a cast-time spell can go off.
+enum class MovementIntent : uint8
+{
+    TACTICAL,     // default: flee, break contact, dungeon mechanics, anything that did not opt in.
+                  // Neither yields to a cast nor interrupts one.
+    POSITIONING,  // formation, reaching range, follow, wandering, collision nudges. Yields to a cast.
+    SURVIVAL,     // dodge a spike, leave a cone. Behaves like TACTICAL today; reserved so a later
+                  // change can let it interrupt a cast in progress.
+};
+
 class LastMovement
 {
 public:
@@ -40,6 +51,8 @@ public:
         lastPath = other.lastPath;
         nextTeleport = other.nextTeleport;
         priority = other.priority;
+        intent = other.intent;
+        issuer = other.issuer;
         return *this;
     };
 
@@ -65,6 +78,8 @@ public:
     WorldPosition lastMoveShort;
     uint32 msTime;
     MovementPriority priority;
+    MovementIntent intent;
+    std::string issuer;  // name of the action that issued the movement; for diagnostics only
     TravelPath lastPath;
     time_t nextTeleport;
     std::future<TravelPath> future;

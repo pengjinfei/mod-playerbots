@@ -24,6 +24,8 @@ LastMovement::LastMovement(LastMovement& other)
     nextTeleport = other.nextTeleport;
     lastPath = other.lastPath;
     priority = other.priority;
+    intent = other.intent;
+    issuer = other.issuer;
 }
 
 void LastMovement::clear()
@@ -42,6 +44,8 @@ void LastMovement::clear()
     msTime = 0;
     lastdelayTime = 0;
     priority = MovementPriority::MOVEMENT_NORMAL;
+    intent = MovementIntent::TACTICAL;
+    issuer.clear();
 }
 
 void LastMovement::Set(Unit* follow)

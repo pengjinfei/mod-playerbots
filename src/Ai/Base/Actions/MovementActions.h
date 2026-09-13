@@ -28,7 +28,15 @@ class MovementAction : public Action
 public:
     MovementAction(PlayerbotAI* botAI, std::string const name);
 
+    // Why this action moves the bot. PlayerbotAI::TryYieldMovementForCast() interrupts the movement
+    // for a cast-time spell only when the issuing action declares POSITIONING. Default is TACTICAL,
+    // so an action that does not opt in keeps today's behaviour (the cast is skipped while moving).
+    virtual MovementIntent GetMovementIntent() const { return MovementIntent::TACTICAL; }
+
 protected:
+    // Single place that records an issued point movement in the "last movement" value.
+    void RecordLastMovement(uint32 mapId, float x, float y, float z, float delay, MovementPriority priority);
+
     bool JumpTo(uint32 mapId, float x, float y, float z, MovementPriority priority = MovementPriority::MOVEMENT_NORMAL);
     bool MoveNear(uint32 mapId, float x, float y, float z, float distance = sPlayerbotAIConfig.contactDistance,
                   MovementPriority priority = MovementPriority::MOVEMENT_NORMAL);
@@ -132,6 +140,8 @@ public:
 
     bool isUseful() override;
     bool Execute(Event event) override;
+    // Formation adjustments (and the derived tank face / set behind) give way to a cast.
+    MovementIntent GetMovementIntent() const override { return MovementIntent::POSITIONING; }
 
 protected:
     Position AverageGroupPos(float dis = sPlayerbotAIConfig.sightDistance, bool ranged = false, bool self = false);
@@ -232,6 +242,7 @@ public:
 
     bool Execute(Event event) override;
     bool isUseful() override;
+    MovementIntent GetMovementIntent() const override { return MovementIntent::POSITIONING; }
 };
 
 class MoveRandomAction : public MovementAction
@@ -241,6 +252,7 @@ public:
 
     bool Execute(Event event) override;
     bool isUseful() override;
+    MovementIntent GetMovementIntent() const override { return MovementIntent::POSITIONING; }
 };
 
 class MoveInsideAction : public MovementAction

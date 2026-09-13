@@ -23,6 +23,8 @@ public:
     bool Execute(Event event) override;
     bool isUseful() override;
     std::string const GetTargetName() override;
+    // Closing distance is positioning: if another target can be cast on right now, stop and cast.
+    MovementIntent GetMovementIntent() const override { return MovementIntent::POSITIONING; }
 
 protected:
     float distance;

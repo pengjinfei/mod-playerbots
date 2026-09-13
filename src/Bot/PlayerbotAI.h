@@ -521,6 +521,16 @@ public:
                   int checkStack = -1);
     bool CastSpell(uint32 spellId, Unit* target, Item* itemTarget = nullptr);
     bool CastSpell(uint32 spellId, float x, float y, float z, Item* itemTarget = nullptr);
+    // True when the core would answer SPELL_FAILED_MOVING for this spell while the bot moves: cast time,
+    // a channel that does not allow actions (Spell::prepare), or an auto-repeat shot (Spell::CheckCast).
+    bool IsCastBlockedByMovement(SpellInfo const* spellInfo) const;
+    // True when the movement in flight may be interrupted for a cast: a point movement issued with
+    // MovementIntent::POSITIONING, or the follow generator. Pure query; CanCastSpell() uses it so a
+    // positioning move does not make a cast-time spell "impossible".
+    bool CanYieldMovementForCast() const;
+    // Actually interrupt such a movement so the spell can be cast. Returns true when the bot is no longer
+    // moving. Tactical / survival movements, chase, knockbacks and charges are left alone (returns false).
+    bool TryYieldMovementForCast(SpellInfo const* spellInfo);
     bool canDispel(SpellInfo const* spellInfo, uint32 dispelType);
 
     bool CanCastVehicleSpell(uint32 spellid, Unit* target);

@@ -3369,7 +3369,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
 
     uint32 CastingTime = !spellInfo->IsChanneled() ? spellInfo->CalcCastTime(bot) : spellInfo->GetDuration();
     // bool interruptOnMove = spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT;
-    if ((CastingTime || spellInfo->IsAutoRepeatRangedSpell()) && bot->isMoving())
+    // A positioning move (formation, reach, follow) is interrupted by CastSpell() for such a spell, so it
+    // must not make the spell impossible here; only tactical / survival movement does.
+    if ((CastingTime || spellInfo->IsAutoRepeatRangedSpell()) && bot->isMoving() && !CanYieldMovementForCast())
     {
         if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && HasGameClientMaster()))
             LOG_DEBUG("playerbots", "Casting time and bot is moving - target name: {}, spellid: {}, bot name: {}",
@@ -3474,7 +3476,7 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkH
         return false;
 
     int32 CastingTime = !spellInfo->IsChanneled() ? spellInfo->CalcCastTime(bot) : spellInfo->GetDuration();
-    if (CastingTime > 0 && bot->isMoving())
+    if (CastingTime > 0 && bot->isMoving() && !CanYieldMovementForCast())
         return false;
 
     if (ServerFacade::instance().GetDistance2d(bot, goTarget) > sPlayerbotAIConfig.sightDistance)
@@ -3732,12 +3734,12 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
         }
     }
 
-    if (bot->isMoving() && spell->GetCastTime())
+    // Spell::prepare() refuses cast-time and most channeled spells while the caster moves. Note that
+    // spell->GetCastTime() is still 0 here (set inside prepare), so the decision has to come from SpellInfo.
+    if (bot->isMoving() && IsCastBlockedByMovement(spellInfo) && !TryYieldMovementForCast(spellInfo))
     {
-        // bot->StopMoving();
         SetNextCheckDelay(sPlayerbotAIConfig.reactDelay);
-        spell->cancel();
-        delete spell;
+        delete spell;  // not prepared yet: no SpellEvent owns it
         return false;
     }
 
@@ -3754,9 +3756,11 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
 
     if (result != SPELL_CAST_OK)
     {
-        // if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && HasGameClientMaster()))
-        //     LOG_DEBUG("playerbots", "Spell cast failed. - target name: {}, spellid: {}, bot name: {}, result: {}",
-        //         target->GetName(), spellId, bot->GetName(), result);
+        // Same gate as CanCastSpell()'s "CanCastSpell Check Failed" line; this is the only place the reason
+        // for an engine FAILED (as opposed to IMPOSSIBLE) becomes visible.
+        if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && HasGameClientMaster()))
+            LOG_DEBUG("playerbots", "Spell prepare failed. - target name: {}, spellid: {}, bot name: {}, result: {}",
+                target->GetName(), spellId, bot->GetName(), static_cast<uint32>(result));
 
         if (HasStrategy("debug spell", BOT_STATE_NON_COMBAT))
         {
@@ -3943,15 +3947,22 @@ bool PlayerbotAI::CastSpell(uint32 spellId, float x, float y, float z, Item* ite
         return false;
     }
 
-    spell->prepare(&targets);
-
-    if (bot->isMoving() && spell->GetCastTime())
+    // Same movement gate as the unit-target overload, and it must run before prepare(): once prepared
+    // the Spell belongs to a SpellEvent and must not be deleted here.
+    if (bot->isMoving() && IsCastBlockedByMovement(spellInfo) && !TryYieldMovementForCast(spellInfo))
     {
-        // bot->StopMoving();
         SetNextCheckDelay(sPlayerbotAIConfig.reactDelay);
-        spell->cancel();
         delete spell;
         return false;
+    }
+
+    SpellCastResult const prepareResult = spell->prepare(&targets);
+    if (prepareResult != SPELL_CAST_OK &&
+        (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && HasGameClientMaster())))
+    {
+        // Note: this overload has always reported success regardless of prepare(); only logging is added here.
+        LOG_DEBUG("playerbots", "Spell prepare failed (ground target). - spellid: {}, bot name: {}, result: {}",
+            spellId, bot->GetName(), static_cast<uint32>(prepareResult));
     }
 
     if (spellInfo->Effects[0].Effect == SPELL_EFFECT_OPEN_LOCK || spellInfo->Effects[0].Effect == SPELL_EFFECT_SKINNING)
@@ -4265,6 +4276,97 @@ void PlayerbotAI::RemoveAura(std::string const name)
     uint32 spellid = aiObjectContext->GetValue<uint32>("spell id", name)->Get();
     if (spellid && bot->HasAura(spellid))
         bot->RemoveAurasDueToSpell(spellid);
+}
+
+bool PlayerbotAI::IsCastBlockedByMovement(SpellInfo const* spellInfo) const
+{
+    if (!spellInfo)
+        return false;
+
+    if (spellInfo->IsAutoRepeatRangedSpell())
+        return true;
+
+    if (!(spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT))
+        return false;
+
+    if (spellInfo->CalcCastTime(bot) > 0)
+        return true;
+
+    return spellInfo->IsChanneled() && !spellInfo->IsActionAllowedChannel();
+}
+
+namespace
+{
+struct MovementYieldVerdict
+{
+    bool canYield = false;
+    MovementGeneratorType generator = IDLE_MOTION_TYPE;
+    MovementIntent intent = MovementIntent::TACTICAL;
+    std::string issuer;
+};
+
+// Shared decision for CanYieldMovementForCast() / TryYieldMovementForCast(): may the movement in flight
+// be interrupted so a cast-time spell can go off?
+MovementYieldVerdict JudgeMovementForCast(Player* bot, LastMovement const& lastMove)
+{
+    MovementYieldVerdict verdict;
+    MotionMaster* mm = bot->GetMotionMaster();
+    verdict.generator = mm ? mm->GetCurrentMovementGeneratorType() : IDLE_MOTION_TYPE;
+    verdict.intent = lastMove.intent;
+    verdict.issuer = lastMove.issuer;
+
+    if (bot->GetVehicle())  // vehicles have their own cast path
+        return verdict;
+
+    if (verdict.generator == FOLLOW_MOTION_TYPE)
+    {
+        // Follow() never records a LastMovement and the player follow generator does not pause for
+        // casting, so the generator itself has to go. FollowAction re-issues it after the cast.
+        verdict.canYield = true;
+        verdict.intent = MovementIntent::POSITIONING;
+        verdict.issuer = "follow";
+    }
+    else if (verdict.generator == POINT_MOTION_TYPE && !bot->HasUnitState(UNIT_STATE_CHARGING))
+    {
+        // Every MovementAction::MoveTo() ends in a point movement and records who issued it.
+        verdict.canYield = lastMove.intent == MovementIntent::POSITIONING;
+    }
+    // chase, knockback / falling, flight, charge: leave the movement alone
+
+    return verdict;
+}
+}  // namespace
+
+bool PlayerbotAI::CanYieldMovementForCast() const
+{
+    return JudgeMovementForCast(bot, aiObjectContext->GetValue<LastMovement&>("last movement")->Get()).canYield;
+}
+
+bool PlayerbotAI::TryYieldMovementForCast(SpellInfo const* spellInfo)
+{
+    LastMovement& lastMove = aiObjectContext->GetValue<LastMovement&>("last movement")->Get();
+    MovementYieldVerdict const verdict = JudgeMovementForCast(bot, lastMove);
+    bool yielded = false;
+    if (verdict.canYield)
+    {
+        bot->GetMotionMaster()->Clear();
+        bot->StopMoving();
+        // The interrupted movement is no longer in flight; do not let its priority lock refuse the
+        // next movement for the rest of its estimated travel time.
+        lastMove.lastdelayTime = 0;
+        yielded = !bot->isMoving();
+    }
+
+    if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && HasGameClientMaster()))
+    {
+        LOG_DEBUG("playerbots", "cast-vs-move bot={} spell={} ({}) generator={} issuer={} intent={} result={}",
+                  bot->GetName(), spellInfo ? spellInfo->Id : 0,
+                  spellInfo && spellInfo->SpellName[0] ? spellInfo->SpellName[0] : "",
+                  static_cast<uint32>(verdict.generator), verdict.issuer.empty() ? "-" : verdict.issuer,
+                  static_cast<uint32>(verdict.intent), yielded ? "yield" : "refuse");
+    }
+
+    return yielded;
 }
 
 void PlayerbotAI::RequestSpellInterrupt()
