@@ -21,6 +21,8 @@ class WotlkDungeonANActionContext : public NamedObjectContext<Action>
             creators["dodge impale"] = &WotlkDungeonANActionContext::dodge_impale;
             creators["anub'arak rim guard"] = &WotlkDungeonANActionContext::anubarak_rim_guard;
             creators["anub'arak keep range"] = &WotlkDungeonANActionContext::anubarak_keep_range;
+            creators["anub'arak pound shield tank"] = &WotlkDungeonANActionContext::anubarak_pound_shield_tank;
+            creators["anub'arak pound heal tank"] = &WotlkDungeonANActionContext::anubarak_pound_heal_tank;
         }
     private:
         static Action* attack_web_wrap(PlayerbotAI* ai) { return new AttackWebWrapAction(ai); }
@@ -29,6 +31,8 @@ class WotlkDungeonANActionContext : public NamedObjectContext<Action>
         static Action* dodge_impale(PlayerbotAI* ai) { return new AnubarakDodgeImpaleAction(ai); }
         static Action* anubarak_rim_guard(PlayerbotAI* ai) { return new AnubarakRimGuardAction(ai); }
         static Action* anubarak_keep_range(PlayerbotAI* ai) { return new AnubarakKeepRangeAction(ai); }
+        static Action* anubarak_pound_shield_tank(PlayerbotAI* ai) { return new AnubarakPoundShieldTankAction(ai); }
+        static Action* anubarak_pound_heal_tank(PlayerbotAI* ai) { return new AnubarakPoundHealTankAction(ai); }
 };
 
 #endif

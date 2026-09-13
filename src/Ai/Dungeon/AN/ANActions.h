@@ -10,6 +10,7 @@
 #include "ANTriggers.h"
 #include "Action.h"
 #include "AttackAction.h"
+#include "GenericSpellActions.h"
 #include "MovementActions.h"
 #include "PlayerbotAI.h"
 #include "Playerbots.h"
@@ -37,6 +38,23 @@ public:
     bool Execute(Event event) override;
     bool isUseful() override;
     MovementIntent GetMovementIntent() const override { return MovementIntent::SURVIVAL; }
+};
+
+// 践踏读条时给主坦预盾 / 接一记治疗（治疗专用，见 AnubarakPoundHealerTrigger）。
+class AnubarakPoundShieldTankAction : public CastSpellAction
+{
+public:
+    AnubarakPoundShieldTankAction(PlayerbotAI* ai) : CastSpellAction(ai, "power word: shield") {}
+    std::string const getName() override { return "anub'arak pound shield tank"; }
+    std::string const GetTargetName() override { return "main tank"; }
+};
+
+class AnubarakPoundHealTankAction : public CastSpellAction
+{
+public:
+    AnubarakPoundHealTankAction(PlayerbotAI* ai) : CastSpellAction(ai, "penance") {}
+    std::string const getName() override { return "anub'arak pound heal tank"; }
+    std::string const GetTargetName() override { return "main tank"; }
 };
 
 // 西沿护栏：x 低于安全线就沿 +x 挪回 kArenaGuardX。保命动作：掉出平台等于整场缺席。

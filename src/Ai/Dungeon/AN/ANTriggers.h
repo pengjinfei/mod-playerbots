@@ -104,6 +104,24 @@ public:
     bool IsActive() override;
 };
 
+// 坦克在 boss 读条践踏、且身上守卫的 Sunder Armor（59350，-2000 护甲/层，最多 20 层）叠到 kPoundGuardSunderStacks 以上时开圣佑术。
+// run 457–473 坦克 109 次正常践踏均值 16k；三次 22k–31.6k 全部对应破甲 2–5 层（同窗口 boss 普攻也翻 2–4 倍），不是暴击。
+constexpr uint32 kPoundGuardSunderStacks = 3;
+class AnubarakPoundTankTrigger : public Trigger
+{
+public:
+    AnubarakPoundTankTrigger(PlayerbotAI* ai) : Trigger(ai, "anub'arak pound tank") {}
+    bool IsActive() override;
+};
+
+// 治疗在 boss 读条践踏（3.2 秒）时预先给主坦上盾并接一记治疗。
+class AnubarakPoundHealerTrigger : public Trigger
+{
+public:
+    AnubarakPoundHealerTrigger(PlayerbotAI* ai) : Trigger(ai, "anub'arak pound healer") {}
+    bool IsActive() override;
+};
+
 // 活着站到西沿安全线以外（x < kArenaSafeMinX）或离平台中心超过 kArenaSafeRadius。
 class AnubarakRimTrigger : public Trigger
 {

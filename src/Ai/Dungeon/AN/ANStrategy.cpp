@@ -40,6 +40,12 @@ void WotlkDungeonANStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     // 远程保距重新接入（2026-09-13 run 473）：三个失败原因已分别修掉——mmap 绕路（改直线 spline + vmap 校验）、
     // 开怪前移动（要求 IsInCombat）、把治疗也挪走（只对远程 DPS）。run 472/4 萨满在准备点被第一记践踏 24k 秒杀，就是没保距。
     triggers.push_back(new TriggerNode("anub'arak ranged too close", { NextAction("anub'arak keep range", ACTION_MOVE + 3) }));
+    // 践踏读条 3.2 秒里的两件事（2026-09-13 傍晚，成因见记录「30k+ 践踏」一节）：
+    // 坦克破甲 >=3 层时开圣佑术（-50%）；治疗先给主坦上盾再接苦修。
+    triggers.push_back(new TriggerNode("anub'arak pound tank", { NextAction("divine protection", ACTION_EMERGENCY) }));
+    triggers.push_back(new TriggerNode("anub'arak pound healer",
+        { NextAction("anub'arak pound shield tank", ACTION_CRITICAL_HEAL + 9),
+          NextAction("anub'arak pound heal tank", ACTION_CRITICAL_HEAL + 8) }));
 }
 
 void WotlkDungeonANStrategy::InitMultipliers(std::vector<Multiplier*> &multipliers)

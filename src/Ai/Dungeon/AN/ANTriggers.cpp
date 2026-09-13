@@ -109,3 +109,28 @@ bool AnubarakRangedTooCloseTrigger::IsActive()
         return false;
     return bot->GetExactDist(boss) < kRangedKeepDistance + bot->GetObjectSize();
 }
+
+namespace
+{
+bool BossCastingPound(PlayerbotAI* botAI, Player* bot)
+{
+    Unit* boss = botAI->GetAiObjectContext()->GetValue<Unit*>("find target", "anub'arak")->Get();
+    return boss && boss->HasUnitState(UNIT_STATE_CASTING) && boss->FindCurrentSpellBySpellId(SPELL_POUND);
+}
+}  // namespace
+
+bool AnubarakPoundTankTrigger::IsActive()
+{
+    if (!bot->IsAlive() || !botAI->IsTank(bot) || !BossCastingPound(botAI, bot))
+        return false;
+    Aura* sunder = botAI->GetAura("sunder armor", bot);
+    return sunder && sunder->GetStackAmount() >= kPoundGuardSunderStacks;
+}
+
+bool AnubarakPoundHealerTrigger::IsActive()
+{
+    if (!bot->IsAlive() || !botAI->IsHeal(bot) || !BossCastingPound(botAI, bot))
+        return false;
+    Unit* tank = AI_VALUE(Unit*, "main tank");
+    return tank && tank->IsAlive() && bot->IsWithinDistInMap(tank, 40.0f);
+}
