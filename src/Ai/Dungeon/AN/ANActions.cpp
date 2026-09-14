@@ -39,6 +39,28 @@ void LogArenaMove(PlayerbotAI* botAI, Player* bot, char const* action, char cons
         LOG_DEBUG("playerbots", "an-move bot={} action={} result={} from=({:.1f},{:.1f},{:.1f}) to=({:.1f},{:.1f},{:.1f})",
                   bot->GetName(), action, result, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), x, y, z);
 }
+// 直线路径 bot→(x,y) 距 boss 中心的最近距离。躲踏/保距的候选点本身可能安全，但走过去的路会穿过锥：
+// run 488/4 萨满在西沿 15.8 码、锥外 83°，径向候选被护栏挡掉后选了侧向 18 码点，直线路过 13.9 码处、偏轴 10° 时被 23.5k 秒杀。
+float PathMinDistToBoss(Player* bot, Unit* boss, float x, float y)
+{
+    float const ax = bot->GetPositionX(), ay = bot->GetPositionY();
+    float const dx = x - ax, dy = y - ay;
+    float const len2 = dx * dx + dy * dy;
+    float t = 0.f;
+    if (len2 > 0.01f)
+        t = std::clamp(((boss->GetPositionX() - ax) * dx + (boss->GetPositionY() - ay) * dy) / len2, 0.f, 1.f);
+    float const px = ax + dx * t, py = ay + dy * t;
+    return boss->GetExactDist2d(px, py);
+}
+
+// bot 相对 boss 朝向的偏轴角（0 = 正前方，π = 正后方）。
+float OffAxisAngle(Unit* boss, Player* bot)
+{
+    float const facing = Position::NormalizeOrientation(boss->GetOrientation());
+    float const toBot = std::atan2(bot->GetPositionY() - boss->GetPositionY(), bot->GetPositionX() - boss->GetPositionX());
+    float off = std::fabs(Position::NormalizeOrientation(toBot - facing));
+    return off > float(M_PI) ? 2.0f * float(M_PI) - off : off;
+}
 }  // namespace
 
 bool AttackWebWrapAction::isUseful() { return !botAI->IsHeal(bot); }
@@ -144,8 +166,39 @@ bool AnubarakDodgeImpaleAction::Execute(Event /*event*/)
     if (step <= 0.0f)
         return false;
 
-    // 朝「尖刺 -> 自己」的方向走开。Move() 自带碰撞与坐标校验，不会把 bot 推下平台。
-    return Move(spike->GetAngle(bot), step);
+    // 原来走共享层 Move()（CheckCollisionAndGetValidCoords + 寻路 MoveTo），run 483–486 四个非坦克 FAILED 是 OK 的 3 倍
+    // （法师 61:10），穿刺每场每人中 1–8 次、7–8k 一记，法师被毒箭齐射打残后就是它收的。改成与躲踏/保距同一套：
+    // 直线 spline、同层地面校验；首选沿「尖刺→自己」方向，落点出护栏就换 ±45°/±90°。
+    if (bot->isMoving() && AI_VALUE(LastMovement&, "last movement").issuer == getName())
+        return false;  // 已经在走开
+    if (!botAI->CanMove())
+    {
+        LogArenaMove(botAI, bot, getName().c_str(), "cannot_move", 0.f, 0.f, 0.f);
+        return false;
+    }
+    float const base = spike->GetAngle(bot);
+    static constexpr float kTurns[] = {0.f, 0.785f, -0.785f, 1.571f, -1.571f};
+    for (float turn : kTurns)
+    {
+        float const ang = base + turn;
+        float const x = bot->GetPositionX() + std::cos(ang) * step;
+        float const y = bot->GetPositionY() + std::sin(ang) * step;
+        if (x < kArenaGuardX && x < bot->GetPositionX())
+            continue;  // 西沿护栏：不比现在更靠西即可——站在准备点 (527,248) 的人否则永远没有候选点（run 487 no_candidate 14 次）
+        float const cx = x - kArenaCenterX;
+        float const cy = y - kArenaCenterY;
+        if (cx * cx + cy * cy > kArenaSafeRadius * kArenaSafeRadius)
+            continue;
+        float z;
+        if (!ResolveGround(bot, x, y, z))
+            continue;
+        float const delay = MoveStraightNoPath(bot, x, y, z);
+        RecordLastMovement(bot->GetMapId(), x, y, z, delay, MovementPriority::MOVEMENT_FORCED);
+        LogArenaMove(botAI, bot, getName().c_str(), "ok", x, y, z);
+        return true;
+    }
+    LogArenaMove(botAI, bot, getName().c_str(), "no_candidate", spike->GetPositionX(), spike->GetPositionY(), 0.f);
+    return false;
 }
 
 bool AnubarakDodgePoundAction::isUseful()
@@ -165,7 +218,11 @@ bool AnubarakDodgePoundAction::isUseful()
     // 读条 3.2 秒，退出 15 码只损失约 3 秒近战输出，代价远小于一次秒杀。
     // 治疗只在可能成为践踏目标的 10 码内才躲：run 472/2、472/4 牧师在坦克吃 16–20k 践踏的同一刻跑位、0 治疗，坦克倒下。
     float const reach = botAI->IsHeal(bot) ? kPoundTargetRadius : kPoundConeRadius;
-    return bot->GetExactDist(boss) <= reach + bot->GetObjectSize();
+    if (bot->GetExactDist(boss) > reach + bot->GetObjectSize())
+        return false;
+    // 读条期朝向可信（Spell::prepare → FocusTarget → SetInFront），已经站在 ±(60°+15°) 锥外的人不要动：
+    // run 488/4 萨满在锥外 83° 被躲踏动作挪进锥里打死。（第七轮"不再看朝向"是在锥角还按 24° 算的时候下的结论。）
+    return OffAxisAngle(boss, bot) <= kPoundConeArc / 2.0f + 15.0f * float(M_PI) / 180.0f;
 }
 
 bool AnubarakDodgePoundAction::Execute(Event /*event*/)
@@ -181,23 +238,23 @@ bool AnubarakDodgePoundAction::Execute(Event /*event*/)
     // run 483/1、483/5 盗贼站在正面 10.7 / 15 码，"绕到背后 5 码"要穿过整个正面锥（20 码、2.9 秒），践踏落地时还在锥里被 31–32k 秒杀。
     // 正面且 ≥8 码的近战改为径向退出（15→18 只要 3 码）；贴近或已在侧后方的才绕背后。
     float const facing = Position::NormalizeOrientation(boss->GetOrientation());
-    float const toBot = std::atan2(bot->GetPositionY() - boss->GetPositionY(), bot->GetPositionX() - boss->GetPositionX());
-    float offAxis = std::fabs(Position::NormalizeOrientation(toBot - facing));
-    if (offAxis > float(M_PI))
-        offAxis = 2.0f * float(M_PI) - offAxis;
+    float const offAxis = OffAxisAngle(boss, bot);
     bool const inFront = offAxis <= kPoundConeArc / 2.0f + 15.0f * float(M_PI) / 180.0f;  // 60° 半锥 + 15° 余量
     bool const goBehind = (botAI->IsMelee(bot) || distance < 6.0f) && (distance < 8.0f || !inFront);
 
     float x, y, z;
+    bool behindOk = false;
     if (goBehind)
     {
         float const back = facing + float(M_PI);
         x = boss->GetPositionX() + std::cos(back) * kPoundMeleeBehindDistance;
         y = boss->GetPositionY() + std::sin(back) * kPoundMeleeBehindDistance;
-        if (x < kArenaSafeMinX)
-            x = kArenaSafeMinX;
+        // 不再把 x 夹到 kArenaSafeMinX：run 488/3 boss 被拉到 x=533.7，盗贼在准备点 (527,248) 本来就在背后，背后点 (528.7,250) 被夹成 (533,250)
+        // ——正好是 boss 脚下，盗贼跑上去吃了 33.8k。护栏同样用"不比现在更靠西"；不合法就退到径向分支。
+        behindOk = x >= kArenaGuardX || x >= bot->GetPositionX();
     }
-    else if (!AnubarakKeepRangeAction::PickPointAwayFromBoss(boss, bot, kPoundConeRadius + 3.0f, x, y, z))
+    if (!behindOk &&
+        !AnubarakKeepRangeAction::PickPointAwayFromBoss(boss, bot, kPoundConeRadius + 3.0f, x, y, z, /*keepDistance*/ true))
     {
         LogArenaMove(botAI, bot, getName().c_str(), "no_candidate", boss->GetPositionX(), boss->GetPositionY(), 0.f);
         return false;
@@ -208,7 +265,7 @@ bool AnubarakDodgePoundAction::Execute(Event /*event*/)
         LogArenaMove(botAI, bot, getName().c_str(), "cannot_move", x, y, 0.f);
         return false;
     }
-    if (!goBehind || ResolveGround(bot, x, y, z))
+    if (!behindOk || ResolveGround(bot, x, y, z))
     {
         // 径向分支的点已在 PickPointAwayFromBoss 里校验过地面；背后分支在这里校验
     }
@@ -261,8 +318,11 @@ bool AnubarakRimGuardAction::Execute(Event /*event*/)
     return true;
 }
 
-bool AnubarakKeepRangeAction::PickPointAwayFromBoss(Unit* boss, Player* bot, float radius, float& x, float& y, float& z)
+bool AnubarakKeepRangeAction::PickPointAwayFromBoss(Unit* boss, Player* bot, float radius, float& x, float& y, float& z,
+                                                     bool keepDistance)
 {
+    // keepDistance：走过去的直线不得比现在更靠近 boss（躲踏用；保距时 boss 没在读条，路过近处无妨）
+    float const nowDist = bot->GetExactDist2d(boss->GetPosition());
     float const bx = boss->GetPositionX();
     float const by = boss->GetPositionY();
     float base = std::atan2(bot->GetPositionY() - by, bot->GetPositionX() - bx);
@@ -275,11 +335,13 @@ bool AnubarakKeepRangeAction::PickPointAwayFromBoss(Unit* boss, Player* bot, flo
         float const ang = base + float(k) * 15.0f * float(M_PI) / 180.0f;
         x = bx + std::cos(ang) * radius;
         y = by + std::sin(ang) * radius;
-        if (x < kArenaGuardX)
-            continue;
+        if (x < kArenaGuardX && x < bot->GetPositionX())
+            continue;  // 同上：不比现在更靠西即可，否则 boss 被拉到西沿时保距/躲踏全是 no_candidate（run 483 47 次）
         float const cx = x - kArenaCenterX;
         float const cy = y - kArenaCenterY;
         if (cx * cx + cy * cy > kArenaSafeRadius * kArenaSafeRadius)
+            continue;
+        if (keepDistance && PathMinDistToBoss(bot, boss, x, y) < std::min(nowDist, kPoundConeRadius + 1.0f) - 0.5f)
             continue;
         if (ResolveGround(bot, x, y, z))
             return true;
@@ -309,5 +371,22 @@ bool AnubarakKeepRangeAction::Execute(Event /*event*/)
     float const delay = MoveStraightNoPath(bot, x, y, z);
     RecordLastMovement(bot->GetMapId(), x, y, z, delay, MovementPriority::MOVEMENT_FORCED);
     LogArenaMove(botAI, bot, getName().c_str(), "ok", x, y, z);
+    return true;
+}
+
+bool AnubarakFocusVenomancerAction::Execute(Event /*event*/)
+{
+    auto* prioritized = botAI->GetAiObjectContext()->GetValue<GuidVector>("prioritized targets");
+    if (Unit* want = FindVenomancerToFocus(botAI, bot))
+    {
+        prioritized->Set({want->GetGUID()});
+        if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
+            LOG_DEBUG("playerbots", "an-focus bot={} venomancer={} dist={:.1f}", bot->GetName(),
+                      want->GetGUID().GetCounter(), bot->GetExactDist(want));
+        return true;
+    }
+    prioritized->Reset();
+    if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
+        LOG_DEBUG("playerbots", "an-focus bot={} cleared", bot->GetName());
     return true;
 }

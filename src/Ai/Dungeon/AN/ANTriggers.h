@@ -126,6 +126,21 @@ public:
     bool IsActive() override;
 };
 
+// 毒疗者优先（第十六轮）：run 483–485 毒疗者每轮对全队 545–700k、承伤第一（毒箭齐射 59359 每发全队约 13k），每场 4 只、平均活 24 秒放 2 发；
+// bot 打在它身上的伤害只占 14%。DPS（非坦克非治疗）在场上有活着的、已进入主坦 kVenomancerFocusAnchorRange 码内的毒疗者时，
+// 把最近的一只写进 "prioritized targets"（DpsTargetValue 的 IsHighPriority 会先选它）；没有时清掉自己写的那条。
+// 用主坦距离做门限是为了不让 DPS 盯着还在坡道上、追敌上限（38.5 码）够不到的目标发呆。
+constexpr uint32 kVenomancerEntry = 29217;
+constexpr float kVenomancerSearchRange = 60.0f;
+constexpr float kVenomancerFocusAnchorRange = 40.0f;
+Unit* FindVenomancerToFocus(PlayerbotAI* botAI, Player* bot);
+class AnubarakVenomancerFocusTrigger : public Trigger
+{
+public:
+    AnubarakVenomancerFocusTrigger(PlayerbotAI* ai) : Trigger(ai, "anub'arak venomancer focus") {}
+    bool IsActive() override;
+};
+
 // 活着站到西沿安全线以外（x < kArenaSafeMinX）或离平台中心超过 kArenaSafeRadius。
 class AnubarakRimTrigger : public Trigger
 {

@@ -23,6 +23,7 @@ class WotlkDungeonANTriggerContext : public NamedObjectContext<Trigger>
             creators["anub'arak ranged too close"] = &WotlkDungeonANTriggerContext::anubarak_ranged_too_close;
             creators["anub'arak pound tank"] = &WotlkDungeonANTriggerContext::anubarak_pound_tank;
             creators["anub'arak pound healer"] = &WotlkDungeonANTriggerContext::anubarak_pound_healer;
+            creators["anub'arak venomancer focus"] = &WotlkDungeonANTriggerContext::anubarak_venomancer_focus;
         }
     private:
         static Trigger* krikthir_web_wrap(PlayerbotAI* ai) { return new KrikthirWebWrapTrigger(ai); }
@@ -33,6 +34,7 @@ class WotlkDungeonANTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* anubarak_ranged_too_close(PlayerbotAI* ai) { return new AnubarakRangedTooCloseTrigger(ai); }
         static Trigger* anubarak_pound_tank(PlayerbotAI* ai) { return new AnubarakPoundTankTrigger(ai); }
         static Trigger* anubarak_pound_healer(PlayerbotAI* ai) { return new AnubarakPoundHealerTrigger(ai); }
+        static Trigger* anubarak_venomancer_focus(PlayerbotAI* ai) { return new AnubarakVenomancerFocusTrigger(ai); }
 };
 
 #endif

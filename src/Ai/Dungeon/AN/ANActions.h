@@ -40,6 +40,14 @@ public:
     MovementIntent GetMovementIntent() const override { return MovementIntent::SURVIVAL; }
 };
 
+// DPS 把最近的、已进入战场的毒疗者写进 "prioritized targets"，没有时清掉（见 AnubarakVenomancerFocusTrigger）。
+class AnubarakFocusVenomancerAction : public Action
+{
+public:
+    AnubarakFocusVenomancerAction(PlayerbotAI* ai) : Action(ai, "anub'arak focus venomancer") {}
+    bool Execute(Event event) override;
+};
+
 // 践踏读条时给主坦预盾 / 接一记治疗（治疗专用，见 AnubarakPoundHealerTrigger）。
 class AnubarakPoundShieldTankAction : public CastSpellAction
 {
@@ -76,7 +84,8 @@ public:
 
     // 供躲践踏复用：在以 boss 为圆心、radius 为半径的圆上，从"boss->bot"径向开始每 15° 左右交替旋转，
     // 取第一个在平台安全圆内、x >= kArenaGuardX、且 vmap 有同层地面的点（z 一并给出）。找不到返回 false。
-    static bool PickPointAwayFromBoss(Unit* boss, Player* bot, float radius, float& x, float& y, float& z);
+    static bool PickPointAwayFromBoss(Unit* boss, Player* bot, float radius, float& x, float& y, float& z,
+                                      bool keepDistance = false);
 };
 
 // 躲开穿刺尖刺：尖刺生成后 4 秒才落伤害、半径只有 4 码，走开两步就行。

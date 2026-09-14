@@ -5,6 +5,7 @@
  */
 
 #include "ANTriggers.h"
+#include <list>
 #include "AiObjectContext.h"
 #include "Playerbots.h"
 
@@ -82,6 +83,45 @@ bool AnubarakPoundTrigger::IsActive()
     if (!boss) { return false; }
 
     return boss->HasUnitState(UNIT_STATE_CASTING) && boss->FindCurrentSpellBySpellId(SPELL_POUND);
+}
+
+Unit* FindVenomancerToFocus(PlayerbotAI* botAI, Player* bot)
+{
+    Unit* anchor = botAI->GetAiObjectContext()->GetValue<Unit*>("main tank")->Get();
+    if (!anchor || !anchor->IsAlive())
+        anchor = bot;
+    std::list<Creature*> found;
+    bot->GetCreatureListWithEntryInGrid(found, kVenomancerEntry, kVenomancerSearchRange);
+    Unit* best = nullptr;
+    float bestDist = 0.f;
+    for (Creature* c : found)
+    {
+        if (!c->IsAlive() || !c->IsInCombat())
+            continue;
+        if (anchor->GetExactDist(c) > kVenomancerFocusAnchorRange)
+            continue;  // 还在坡道上，追敌上限够不到，先别盯
+        float const d = bot->GetExactDist(c);
+        if (!best || d < bestDist)
+        {
+            best = c;
+            bestDist = d;
+        }
+    }
+    return best;
+}
+
+// 与 AnubarakFocusVenomancerAction::Execute 用同一判据：有该盯的目标但没盯上，或盯着的毒疗者已经死了/没了。
+bool AnubarakVenomancerFocusTrigger::IsActive()
+{
+    if (!bot->IsAlive() || !bot->IsInCombat() || botAI->IsTank(bot) || botAI->IsHeal(bot))
+        return false;
+    GuidVector const current = AI_VALUE(GuidVector, "prioritized targets");
+    if (Unit* want = FindVenomancerToFocus(botAI, bot))
+        return current.empty() || current.front() != want->GetGUID();
+    if (current.empty() || current.front().GetEntry() != kVenomancerEntry)
+        return false;
+    Unit* held = botAI->GetUnit(current.front());
+    return !held || !held->IsAlive();
 }
 
 bool AnubarakRimTrigger::IsActive()
