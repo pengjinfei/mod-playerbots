@@ -101,13 +101,20 @@ bool AnubarakRimTrigger::IsActive()
 bool AnubarakRangedTooCloseTrigger::IsActive()
 {
     // 战斗中才拉开：run 466/1 里开怪前就把牧师挪走，它没进战斗状态，整场留在非战斗引擎里。
-    // 只管远程 DPS：治疗靠躲踏（10 码内）保命，别让它为拉开距离浪费治疗 GCD。
-    if (!bot->IsAlive() || !bot->IsInCombat() || !botAI->IsRangedDps(bot))
+    // 远程 DPS 与治疗各有阈值：治疗 10 码内靠躲踏，10–17 码这段过去没人管，run 478/479 五场首死都在这里。
+    if (!bot->IsAlive() || !bot->IsInCombat())
+        return false;
+    float keepDistance;
+    if (botAI->IsRangedDps(bot))
+        keepDistance = kRangedKeepDistance;
+    else if (botAI->IsHeal(bot))
+        keepDistance = kHealerKeepDistance;
+    else
         return false;
     Unit* boss = AI_VALUE2(Unit*, "find target", "anub'arak");
     if (!boss || !boss->IsAlive() || boss->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE))  // 潜地期没有践踏
         return false;
-    return bot->GetExactDist(boss) < kRangedKeepDistance + bot->GetObjectSize();
+    return bot->GetExactDist(boss) < keepDistance + bot->GetObjectSize();
 }
 
 namespace

@@ -68,6 +68,10 @@ constexpr float kPoundConeArc = 120.0f * float(M_PI) / 180.0f;   // HasInArc 收
 // 远程保距：站在 15 码锥长之外就永远不会被践踏打到，站在 10 码外就不会成为践踏目标。
 constexpr float kRangedKeepDistance = 14.0f;   // 低于它触发（与目标距离留 4 码滞回，免得 boss 一挪就反复触发）
 constexpr float kRangedKeepTarget   = 18.0f;   // 退到这么远
+// 治疗保距（第十三轮）：牧师躲踏只在 10 码内起作用，run 478/479 八场团灭里五场首死是站在 12.9–16.3 码被 28–35k 践踏秒杀
+// （命中半径按 core 是 15 + 目标体型，16.3 码仍在内）。治疗阈值放到 17，退到 20，留出体型和 boss 挪动的余量。
+constexpr float kHealerKeepDistance = 17.0f;
+constexpr float kHealerKeepTarget   = 20.0f;
 constexpr float kPoundMeleeBehindDistance = 5.0f;
 
 // 场地西沿：run457–462 里 6 人次活着掉出平台，掉落前最后落点全部在 x≈525–533（地面 z≈223.4，开怪点 x=543）。
@@ -132,7 +136,7 @@ public:
 
 // 远程 DPS 与治疗、且已在战斗中、离浮出的 boss 不足 kRangedKeepDistance（含体型半径）。
 // 曾经把治疗排除、又曾经不限战斗状态：run 466/1 开怪前挪走牧师导致它整场留在非战斗引擎；run 467/1 牧师站在 boss 10 码内
-// 被第一记践踏 27k 秒杀。现在的组合：战斗中 + 走位型（POSITIONING，施法可打断）。
+// 被第一记践踏 27k 秒杀。现在的组合：战斗中 + TACTICAL（施法不打断它）；远程 DPS 阈值 14→18，治疗阈值 17→20。
 class AnubarakRangedTooCloseTrigger : public Trigger
 {
 public:

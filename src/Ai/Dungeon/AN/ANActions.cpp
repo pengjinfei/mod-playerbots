@@ -289,7 +289,8 @@ bool AnubarakKeepRangeAction::Execute(Event /*event*/)
         return false;
     }
     float x, y, z;
-    if (!PickPointAwayFromBoss(boss, bot, kRangedKeepTarget, x, y, z))
+    float const keepTarget = botAI->IsHeal(bot) ? kHealerKeepTarget : kRangedKeepTarget;
+    if (!PickPointAwayFromBoss(boss, bot, keepTarget, x, y, z))
     {
         LogArenaMove(botAI, bot, getName().c_str(), "no_candidate", boss->GetPositionX(), boss->GetPositionY(), 0.f);
         return false;
