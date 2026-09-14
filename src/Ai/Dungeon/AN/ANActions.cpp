@@ -177,10 +177,21 @@ bool AnubarakDodgePoundAction::Execute(Event /*event*/)
 
     // ±60° 的宽锥下横移出锥要走 d·tan(60°)≈1.7d，径向退出 15 码锥长只要 15-d：d>6 时径向更短，
     // 而且退到 15 码外以后践踏永远打不到。近战（或贴脸）则绕到 boss 背后——锥只朝前。
+    // 读条期 boss 的服务端朝向就是锥轴：Spell::prepare → Creature::FocusTarget → SetInFront(践踏目标)，DisableRotate 只关客户端转向。
+    // run 483/1、483/5 盗贼站在正面 10.7 / 15 码，"绕到背后 5 码"要穿过整个正面锥（20 码、2.9 秒），践踏落地时还在锥里被 31–32k 秒杀。
+    // 正面且 ≥8 码的近战改为径向退出（15→18 只要 3 码）；贴近或已在侧后方的才绕背后。
+    float const facing = Position::NormalizeOrientation(boss->GetOrientation());
+    float const toBot = std::atan2(bot->GetPositionY() - boss->GetPositionY(), bot->GetPositionX() - boss->GetPositionX());
+    float offAxis = std::fabs(Position::NormalizeOrientation(toBot - facing));
+    if (offAxis > float(M_PI))
+        offAxis = 2.0f * float(M_PI) - offAxis;
+    bool const inFront = offAxis <= kPoundConeArc / 2.0f + 15.0f * float(M_PI) / 180.0f;  // 60° 半锥 + 15° 余量
+    bool const goBehind = (botAI->IsMelee(bot) || distance < 6.0f) && (distance < 8.0f || !inFront);
+
     float x, y, z;
-    if (botAI->IsMelee(bot) || distance < 6.0f)
+    if (goBehind)
     {
-        float const back = boss->GetOrientation() + float(M_PI);
+        float const back = facing + float(M_PI);
         x = boss->GetPositionX() + std::cos(back) * kPoundMeleeBehindDistance;
         y = boss->GetPositionY() + std::sin(back) * kPoundMeleeBehindDistance;
         if (x < kArenaSafeMinX)
@@ -197,9 +208,9 @@ bool AnubarakDodgePoundAction::Execute(Event /*event*/)
         LogArenaMove(botAI, bot, getName().c_str(), "cannot_move", x, y, 0.f);
         return false;
     }
-    if (!(botAI->IsMelee(bot) || distance < 6.0f) || ResolveGround(bot, x, y, z))
+    if (!goBehind || ResolveGround(bot, x, y, z))
     {
-        // 远程分支的点已在 PickPointAwayFromBoss 里校验过地面；近战分支在这里校验
+        // 径向分支的点已在 PickPointAwayFromBoss 里校验过地面；背后分支在这里校验
     }
     else
     {
