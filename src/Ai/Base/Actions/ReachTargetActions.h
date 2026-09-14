@@ -30,8 +30,9 @@ public:
     virtual bool ChasesEnemy() const { return true; }
 
 protected:
-    // Is the target outside the main tank's fight (heal range around the tank) for a non-tank bot?
+    // Is the target outside the group's fight: heal range around the main tank (non-tanks) or around the healer (tanks)?
     bool IsChaseLeashed(Unit* target) const;
+    Unit* ChaseAnchor() const;
 
     float distance;
 };

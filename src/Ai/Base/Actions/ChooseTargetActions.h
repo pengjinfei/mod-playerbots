@@ -98,6 +98,11 @@ public:
     DropTargetAction(PlayerbotAI* botAI) : Action(botAI, "drop target") {}
 
     bool Execute(Event event) override;
+    // "invalid target" also fires when there is no target at all (InvalidTargetValue returns !target). With the bot now
+    // kept in the combat engine while in combat, an empty target would make drop target (relevance 99) win every tick
+    // and starve everything else (run 491/1: healer 103 drops, 0 heals, wipe at 45 s). Nothing to drop -> useless,
+    // unless we are out of combat and should hand over to the non-combat engine.
+    bool isUseful() override;
 };
 
 #endif

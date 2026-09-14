@@ -1519,7 +1519,10 @@ void PlayerbotAI::DoNextAction(bool min)
         return;
     }
 
-    // Clear targets if in combat but sticking with old data
+    // In combat -> combat engine, always. Upstream only cleared the stale target here and left the bot in the
+    // non-combat engine until some attack action switched it back; a healer whose dps target went invalid
+    // (DropTargetAction -> non-combat) then sat in the non-combat engine, which has no heals for its spec, while its
+    // group fought on. run 490/1: priest in the non-combat engine for 56 s in combat, 0 heals, tank died at 62 s.
     if (currentEngine == engines[BOT_STATE_NON_COMBAT] && bot->IsInCombat())
     {
         Unit* currentTarget = aiObjectContext->GetValue<Unit*>("current target")->Get();
@@ -1527,6 +1530,9 @@ void PlayerbotAI::DoNextAction(bool min)
         {
             aiObjectContext->GetValue<Unit*>("current target")->Set(nullptr);
         }
+        LOG_DEBUG("playerbots", "engine-sync bot={} in combat but in non-combat engine -> combat engine", bot->GetName());
+        ChangeEngine(BOT_STATE_COMBAT);
+        return;
     }
 
     bool minimal = !this->AllowActivity();

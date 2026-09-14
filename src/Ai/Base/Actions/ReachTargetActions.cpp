@@ -7,6 +7,7 @@
 #include "ReachTargetActions.h"
 #include "Event.h"
 #include "Group.h"
+#include "GroupReference.h"
 #include "Log.h"
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
@@ -43,15 +44,35 @@ bool ReachTargetAction::isUseful()
 // have no upper bound, so casters and melee end up alone at the spawn point and the healer follows them there.
 // The fight's footprint is heal range around the main tank: an enemy farther than that is not part of the tank's
 // fight yet, so nobody but the tank goes to fetch it. Tanks are exempt because picking adds up is their job.
+// 追敌的锚点：非坦克看主坦；坦克看治疗（没有活着的治疗就看最近的活着的队友）。坦克豁免过一版（"接小怪是它的活"），
+// run 489/5 证明不行：坦克 37 秒 reach melee 去 100 码外刷新点接守卫，自己站到坡道上 (550,327)，两只守卫走下来 30 秒把留在平台上的四人全杀了。
+Unit* ReachTargetAction::ChaseAnchor() const
+{
+    if (!PlayerbotAI::IsTank(bot))
+        return AI_VALUE(Unit*, "main tank");
+
+    Group* group = bot->GetGroup();
+    Unit* healer = nullptr;
+    Unit* nearest = nullptr;
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+    {
+        Player* member = ref->GetSource();
+        if (!member || member == bot || !member->IsAlive() || member->GetMapId() != bot->GetMapId())
+            continue;
+        if (PlayerbotAI::IsHeal(member) && (!healer || bot->GetExactDist(member) < bot->GetExactDist(healer)))
+            healer = member;
+        if (!nearest || bot->GetExactDist(member) < bot->GetExactDist(nearest))
+            nearest = member;
+    }
+    return healer ? healer : nearest;
+}
+
 bool ReachTargetAction::IsChaseLeashed(Unit* target) const
 {
     if (!target || !bot->GetGroup() || !bot->IsInCombat())
         return false;
 
-    if (PlayerbotAI::IsTank(bot))
-        return false;
-
-    Unit* anchor = AI_VALUE(Unit*, "main tank");
+    Unit* anchor = ChaseAnchor();
     if (!anchor || anchor == bot || !anchor->IsAlive() || anchor->GetMapId() != bot->GetMapId())
         return false;
 
