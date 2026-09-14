@@ -248,6 +248,16 @@ public:
     bool IsActive() override;
 };
 
+// 队友身上贴着近战小怪（且不是坦克当前目标）——坦克该用正义防御把它们接走
+class PartyMemberMeleeAggroTrigger : public Trigger
+{
+public:
+    PartyMemberMeleeAggroTrigger(PlayerbotAI* botAI) : Trigger(botAI, "party member melee aggro", 1) {}
+
+    Unit* GetTarget() override;
+    bool IsActive() override;
+};
+
 class AvengingWrathTrigger : public BoostTrigger
 {
 public:

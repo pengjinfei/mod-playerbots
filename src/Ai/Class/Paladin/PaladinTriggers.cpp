@@ -74,6 +74,17 @@ bool HandOfFreedomOnPartyTrigger::IsActive()
     return !ai::paladin::HasAnyPaladinHandFromCaster(target, bot) && botAI->IsMovementImpaired(target);
 }
 
+Unit* PartyMemberMeleeAggroTrigger::GetTarget()
+{
+    return ai::paladin::SelectMeleeAggroedPartyMember(botAI);
+}
+
+bool PartyMemberMeleeAggroTrigger::IsActive()
+{
+    Unit* target = GetTarget();
+    return target && botAI->CanCastSpell("righteous defense", target);
+}
+
 bool NotSensingUndeadTrigger::IsActive()
 {
     return !botAI->HasAura("sense undead", bot);

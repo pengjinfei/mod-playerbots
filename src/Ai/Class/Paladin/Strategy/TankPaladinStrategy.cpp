@@ -122,6 +122,16 @@ void TankPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     );
     triggers.push_back(
         new TriggerNode(
+            "party member melee aggro",
+            {
+                // 必须压过 tank assist(50) 与 tank face(30)：run 499 实测 26.5 的 tick 全被它们吃掉，
+                // 一次都没执行。低于 AN 层躲踏/保距（58/60）——躲 25k 践踏比接小怪优先。
+                NextAction("righteous defense on party", ACTION_HIGH + 35.0f)
+            }
+        )
+    );
+    triggers.push_back(
+        new TriggerNode(
             "medium health",
             {
                 NextAction("holy shield", ACTION_HIGH + 4)

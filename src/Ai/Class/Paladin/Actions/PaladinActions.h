@@ -273,6 +273,18 @@ public:
     virtual Unit* GetTarget() override;
 };
 
+// 队友身上有近战小怪在打（且不是坦克当前目标）时，对那个队友放正义防御——一次最多接走 3 只。
+// 只用正义防御、不用制裁之手：制裁之手留给「当前目标掉仇恨」那条路，避免两个嘲讽同时进冷却。
+class CastRighteousDefenseOnPartyAction : public CastSpellAction
+{
+public:
+    CastRighteousDefenseOnPartyAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "righteous defense") {}
+
+    std::string const getName() override { return "righteous defense on party"; }
+    Unit* GetTarget() override;
+    bool isUseful() override;
+};
+
 class CastCleansePoisonAction : public CastCureSpellAction
 {
 public:
@@ -425,5 +437,13 @@ public:
     bool Execute(Event event) override;
     bool isUseful() override;
 };
+
+namespace ai::paladin
+{
+// 返回最该被正义防御接走的队友：身上贴着近战小怪、且那些小怪不是坦克当前目标的队友；
+// 多个候选时取身上小怪最多的（正义防御一次能拉 3 只），再取血量低的。没有则 nullptr。
+// 只认近战怪：远程施法者（毒疗者的毒箭齐射一类）被嘲讽 3 秒后照样转回去，伤害又是 AOE，嘲讽接不走。
+Unit* SelectMeleeAggroedPartyMember(PlayerbotAI* botAI);
+}
 
 #endif

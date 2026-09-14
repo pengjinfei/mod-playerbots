@@ -148,6 +148,7 @@ public:
         creators["beacon of light on main tank"] = &PaladinTriggerFactoryInternal::beacon_of_light_on_main_tank;
         creators["sacred shield on main tank"] = &PaladinTriggerFactoryInternal::sacred_shield_on_main_tank;
         creators["hand of freedom on party"] = &PaladinTriggerFactoryInternal::hand_of_freedom_on_party;
+        creators["party member melee aggro"] = &PaladinTriggerFactoryInternal::party_member_melee_aggro;
 
         creators["blessing of kings on party"] = &PaladinTriggerFactoryInternal::blessing_of_kings_on_party;
         creators["blessing of wisdom on party"] = &PaladinTriggerFactoryInternal::blessing_of_wisdom_on_party;
@@ -216,6 +217,7 @@ private:
     static Trigger* beacon_of_light_on_main_tank(PlayerbotAI* botAI) { return new BeaconOfLightOnMainTankTrigger(botAI); }
     static Trigger* sacred_shield_on_main_tank(PlayerbotAI* botAI) { return new SacredShieldOnMainTankTrigger(botAI); }
     static Trigger* hand_of_freedom_on_party(PlayerbotAI* botAI) { return new HandOfFreedomOnPartyTrigger(botAI); }
+    static Trigger* party_member_melee_aggro(PlayerbotAI* botAI) { return new PartyMemberMeleeAggroTrigger(botAI); }
 
     static Trigger* blessing_of_kings_on_party(PlayerbotAI* botAI) { return new BlessingOfKingsOnPartyTrigger(botAI); }
     static Trigger* blessing_of_wisdom_on_party(PlayerbotAI* botAI)
@@ -322,6 +324,7 @@ public:
         creators["divine sacrifice"] = &PaladinAiObjectContextInternal::divine_sacrifice;
         creators["cancel divine sacrifice"] = &PaladinAiObjectContextInternal::cancel_divine_sacrifice;
         creators["hand of freedom on party"] = &PaladinAiObjectContextInternal::hand_of_freedom_on_party;
+        creators["righteous defense on party"] = &PaladinAiObjectContextInternal::righteous_defense_on_party;
         creators["cast greater blessing assignment"] =
             &PaladinAiObjectContextInternal::cast_greater_blessing_assignment;
     }
@@ -431,6 +434,10 @@ private:
     static Action* divine_sacrifice(PlayerbotAI* botAI) { return new CastDivineSacrificeAction(botAI); }
     static Action* cancel_divine_sacrifice(PlayerbotAI* botAI) { return new CastCancelDivineSacrificeAction(botAI); }
     static Action* hand_of_freedom_on_party(PlayerbotAI* botAI) { return new CastHandOfFreedomOnPartyAction(botAI); }
+    static Action* righteous_defense_on_party(PlayerbotAI* botAI)
+    {
+        return new CastRighteousDefenseOnPartyAction(botAI);
+    }
     static Action* cast_greater_blessing_assignment(PlayerbotAI* botAI)
     {
         return new CastGreaterBlessingAssignmentAction(botAI);

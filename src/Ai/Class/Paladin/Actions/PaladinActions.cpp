@@ -587,6 +587,82 @@ Unit* CastRighteousDefenseAction::GetTarget()
     return current_target->GetVictim();
 }
 
+namespace
+{
+    // 正义防御 31789 的施法距离
+    constexpr float RIGHTEOUS_DEFENSE_RANGE = 30.0f;
+}
+
+Unit* ai::paladin::SelectMeleeAggroedPartyMember(PlayerbotAI* botAI)
+{
+    Player* bot = botAI->GetBot();
+    if (!bot || !bot->IsInCombat())
+        return nullptr;
+
+    Group* group = bot->GetGroup();
+    if (!group)
+        return nullptr;
+
+    AiObjectContext* context = botAI->GetAiObjectContext();
+    Unit* currentTarget = AI_VALUE(Unit*, "current target");
+
+    std::unordered_map<Unit*, uint32> pressure;
+
+    GuidVector attackers = AI_VALUE(GuidVector, "attackers");
+    for (ObjectGuid const& guid : attackers)
+    {
+        Unit* attacker = botAI->GetUnit(guid);
+        if (!attacker || !attacker->IsAlive())
+            continue;
+
+        // 当前目标掉仇恨由 "lose aggro" → 制裁之手 那条路管，这里不重复占冷却
+        if (attacker == currentTarget)
+            continue;
+
+        Unit* victim = attacker->GetVictim();
+        if (!victim || victim == bot || !victim->IsAlive())
+            continue;
+
+        Player* member = victim->ToPlayer();
+        if (!member || !group->IsMember(member->GetGUID()))
+            continue;
+
+        // 只认贴身打人的近战怪，远程施法者接不走
+        if (!attacker->IsWithinMeleeRange(victim))
+            continue;
+
+        if (!bot->IsWithinDistInMap(member, RIGHTEOUS_DEFENSE_RANGE) || !bot->IsWithinLOSInMap(member))
+            continue;
+
+        ++pressure[member];
+    }
+
+    Unit* best = nullptr;
+    uint32 bestCount = 0;
+    for (auto const& itr : pressure)
+    {
+        Unit* member = itr.first;
+        uint32 count = itr.second;
+        if (count > bestCount || (count == bestCount && best && member->GetHealthPct() < best->GetHealthPct()))
+        {
+            best = member;
+            bestCount = count;
+        }
+    }
+
+    return best;
+}
+
+Unit* CastRighteousDefenseOnPartyAction::GetTarget()
+{
+    return ai::paladin::SelectMeleeAggroedPartyMember(botAI);
+}
+
+bool CastRighteousDefenseOnPartyAction::isUseful()
+{
+    return GetTarget() && CastSpellAction::isUseful();
+}
+
 bool CastDivineSacrificeAction::isUseful()
 {
     return GetTarget() && (GetTarget() != nullptr) && CastSpellAction::isUseful() &&
