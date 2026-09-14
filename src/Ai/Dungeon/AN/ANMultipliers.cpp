@@ -84,5 +84,24 @@ float AnubarakMageManaMultiplier::GetValue(Action* action)
         return (target && target->GetEntry() == kAnubarakEntry) ? 1.0f : 0.0f;
     }
 
-    return 0.0f;
+    // 第十九轮：群攻不再一律归零。run 489–492 法师 135 个 AOE tick（≥3 小怪聚在目标 8 码内）里烈焰风暴/暴风雪 0 次，
+    // 旧 boss 里同一法师烈焰风暴 10 次。条件放行：boss 潜地（不可选中，只有小怪可打）、目标 8 码内 ≥3 只活着的小怪、法师蓝 >50%。
+    // 铺炸弹（living bomb on attacker）仍归零——它是单体 DoT 逐只铺，run 469 之前每场约 17k 蓝。
+    if (name == "living bomb on attacker" || name == "living bomb on attackers")
+        return 0.0f;
+    if (!boss->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE))
+        return 0.0f;
+    if (bot->GetPowerPct(POWER_MANA) <= 50.0f)
+        return 0.0f;
+    Unit* target = action->GetTarget();
+    if (!target)
+        return 0.0f;
+    uint32 clustered = 0;
+    for (ObjectGuid const& guid : botAI->GetAiObjectContext()->GetValue<GuidVector>("attackers")->Get())
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (unit && unit->IsAlive() && unit->GetDistance(target) <= 8.0f)
+            ++clustered;
+    }
+    return clustered >= 3 ? 1.0f : 0.0f;
 }

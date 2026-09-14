@@ -40,7 +40,11 @@ bool AggressiveTargetAction::isUseful()
 
 bool DropTargetAction::isUseful()
 {
-    return context->GetValue<Unit*>("current target")->Get() != nullptr || !bot->IsInCombat();
+    // Nothing to drop: useful only if we should also leave the combat engine, i.e. out of combat or in combat with no
+    // reachable attacker (mirrors the engine-sync rule in PlayerbotAI::UpdateAIInternal, so the two never flap).
+    if (context->GetValue<Unit*>("current target")->Get() != nullptr)
+        return true;
+    return !bot->IsInCombat() || context->GetValue<GuidVector>("attackers")->Get().empty();
 }
 
 bool DropTargetAction::Execute(Event /*event*/)
@@ -68,7 +72,7 @@ bool DropTargetAction::Execute(Event /*event*/)
     // Dropping a target does not end the fight: stay in the combat engine while still in combat (the group is still
     // fighting), otherwise healers lose their heal strategies until something attacks again. PlayerbotAI::UpdateAIInternal
     // enforces the same invariant; this just avoids a one-tick flap.
-    if (!bot->IsInCombat())
+    if (!bot->IsInCombat() || context->GetValue<GuidVector>("attackers")->Get().empty())
         botAI->ChangeEngine(BOT_STATE_NON_COMBAT);
     if (bot->getClass() == CLASS_HUNTER) // Check for Hunter Class
     {

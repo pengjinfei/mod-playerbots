@@ -369,7 +369,7 @@ void RogueAoeStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         new TriggerNode(
             "medium aoe",
             {
-                NextAction("fan of knives", ACTION_NORMAL + 5)
+                NextAction("fan of knives", ACTION_HIGH + 8)  // 28：AOE 时压过绞喉 27/伏击 26/饥渴 26/切割 25，此前 15 在 538 次推入里只执行 35 次
             }
         )
     );

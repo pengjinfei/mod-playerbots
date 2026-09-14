@@ -1523,7 +1523,11 @@ void PlayerbotAI::DoNextAction(bool min)
     // non-combat engine until some attack action switched it back; a healer whose dps target went invalid
     // (DropTargetAction -> non-combat) then sat in the non-combat engine, which has no heals for its spec, while its
     // group fought on. run 490/1: priest in the non-combat engine for 56 s in combat, 0 heals, tank died at 62 s.
-    if (currentEngine == engines[BOT_STATE_NON_COMBAT] && bot->IsInCombat())
+    // Only when there is something to fight: "attackers" (threat-list units in LOS). A bot flagged in combat with no
+    // reachable attacker (run 496: tank pulling a ghoul behind a door, pull_rejected los=false) must stay in the
+    // non-combat engine, where the pull/approach flow lives; forcing it into the combat engine deadlocked the pull.
+    if (currentEngine == engines[BOT_STATE_NON_COMBAT] && bot->IsInCombat() &&
+        !aiObjectContext->GetValue<GuidVector>("attackers")->Get().empty())
     {
         Unit* currentTarget = aiObjectContext->GetValue<Unit*>("current target")->Get();
         if (currentTarget != nullptr)
