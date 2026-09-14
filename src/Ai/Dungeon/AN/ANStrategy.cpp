@@ -30,16 +30,18 @@ void WotlkDungeonANStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     // 不躲的代价：run445 a3 一场吃了 105,838，约占全队承伤的四分之一。
     // 与躲践踏同优先级：践踏只在 boss 浮出时、穿刺只在下潜期，两者不会同时触发。
     triggers.push_back(new TriggerNode("anub'arak impale",
-        { NextAction("dodge impale", ACTION_MOVE + 5) }));
+        { NextAction("dodge impale", ACTION_MOVE + 10) }));
     triggers.push_back(new TriggerNode("anub'arak pound",
-        { NextAction("dodge pound", ACTION_MOVE + 5) }));
+        { NextAction("dodge pound", ACTION_MOVE + 10) }));
     // 西沿护栏与远程保距（2026-09-13 run463–468 实验）暂不接入：六轮里每一轮都让开局更差——
     // 护栏把全队从准备点拉到 x=536 后牧师离 boss 10 码被践踏秒杀（467/1）、保距在开怪前把牧师挪走导致它整场不进战斗（466/1）、
     // 目标点经 mmap 寻路被吸到平台上/下层（463/464）。动作与触发器代码保留，等站位方案单独设计并可测后再启用。
     // triggers.push_back(new TriggerNode("anub'arak rim", { NextAction("anub'arak rim guard", ACTION_MOVE + 6) }));
     // 远程保距重新接入（2026-09-13 run 473）：三个失败原因已分别修掉——mmap 绕路（改直线 spline + vmap 校验）、
     // 开怪前移动（要求 IsInCombat）、把治疗也挪走（只对远程 DPS）。run 472/4 萨满在准备点被第一记践踏 24k 秒杀，就是没保距。
-    triggers.push_back(new TriggerNode("anub'arak ranged too close", { NextAction("anub'arak keep range", ACTION_MOVE + 3) }));
+    // 相关性必须压过 CombatStrategy 的 set facing（ACTION_MOVE+7=37）：run 485 盗贼 46 个践踏读条 tick 里 23 个被 set facing 吃掉、
+    // 躲踏没执行，牧师/法师保距 43/27 个 tick 里 31/21 个同样被吃掉。躲踏 40、保距 38（治疗的践踏预盾 39 仍先于保距）。
+    triggers.push_back(new TriggerNode("anub'arak ranged too close", { NextAction("anub'arak keep range", ACTION_MOVE + 8) }));
     // 践踏读条 3.2 秒里的两件事（2026-09-13 傍晚，成因见记录「30k+ 践踏」一节）：
     // 坦克破甲 >=3 层时开圣佑术（-50%）；治疗先给主坦上盾再接苦修。
     triggers.push_back(new TriggerNode("anub'arak pound tank", { NextAction("divine protection", ACTION_EMERGENCY) }));
