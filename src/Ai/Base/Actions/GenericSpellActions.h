@@ -147,6 +147,18 @@ public:
     bool isPossible() override;
 };
 
+// 补位治疗：正常治疗已阵亡或没蓝时顶上一发。刻意用 CastSpellAction 而不是
+// CastHealingSpellAction——后者会被 `save mana` 乘子按治疗效率掐掉，而补位本来就是
+// 「没人治了」的兜底，这时候省蓝没有意义。法术按职业选（见 OffhealSpellName）。
+class OffhealAction : public CastSpellAction
+{
+public:
+    OffhealAction(PlayerbotAI* botAI);
+
+    std::string const getName() override { return "offheal"; }
+    std::string const GetTargetName() override { return "party member to heal"; }
+};
+
 class CastHealingSpellAction : public CastAuraSpellAction
 {
 public:

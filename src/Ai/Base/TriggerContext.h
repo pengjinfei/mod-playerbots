@@ -165,6 +165,7 @@ public:
 
         creators["group heal setting"] = &TriggerContext::group_heal_occasion;
         creators["medium group heal setting"] = &TriggerContext::medium_group_heal_occasion;
+        creators["party needs offheal"] = &TriggerContext::party_needs_offheal;
         creators["invalid target"] = &TriggerContext::invalid_target;
         creators["lfg proposal active"] = &TriggerContext::lfg_proposal_active;
 
@@ -296,6 +297,7 @@ private:
     {
         return new AoeInGroupTrigger(ai, "group heal setting", "almost full");
     }
+    static Trigger* party_needs_offheal(PlayerbotAI* ai) { return new PartyNeedsOffhealTrigger(ai); }
     static Trigger* medium_group_heal_occasion(PlayerbotAI* ai)
     {
         return new AoeInGroupTrigger(ai, "medium group heal setting", "medium");

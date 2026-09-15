@@ -19,6 +19,7 @@
 #include "WorldPacket.h"
 #include <ctime>
 #include <unordered_set>
+#include "HealthTriggers.h"
 
 using ai::buff::BuffBelowRefreshTarget;
 using ai::buff::MakeAuraQualifierForBuff;
@@ -670,4 +671,9 @@ bool CastDebuffSpellAction::isUseful()
 
     return CastAuraSpellAction::isUseful() &&
            (target->GetHealth() / AI_VALUE(float, "estimated group dps")) >= needLifeTime;
+}
+
+OffhealAction::OffhealAction(PlayerbotAI* botAI)
+    : CastSpellAction(botAI, OffhealSpellName(botAI->GetBot()))
+{
 }

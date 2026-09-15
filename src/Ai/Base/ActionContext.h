@@ -100,6 +100,7 @@ public:
         creators["reach spell"] = &ActionContext::ReachSpell;
         creators["reach melee"] = &ActionContext::ReachMelee;
         creators["reach party member to heal"] = &ActionContext::reach_party_member_to_heal;
+        creators["offheal"] = &ActionContext::offheal;
         creators["reach party member to resurrect"] = &ActionContext::reach_party_member_to_resurrect;
         creators["flee"] = &ActionContext::flee;
         creators["flee with pet"] = &ActionContext::flee_with_pet;
@@ -323,6 +324,7 @@ private:
     static Action* ReachSpell(PlayerbotAI* botAI) { return new ReachSpellAction(botAI); }
     static Action* ReachMelee(PlayerbotAI* botAI) { return new ReachMeleeAction(botAI); }
     static Action* reach_party_member_to_heal(PlayerbotAI* botAI) { return new ReachPartyMemberToHealAction(botAI); }
+    static Action* offheal(PlayerbotAI* botAI) { return new OffhealAction(botAI); }
     static Action* reach_party_member_to_resurrect(PlayerbotAI* botAI) { return new ReachPartyMemberToResurrectAction(botAI); }
     static Action* flee(PlayerbotAI* botAI) { return new FleeAction(botAI); }
     static Action* flee_with_pet(PlayerbotAI* botAI) { return new FleeWithPetAction(botAI); }

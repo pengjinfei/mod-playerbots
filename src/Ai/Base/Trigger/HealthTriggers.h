@@ -192,6 +192,20 @@ protected:
     std::string const type;
 };
 
+// 补位治疗：正常治疗已阵亡或没蓝时，由还有蓝的非治疗、非坦克职业顶上一发。
+// 因格瓦尔实测（19 场）：团灭时治疗死在 77–104 秒而击杀耗时 118–122 秒，
+// 「队里没有活着且有蓝的治疗」这个窗口占 9.9 秒/场、出现在 7/19 场——整段无人治疗。
+// 判据与 AN 层那版一致，额外排除坦克（坦克跑去补治疗等于丢仇恨）。
+class PartyNeedsOffhealTrigger : public Trigger
+{
+public:
+    PartyNeedsOffhealTrigger(PlayerbotAI* ai) : Trigger(ai, "party needs offheal", 1) {}
+    bool IsActive() override;
+};
+
+// 该 bot 补位治疗用哪个法术；不会治疗的职业返回空串。
+std::string const OffhealSpellName(Player* bot);
+
 class AoeInGroupTrigger : public Trigger
 {
 public:

@@ -50,6 +50,11 @@ void WotlkDungeonUKStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     // 又要排在躲猛击(+5)/躲斧(+6)之下：那两条是即时致命伤害，看不见也得先躲。
     triggers.push_back(new TriggerNode("ingvar los lost",
             { NextAction("ingvar regain los", ACTION_MOVE + 4) }));
+    // 补位治疗：治疗阵亡或没蓝时由还有蓝的非治疗、非坦克成员顶上。19 场实测这个窗口
+    // 占 9.9 秒/场、出现在 7/19 场——团灭时治疗死在 77–104 秒而击杀耗时 118–122 秒，
+    // 整段没有任何治疗。相关性压在所有躲技能之下：补一发治疗不值得站在斧上。
+    triggers.push_back(new TriggerNode("party needs offheal",
+            { NextAction("offheal", ACTION_MOVE + 1) }));
 
 }
 
