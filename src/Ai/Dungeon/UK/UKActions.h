@@ -79,6 +79,17 @@ public:
     bool isUseful() override;
 };
 
+// 视线恢复：后排看不见主坦时，绕开挡住视线的柱子——而不是跑到坦克身上去。
+// 这条动作必须排在散开/保持距离之上（是它们把人挪进柱子影里的），
+// 又必须排在躲猛击/躲斧之下（那两条是即时致命伤害）。
+class IngvarRegainLosAction : public MovementAction
+{
+public:
+    IngvarRegainLosAction(PlayerbotAI* ai) : MovementAction(ai, "ingvar regain los") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
 class IngvarAvoidShadowAxeAction : public MovementAction
 {
 public:

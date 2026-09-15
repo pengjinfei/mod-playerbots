@@ -8,6 +8,8 @@
 #include "AiObjectContext.h"
 #include "Creature.h"
 #include "Log.h"
+#include "Map.h"
+#include "ModelIgnoreFlags.h"
 #include "Playerbots.h"
 #include "Spell.h"
 #include "Unit.h"
@@ -193,6 +195,60 @@ bool IngvarSpreadTrigger::IsActive()
         LOG_DEBUG("playerbots", "Ingvar diagnostic: spread trigger bot={} crowd={} distance={:.2f}",
                   bot->GetName(), crowd->GetName(), bot->GetExactDist2d(crowd));
     return crowd != nullptr;
+}
+
+Unit* FindIngvarLosAnchor(PlayerbotAI* botAI, Player* bot)
+{
+    Unit* tank = botAI->GetAiObjectContext()->GetValue<Unit*>("main tank")->Get();
+    if (tank && tank->IsAlive() && tank != bot && tank->GetMapId() == bot->GetMapId())
+        return tank;
+
+    // 主坦阵亡时锚点退回 boss：这时"能看见战斗"仍然是治疗/驱散/输出的共同前提。
+    return botAI->GetAiObjectContext()->GetValue<Unit*>("find target", "ingvar the plunderer")->Get();
+}
+
+bool IngvarPointHasLosTo(Player* bot, Unit* anchor, float x, float y, float z)
+{
+    if (!anchor || !bot->IsInWorld() || !bot->GetMap())
+        return true;
+
+    float ax = anchor->GetPositionX();
+    float ay = anchor->GetPositionY();
+    float az = anchor->GetPositionZ() + anchor->GetCollisionHeight();
+    return bot->GetMap()->isInLineOfSight(x, y, z + bot->GetCollisionHeight(), ax, ay, az,
+                                          bot->GetPhaseMask(), LINEOFSIGHT_ALL_CHECKS,
+                                          VMAP::ModelIgnoreFlags::Nothing);
+}
+
+bool IngvarHasLosTo(Player* bot, Unit* anchor)
+{
+    return IngvarPointHasLosTo(bot, anchor, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
+}
+
+bool IngvarLosLostTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
+    if (!boss || !bot->IsInCombat() || !boss->IsInCombat())
+        return false;
+
+    // 近战贴着坦克打，不会被柱子隔开；坦克本人就是锚点。
+    if (botAI->IsTank(bot) || (!botAI->IsRanged(bot) && !botAI->IsHeal(bot)))
+        return false;
+
+    Unit* anchor = FindIngvarLosAnchor(botAI, bot);
+    if (!anchor || anchor == bot)
+        return false;
+
+    // 超出取值层本来就够不到的距离时，问题是距离不是视线，交给既有的接近动作。
+    if (bot->GetExactDist2d(anchor) > sPlayerbotAIConfig.healDistance * 2)
+        return false;
+
+    if (IngvarHasLosTo(bot, anchor))
+        return false;
+
+    LOG_DEBUG("playerbots", "Ingvar diagnostic: los lost bot={} anchor={} dist={:.2f}",
+              bot->GetName(), anchor->GetName(), bot->GetExactDist2d(anchor));
+    return true;
 }
 
 bool IngvarShadowAxeTrigger::IsActive()

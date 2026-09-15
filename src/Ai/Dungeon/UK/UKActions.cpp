@@ -310,6 +310,8 @@ bool IngvarSpreadAction::Execute(Event /*event*/)
     float z = 0.0f;
     bool selected = false;
     float selectedBossDistance = 0.0f;
+    Unit* const losAnchor = FindIngvarLosAnchor(botAI, bot);
+    uint32 losRejected = 0;
     for (float offset : kOffsets)
     {
         float const candidateAngle = angle + offset;
@@ -344,6 +346,16 @@ bool IngvarSpreadAction::Execute(Event /*event*/)
                               boss->GetPositionX(), boss->GetPositionY()) < pathClearance)
             continue;
 
+        // 散开不得把自己挪进柱子影里。落点几何合法不等于还能"看见"主坦：
+        // `PartyMemberValue::Check` / `PartyMemberToHeal::Check` 用 `IsWithinLOS` 过滤候选，
+        // 看不见主坦时治疗的 `party member to heal`、法师的 `party member to dispel`
+        // 都静默返回空——不治、不解，连"走过去"的动作也拿不到目标（run528/seq4）。
+        if (!IngvarPointHasLosTo(bot, losAnchor, candidateX, candidateY, candidateZ))
+        {
+            ++losRejected;
+            continue;
+        }
+
         x = candidateX;
         y = candidateY;
         z = candidateZ;
@@ -357,8 +369,9 @@ bool IngvarSpreadAction::Execute(Event /*event*/)
     bool const moved = selected &&
         MoveTo(bot->GetMapId(), x, y, z, false, false, true, true, MovementPriority::MOVEMENT_COMBAT, true);
     LOG_DEBUG("playerbots", "Ingvar diagnostic: spread bot={} crowd={} distance={:.2f} step={:.2f} selected={} "
-                               "moved={} destination=({:.2f},{:.2f},{:.2f}) boss_dest_dist={:.2f}",
-              bot->GetName(), crowd->GetName(), distance, step, selected, moved, x, y, z, selectedBossDistance);
+                               "moved={} destination=({:.2f},{:.2f},{:.2f}) boss_dest_dist={:.2f} los_rejected={}",
+              bot->GetName(), crowd->GetName(), distance, step, selected, moved, x, y, z, selectedBossDistance,
+              losRejected);
     return moved;
 }
 
@@ -367,6 +380,92 @@ bool IngvarSpreadAction::isUseful()
     Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
     return boss && !botAI->IsTank(bot) && bot->IsInCombat() && boss->IsInCombat() &&
         (botAI->IsRanged(bot) || botAI->IsHeal(bot)) && FindIngvarCrowdingMember(botAI, bot) != nullptr;
+}
+
+bool IngvarRegainLosAction::isUseful()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
+    if (!boss || botAI->IsTank(bot) || (!botAI->IsRanged(bot) && !botAI->IsHeal(bot)))
+        return false;
+    if (!bot->IsInCombat() || !boss->IsInCombat())
+        return false;
+
+    Unit* anchor = FindIngvarLosAnchor(botAI, bot);
+    return anchor && anchor != bot && !IngvarHasLosTo(bot, anchor);
+}
+
+bool IngvarRegainLosAction::Execute(Event /*event*/)
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ingvar the plunderer");
+    Unit* anchor = FindIngvarLosAnchor(botAI, bot);
+    if (!boss || !anchor)
+        return false;
+
+    // 侧移绕开遮挡，而不是朝主坦直线跑：主坦就站在 boss 身上，直线接近等于把治疗
+    // 送进猛击锥。先试小半径的八个方向，再放大——取第一个"位移最小且能看见锚点"的点。
+    static constexpr float kRadii[] = { 6.0f, 10.0f, 15.0f };
+    static constexpr int kDirections = 8;
+
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    bool selected = false;
+    uint32 groundRejected = 0;
+    uint32 bossRejected = 0;
+    uint32 losRejected = 0;
+
+    for (float radius : kRadii)
+    {
+        for (int direction = 0; direction != kDirections && !selected; ++direction)
+        {
+            float const angle = bot->GetOrientation() + direction * (2.0f * float(M_PI) / kDirections);
+            float candidateX = bot->GetPositionX() + cos(angle) * radius;
+            float candidateY = bot->GetPositionY() + sin(angle) * radius;
+            float candidateZ = bot->GetMapWaterOrGroundLevel(candidateX, candidateY, bot->GetPositionZ());
+            bool const validGround = candidateZ != INVALID_HEIGHT && candidateZ != -100000.0f &&
+                candidateZ != -200000.0f && std::fabs(candidateZ - bot->GetPositionZ()) <= 4.0f;
+            if (!validGround || !bot->GetMap()->CheckCollisionAndGetValidCoords(bot, bot->GetPositionX(),
+                                                                                bot->GetPositionY(),
+                                                                                bot->GetPositionZ(),
+                                                                                candidateX, candidateY, candidateZ))
+            {
+                ++groundRejected;
+                continue;
+            }
+
+            // 恢复视线不能以走进猛击锥为代价，路径同样不许比出发时更贴近 boss。
+            float const bossDistance = boss->GetExactDist2d(candidateX, candidateY);
+            float const pathClearance = std::min(bot->GetExactDist2d(boss), kIngvarRangedClearance);
+            if (bossDistance < kIngvarRangedClearance ||
+                SegmentDistance2d(bot->GetPositionX(), bot->GetPositionY(), candidateX, candidateY,
+                                  boss->GetPositionX(), boss->GetPositionY()) < pathClearance)
+            {
+                ++bossRejected;
+                continue;
+            }
+
+            if (!IngvarPointHasLosTo(bot, anchor, candidateX, candidateY, candidateZ))
+            {
+                ++losRejected;
+                continue;
+            }
+
+            x = candidateX;
+            y = candidateY;
+            z = candidateZ;
+            selected = true;
+        }
+        if (selected)
+            break;
+    }
+
+    bool const moved = selected &&
+        MoveTo(bot->GetMapId(), x, y, z, false, false, true, true, MovementPriority::MOVEMENT_COMBAT, true);
+    LOG_DEBUG("playerbots", "Ingvar diagnostic: regain los bot={} anchor={} anchor_dist={:.2f} selected={} moved={} "
+                               "destination=({:.2f},{:.2f},{:.2f}) rejected_ground={} rejected_boss={} rejected_los={}",
+              bot->GetName(), anchor->GetName(), bot->GetExactDist2d(anchor), selected, moved, x, y, z,
+              groundRejected, bossRejected, losRejected);
+    return moved;
 }
 
 bool IngvarAvoidShadowAxeAction::Execute(Event /*event*/)

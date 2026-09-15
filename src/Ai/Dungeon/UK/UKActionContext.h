@@ -27,6 +27,7 @@ class WotlkDungeonUKActionContext : public NamedObjectContext<Action>
             creators["ingvar avoid shadow axe"] = &WotlkDungeonUKActionContext::ingvar_avoid_shadow_axe;
             creators["ingvar spread"] = &WotlkDungeonUKActionContext::ingvar_spread;
             creators["ingvar keep range"] = &WotlkDungeonUKActionContext::ingvar_keep_range;
+            creators["ingvar regain los"] = &WotlkDungeonUKActionContext::ingvar_regain_los;
         }
     private:
         static Action* attack_frost_tomb(PlayerbotAI* ai) { return new AttackFrostTombAction(ai); }
@@ -39,6 +40,7 @@ class WotlkDungeonUKActionContext : public NamedObjectContext<Action>
         static Action* ingvar_avoid_shadow_axe(PlayerbotAI* ai) { return new IngvarAvoidShadowAxeAction(ai); }
         static Action* ingvar_spread(PlayerbotAI* ai) { return new IngvarSpreadAction(ai); }
         static Action* ingvar_keep_range(PlayerbotAI* ai) { return new IngvarKeepRangeAction(ai); }
+        static Action* ingvar_regain_los(PlayerbotAI* ai) { return new IngvarRegainLosAction(ai); }
 };
 
 #endif

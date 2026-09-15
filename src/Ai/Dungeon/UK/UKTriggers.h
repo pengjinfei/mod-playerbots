@@ -70,6 +70,21 @@ class Unit;
 // nullptr. Shared so the trigger and its action cannot drift apart.
 Unit* FindIngvarCrowdingMember(PlayerbotAI* botAI, Player* bot);
 
+// 后排的视线锚点：活着的主坦，没有就退回 boss。
+// 之所以用主坦而不是 boss：`PartyMemberValue::Check` / `PartyMemberToHeal::Check` 把
+// `IsWithinLOS` 当成候选过滤条件，看不见主坦时治疗的 `party member to heal`、法师的
+// `party member to dispel` 都会**静默返回空**——既不治、不解，连"走过去"的动作也拿不到目标。
+// run528/seq4 实测：治疗与法师同时对坦克无视线 9–10 秒，治疗连续 10 个 tick
+// `no actions executed`，坦克从满血 24,394 无治疗被磨死；法师同窗口零伤害 14 秒。
+Unit* FindIngvarLosAnchor(PlayerbotAI* botAI, Player* bot);
+
+// bot 当前位置对锚点是否有视线（与 `WorldObject::IsWithinLOSInMap` 的玩家分支同口径）。
+bool IngvarHasLosTo(Player* bot, Unit* anchor);
+
+// 候选落点对锚点是否有视线。站位类动作只校验地面/碰撞/距离是不够的：
+// 平台四角有柱子，几何合法的点可能整段挡住后排对主坦的视线。
+bool IngvarPointHasLosTo(Player* bot, Unit* anchor, float x, float y, float z);
+
 #define SPELL_STAGGERING_ROAR       DUNGEON_MODE(bot, SPELL_STAGGERING_ROAR_N, SPELL_STAGGERING_ROAR_H)
 #define SPELL_DREADFUL_ROAR         DUNGEON_MODE(bot, SPELL_DREADFUL_ROAR_N, SPELL_DREADFUL_ROAR_H)
 #define SPELL_SMASH                 DUNGEON_MODE(bot, SPELL_SMASH_N, SPELL_SMASH_H)
@@ -142,6 +157,15 @@ class IngvarSpreadTrigger : public Trigger
 {
 public:
     IngvarSpreadTrigger(PlayerbotAI* ai) : Trigger(ai, "ingvar spread") {}
+    bool IsActive() override;
+};
+
+// 后排（远程/治疗）对主坦失去视线。这不是站位偏好问题：视线一断，
+// 治疗/驱散的取值层直接把主坦从候选里删掉，整条链条静默停摆。
+class IngvarLosLostTrigger : public Trigger
+{
+public:
+    IngvarLosLostTrigger(PlayerbotAI* ai) : Trigger(ai, "ingvar los lost") {}
     bool IsActive() override;
 };
 

@@ -25,6 +25,7 @@ class WotlkDungeonUKTriggerContext : public NamedObjectContext<Trigger>
             creators["ingvar shadow axe"] = &WotlkDungeonUKTriggerContext::ingvar_shadow_axe;
             creators["ingvar spread"] = &WotlkDungeonUKTriggerContext::ingvar_spread;
             creators["ingvar ranged clearance"] = &WotlkDungeonUKTriggerContext::ingvar_ranged_clearance;
+            creators["ingvar los lost"] = &WotlkDungeonUKTriggerContext::ingvar_los_lost;
         }
     private:
         static Trigger* keleseth_frost_tomb(PlayerbotAI* ai) { return new KelesethFrostTombTrigger(ai); }
@@ -37,6 +38,7 @@ class WotlkDungeonUKTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* ingvar_shadow_axe(PlayerbotAI* ai) { return new IngvarShadowAxeTrigger(ai); }
         static Trigger* ingvar_spread(PlayerbotAI* ai) { return new IngvarSpreadTrigger(ai); }
         static Trigger* ingvar_ranged_clearance(PlayerbotAI* ai) { return new IngvarRangedClearanceTrigger(ai); }
+        static Trigger* ingvar_los_lost(PlayerbotAI* ai) { return new IngvarLosLostTrigger(ai); }
 };
 
 #endif

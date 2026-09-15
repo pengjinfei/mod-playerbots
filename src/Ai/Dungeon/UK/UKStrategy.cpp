@@ -46,6 +46,10 @@ void WotlkDungeonUKStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     // melee contact hold more than that from each other before one lands.
     triggers.push_back(new TriggerNode("ingvar spread",
             { NextAction("ingvar spread", ACTION_MOVE + 2) }));
+    // 视线恢复要排在散开(+2)/保持距离(+3)之上——正是它们把后排挪进柱子影里的；
+    // 又要排在躲猛击(+5)/躲斧(+6)之下：那两条是即时致命伤害，看不见也得先躲。
+    triggers.push_back(new TriggerNode("ingvar los lost",
+            { NextAction("ingvar regain los", ACTION_MOVE + 4) }));
 
 }
 
