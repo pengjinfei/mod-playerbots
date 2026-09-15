@@ -247,6 +247,13 @@ bool QuestAction::AcceptQuest(Quest const* quest, ObjectGuid questGiver)
             bot->AddQuest(quest, pObject);
         }
 
+        // The direct master-quest sync path can add a quest that is already
+        // complete (for example, a zero-objective dialogue quest). Unlike the
+        // explicit quest-share path, it previously left that quest incomplete,
+        // so the bot could not reliably follow the master's immediate turn-in.
+        if (sPlayerbotAIConfig.syncQuestWithPlayer && bot->CanCompleteQuest(questId))
+            CompleteQuest(bot, questId);
+
         if (bot->GetQuestStatus(questId) != QUEST_STATUS_NONE && bot->GetQuestStatus(questId) != QUEST_STATUS_REWARDED)
         {
             BroadcastHelper::BroadcastQuestAccepted(botAI, bot, quest);
