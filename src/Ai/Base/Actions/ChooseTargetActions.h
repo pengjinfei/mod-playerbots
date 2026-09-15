@@ -92,10 +92,11 @@ public:
     bool isUseful() override;
 };
 
-class DropTargetAction : public Action
+// AttackAction 而不是 Action：目标死掉之后要在同一个 tick 里直接接管下一个目标，需要 Attack()。
+class DropTargetAction : public AttackAction
 {
 public:
-    DropTargetAction(PlayerbotAI* botAI) : Action(botAI, "drop target") {}
+    DropTargetAction(PlayerbotAI* botAI) : AttackAction(botAI, "drop target") {}
 
     bool Execute(Event event) override;
     // "invalid target" also fires when there is no target at all (InvalidTargetValue returns !target). With the bot now

@@ -95,6 +95,20 @@ bool DropTargetAction::Execute(Event /*event*/)
     //     }
     // }
 
+    // 同一个 tick 里接管下一个目标。原来目标一死要连走四个 tick：
+    // drop target(99) -> dps assist(50) -> reach melee(21) -> set facing(37)，实测每 tick 0.69 秒，
+    // 一次换目标约 2.8 秒不出手；阿努巴拉克一场要死约 20 只小怪 = 约 56 秒空转。
+    // 盗贼那边的表现是主输出技能 303 次推入只有 17% 轮得到，抢占者里
+    // dps assist/reach melee/drop target 合计占 46%。真人是死一个立刻 tab 下一个，这里对齐这个反应。
+    // 只在「还在战斗、且确实有敌人」时接管；脱战交接给非战斗引擎的分支保持不变。
+    if (bot->IsInCombat() && !context->GetValue<GuidVector>("attackers")->Get().empty())
+    {
+        std::string const nextTargetValue = PlayerbotAI::IsTank(bot) ? "tank target" : "dps target";
+        Unit* next = context->GetValue<Unit*>(nextTargetValue)->Get();
+        if (next && next->IsInWorld() && next->IsAlive() && !bot->IsFriendlyTo(next))
+            Attack(next);  // 失败（视线/距离等）就退回原来的流程，下一 tick 仍会走 dps assist
+    }
+
     return true;
 }
 
