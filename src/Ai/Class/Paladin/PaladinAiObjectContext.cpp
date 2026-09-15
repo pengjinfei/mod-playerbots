@@ -149,6 +149,7 @@ public:
         creators["sacred shield on main tank"] = &PaladinTriggerFactoryInternal::sacred_shield_on_main_tank;
         creators["hand of freedom on party"] = &PaladinTriggerFactoryInternal::hand_of_freedom_on_party;
         creators["party member melee aggro"] = &PaladinTriggerFactoryInternal::party_member_melee_aggro;
+        creators["divine plea uptime"] = &PaladinTriggerFactoryInternal::divine_plea_uptime;
 
         creators["blessing of kings on party"] = &PaladinTriggerFactoryInternal::blessing_of_kings_on_party;
         creators["blessing of wisdom on party"] = &PaladinTriggerFactoryInternal::blessing_of_wisdom_on_party;
@@ -218,6 +219,7 @@ private:
     static Trigger* sacred_shield_on_main_tank(PlayerbotAI* botAI) { return new SacredShieldOnMainTankTrigger(botAI); }
     static Trigger* hand_of_freedom_on_party(PlayerbotAI* botAI) { return new HandOfFreedomOnPartyTrigger(botAI); }
     static Trigger* party_member_melee_aggro(PlayerbotAI* botAI) { return new PartyMemberMeleeAggroTrigger(botAI); }
+    static Trigger* divine_plea_uptime(PlayerbotAI* botAI) { return new DivinePleaUptimeTrigger(botAI); }
 
     static Trigger* blessing_of_kings_on_party(PlayerbotAI* botAI) { return new BlessingOfKingsOnPartyTrigger(botAI); }
     static Trigger* blessing_of_wisdom_on_party(PlayerbotAI* botAI)

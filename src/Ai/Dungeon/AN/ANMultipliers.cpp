@@ -105,3 +105,21 @@ float AnubarakMageManaMultiplier::GetValue(Action* action)
     }
     return clustered >= 3 ? 1.0f : 0.0f;
 }
+
+float AnubarakHeroismMultiplier::GetValue(Action* action)
+{
+    if (!action || bot->getClass() != CLASS_SHAMAN)
+        return 1.0f;
+
+    std::string const& name = action->getName();
+    if (name != "heroism" && name != "bloodlust")
+        return 1.0f;
+
+    // 本策略也覆盖克里克塞尔/哈德诺克斯：那两战找不到阿努巴拉克，不干预。
+    Creature* boss = bot->FindNearestCreature(kAnubarakEntry, 200.0f);
+    if (!boss || !boss->IsAlive())
+        return 1.0f;
+
+    // 第三次出土之前一律不许放（判据与 AnubarakHeroismTrigger 完全一致）
+    return AnubarakAfterThirdEmerge(botAI, bot) ? 1.0f : 0.0f;
+}

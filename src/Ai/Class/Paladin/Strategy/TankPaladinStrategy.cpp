@@ -120,6 +120,22 @@ void TankPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
             }
         )
     );
+    // 防骑的续蓝闭环是「庇护祝福回蓝 + 精神协调 + 神圣恳求常驻（圣光守护 2/2 靠近战刷新）」，
+    // 但 GenericPaladinStrategy 把 divine plea 挂在 ACTION_HIGH(20)：实测坦克 3733 个 tick 里
+    // 恳求推入队列 381 次、只执行 9 次（2.4%），全被 tank assist(50)/drop target(99)/set facing/
+    // hand of reckoning(27) 抢走；恳求不在身上，圣光守护每场 123 次刷新就全刷在空气上。
+    // 这里给坦克单独挂一个压过 tank assist 的节点（52，仍低于接小怪 55 / 保距 58 / 躲踏 60），
+    // 触发条件也换成「战斗中且恳求不在身上」——上游的 HighManaTrigger 是蓝<65% 才亮，
+    // 坦克开局 80% 起步，run 507 两场因此一次都没放（相关性修了、门槛还挡着）。
+    // 恳求是 buff，冷却中/已在身上时返回 USELESS 而不吃 tick，所以抬高相关性不会挤占其它动作。
+    triggers.push_back(
+        new TriggerNode(
+            "divine plea uptime",
+            {
+                NextAction("divine plea", ACTION_HIGH + 32.0f)
+            }
+        )
+    );
     triggers.push_back(
         new TriggerNode(
             "party member melee aggro",

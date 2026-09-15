@@ -108,9 +108,15 @@ public:
     bool IsActive() override;
 };
 
-// 坦克在 boss 读条践踏、且身上守卫的 Sunder Armor（59350，-2000 护甲/层，最多 20 层）叠到 kPoundGuardSunderStacks 以上时开圣佑术。
-// run 457–473 坦克 109 次正常践踏均值 16k；三次 22k–31.6k 全部对应破甲 2–5 层（同窗口 boss 普攻也翻 2–4 倍），不是暴击。
+// 坦克在 boss 读条践踏时开圣佑术（498，−50%、2 分钟冷却）。
+// run 457–473：坦克 109 次正常践踏均值 16k；三次 22k–31.6k 全部对应破甲 2–5 层，不是暴击。
+// 第二十三轮试过收紧（破甲 >=5 且读条只剩 1.5 秒再开），run 515 直接 0/5、坦克五场全死：
+// 触发器从 4.7 次/场掉到 2 次、圣佑从 1.3 掉到 0.6、>=8k 践踏的覆盖率 4%→0%。已回退。
+// 教训：践踏读条 3.2 秒，但 tick 粒度加排队让「剩 1.5 秒再开」经常错过；
+// 「白给一次圣佑」远好过「该开时没开」。破甲阈值也保持 3——守卫要到第一次潜地（约 50 秒）才刷，
+// 抬到 5 只会让中段也开不出来。唯一放宽的是：boss <=25% 时即使破甲不足也允许开。
 constexpr uint32 kPoundGuardSunderStacks = 3;
+constexpr float kPoundGuardBossHealthPct = 25.0f;
 class AnubarakPoundTankTrigger : public Trigger
 {
 public:
@@ -157,6 +163,41 @@ class AnubarakRangedTooCloseTrigger : public Trigger
 public:
     AnubarakRangedTooCloseTrigger(PlayerbotAI* ai) : Trigger(ai, "anub'arak ranged too close") {}
     bool IsActive() override;
+};
+
+// 近战 DPS 站进了 boss 的正面践踏锥（±60°、15 码）——该绕到背后去。
+class AnubarakMeleeFrontTrigger : public Trigger
+{
+public:
+    AnubarakMeleeFrontTrigger(PlayerbotAI* ai) : Trigger(ai, "anub'arak melee front", 1) {}
+    bool IsActive() override;
+};
+
+// 英勇/嗜血只该落在最后冲刺 = boss 第三次出土之后。
+// 注意不能用「可选中且血 <=25%」来代替：血线判定与真正潜地之间有几十秒（run 512/1 实测 boss 191 秒
+// 已经掉到 23% 且可选中，第三次潜地 217 秒才开始），那段窗口里放英勇照样会被潜地吃掉。
+// 只能数出土次数：boss 潜地期带 UNIT_FLAG_NOT_SELECTABLE，从「不可选中」翻回「可选中」即一次出土。
+bool AnubarakAfterThirdEmerge(PlayerbotAI* botAI, Player* bot);
+
+// 依据（run 505-509 共 23 场）：判别输赢的是 180 秒时 boss 的血（击杀场中位 24%、失败场 41%），
+// 而英勇在击杀场中位落在 213 秒、失败场落在 143 秒（第二次潜地附近，boss 根本打不到）。
+// 共享层 HeroismTrigger 继承 BoostTrigger（balance<=50），不看阶段，打得顺就不放、打得乱就早放。
+class AnubarakHeroismTrigger : public Trigger
+{
+public:
+    AnubarakHeroismTrigger(PlayerbotAI* ai) : Trigger(ai, "anub'arak heroism", 1) {}
+    bool IsActive() override;
+};
+
+// 治疗已经接不住（没蓝或阵亡）且有人残血时，让非治疗职业补一发治疗波。
+// 依据（run 483-493 + 500/501 共 60 场）：坦克阵亡 39 场里 31 场死前 3 秒 boss 一下没打到——
+// 是守卫(53.5%)+毒疗者(35.7%)磨死的，同时刻牧师蓝中位 38 点；而元素萨满 18,475 的法力池整场只放 0.6 次治疗波。
+class AnubarakOffhealTrigger : public Trigger
+{
+public:
+    AnubarakOffhealTrigger(PlayerbotAI* ai) : Trigger(ai, "anub'arak offheal", 1) {}
+    bool IsActive() override;
+    std::string const GetTargetName() override { return "party member to heal"; }
 };
 
 #endif

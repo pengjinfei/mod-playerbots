@@ -65,6 +65,28 @@ public:
     std::string const GetTargetName() override { return "main tank"; }
 };
 
+// 治疗没蓝时的补位治疗：用治疗波（3 秒读条，但每点法力的治疗量最高，比次级治疗波划算）。
+class AnubarakOffhealAction : public CastSpellAction
+{
+public:
+    AnubarakOffhealAction(PlayerbotAI* ai) : CastSpellAction(ai, "healing wave") {}
+    std::string const getName() override { return "anub'arak offheal"; }
+    std::string const GetTargetName() override { return "party member to heal"; }
+};
+
+float AnubarakOffAxisAngle(Unit* boss, Player* bot);
+
+// 近战默认绕背：真人近战本来就站 boss 背后，践踏锥（正面 120°/15 码）根本扫不到。
+// run 513/514 实测盗贼 35% 的时间站在锥内、中位夹角只有 50°，两次 32k 一击秒杀都发生在锥内。
+// 「看到读条再躲」（dodge pound）是被动闪避，3.2 秒内从 50° 跑出锥经常来不及。
+class AnubarakMeleeBehindAction : public MovementAction
+{
+public:
+    AnubarakMeleeBehindAction(PlayerbotAI* ai) : MovementAction(ai, "anub'arak melee behind") {}
+    bool Execute(Event event) override;
+    MovementIntent GetMovementIntent() const override { return MovementIntent::TACTICAL; }
+};
+
 // 西沿护栏：x 低于安全线就沿 +x 挪回 kArenaGuardX。保命动作：掉出平台等于整场缺席。
 class AnubarakRimGuardAction : public MovementAction
 {

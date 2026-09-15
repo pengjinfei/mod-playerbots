@@ -5,9 +5,118 @@
  */
 
 #include "ANTriggers.h"
+#include "ANActions.h"
 #include <list>
 #include "AiObjectContext.h"
 #include "Playerbots.h"
+#include "Spell.h"
+
+namespace
+{
+    // 队里的治疗蓝低于此值（或已阵亡）才接手，别抢正常治疗的活
+    constexpr uint8 kOffhealHealerManaPct = 20;
+    // 目标血量低于此值才值得花一发治疗波
+    constexpr uint8 kOffhealTargetHealthPct = 65;
+    // 自己蓝低于此值就别补，留给输出与图腾
+    constexpr uint8 kOffhealSelfManaPct = 25;
+}
+
+namespace
+{
+    // 出土计数。夹具一次只跑一个实例，所以用一份按 instanceId 复位的状态即可；
+    // boss 血回到 >90%（新的一场或 boss 重置）也复位。
+    struct AnubarakEmergeState
+    {
+        uint32 instanceId = 0;
+        uint8 emerges = 0;
+        bool submerged = false;
+    };
+
+    AnubarakEmergeState g_anubarakEmerge;
+}
+
+bool AnubarakAfterThirdEmerge(PlayerbotAI* /*botAI*/, Player* bot)
+{
+    Creature* boss = bot->FindNearestCreature(kAnubarakEntry, 200.0f);
+    if (!boss || !boss->IsAlive())
+        return false;
+
+    uint32 const instanceId = bot->GetInstanceId();
+    if (g_anubarakEmerge.instanceId != instanceId || boss->GetHealthPct() > 90.0f)
+    {
+        g_anubarakEmerge.instanceId = instanceId;
+        g_anubarakEmerge.emerges = 0;
+        g_anubarakEmerge.submerged = false;
+    }
+
+    bool const submerged = boss->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
+    if (g_anubarakEmerge.submerged && !submerged && g_anubarakEmerge.emerges < 255)
+        ++g_anubarakEmerge.emerges;
+    g_anubarakEmerge.submerged = submerged;
+
+    return !submerged && g_anubarakEmerge.emerges >= 3;
+}
+
+bool AnubarakMeleeFrontTrigger::IsActive()
+{
+    if (!bot->IsAlive() || !bot->IsInCombat())
+        return false;
+
+    // 只管近战输出：坦克必须站正面，治疗/远程本来就在 18-20 码外（实测中位夹角 102-110°）
+    if (!botAI->IsMelee(bot) || botAI->IsTank(bot) || botAI->IsHeal(bot))
+        return false;
+
+    Unit* boss = AI_VALUE2(Unit*, "find target", "anub'arak");
+    if (!boss || !boss->IsAlive() || boss->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE))
+        return false;  // 潜地期没有践踏，别干扰打小怪
+
+    if (bot->GetExactDist2d(boss->GetPosition()) > kPoundConeRadius)
+        return false;
+
+    // 半锥 60° 再加 10° 余量；绕背后是 180°，不会来回抖
+    return AnubarakOffAxisAngle(boss, bot) <= kPoundConeArc / 2.0f + 10.0f * float(M_PI) / 180.0f;
+}
+
+bool AnubarakHeroismTrigger::IsActive()
+{
+    if (!bot->IsAlive() || !bot->IsInCombat() || bot->getClass() != CLASS_SHAMAN)
+        return false;
+
+    if (!AnubarakAfterThirdEmerge(botAI, bot))
+        return false;
+
+    return botAI->CanCastSpell("heroism", bot) || botAI->CanCastSpell("bloodlust", bot);
+}
+
+bool AnubarakOffhealTrigger::IsActive()
+{
+    if (!bot->IsAlive() || PlayerbotAI::IsHeal(bot) || !bot->IsInCombat())
+        return false;
+
+    if (AI_VALUE2(uint8, "mana", "self target") < kOffhealSelfManaPct)
+        return false;
+
+    Group* group = bot->GetGroup();
+    if (!group)
+        return false;
+
+    // 队里还有能打的治疗就不接手
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+    {
+        Player* member = ref->GetSource();
+        if (!member || member == bot || !PlayerbotAI::IsHeal(member))
+            continue;
+
+        if (member->IsAlive() && member->GetPowerPct(POWER_MANA) >= kOffhealHealerManaPct)
+            return false;
+    }
+
+    Unit* target = AI_VALUE(Unit*, "party member to heal");
+    if (!target || !target->IsAlive() || target->GetHealthPct() > kOffhealTargetHealthPct)
+        return false;
+
+    return botAI->CanCastSpell("healing wave", target);
+}
 
 bool KrikthirWebWrapTrigger::IsActive()
 {
@@ -170,8 +279,14 @@ bool AnubarakPoundTankTrigger::IsActive()
 {
     if (!bot->IsAlive() || !botAI->IsTank(bot) || !BossCastingPound(botAI, bot))
         return false;
+
     Aura* sunder = botAI->GetAura("sunder armor", bot);
-    return sunder && sunder->GetStackAmount() >= kPoundGuardSunderStacks;
+    if (sunder && sunder->GetStackAmount() >= kPoundGuardSunderStacks)
+        return true;
+
+    // 末段即使破甲不足也开：240-299 秒这档践踏中位 15.5k、最大 20.1k（run 508-514 共 20 场）
+    Unit* boss = AI_VALUE2(Unit*, "find target", "anub'arak");
+    return boss && boss->GetHealthPct() <= kPoundGuardBossHealthPct;
 }
 
 bool AnubarakPoundHealerTrigger::IsActive()

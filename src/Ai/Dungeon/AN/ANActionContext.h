@@ -24,6 +24,8 @@ class WotlkDungeonANActionContext : public NamedObjectContext<Action>
             creators["anub'arak pound shield tank"] = &WotlkDungeonANActionContext::anubarak_pound_shield_tank;
             creators["anub'arak pound heal tank"] = &WotlkDungeonANActionContext::anubarak_pound_heal_tank;
             creators["anub'arak focus venomancer"] = &WotlkDungeonANActionContext::anubarak_focus_venomancer;
+            creators["anub'arak offheal"] = &WotlkDungeonANActionContext::anubarak_offheal;
+            creators["anub'arak melee behind"] = &WotlkDungeonANActionContext::anubarak_melee_behind;
         }
     private:
         static Action* attack_web_wrap(PlayerbotAI* ai) { return new AttackWebWrapAction(ai); }
@@ -35,6 +37,8 @@ class WotlkDungeonANActionContext : public NamedObjectContext<Action>
         static Action* anubarak_pound_shield_tank(PlayerbotAI* ai) { return new AnubarakPoundShieldTankAction(ai); }
         static Action* anubarak_pound_heal_tank(PlayerbotAI* ai) { return new AnubarakPoundHealTankAction(ai); }
         static Action* anubarak_focus_venomancer(PlayerbotAI* ai) { return new AnubarakFocusVenomancerAction(ai); }
+        static Action* anubarak_offheal(PlayerbotAI* ai) { return new AnubarakOffhealAction(ai); }
+        static Action* anubarak_melee_behind(PlayerbotAI* ai) { return new AnubarakMeleeBehindAction(ai); }
 };
 
 #endif

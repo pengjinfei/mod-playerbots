@@ -24,6 +24,9 @@ class WotlkDungeonANTriggerContext : public NamedObjectContext<Trigger>
             creators["anub'arak pound tank"] = &WotlkDungeonANTriggerContext::anubarak_pound_tank;
             creators["anub'arak pound healer"] = &WotlkDungeonANTriggerContext::anubarak_pound_healer;
             creators["anub'arak venomancer focus"] = &WotlkDungeonANTriggerContext::anubarak_venomancer_focus;
+            creators["anub'arak offheal"] = &WotlkDungeonANTriggerContext::anubarak_offheal;
+            creators["anub'arak heroism"] = &WotlkDungeonANTriggerContext::anubarak_heroism;
+            creators["anub'arak melee front"] = &WotlkDungeonANTriggerContext::anubarak_melee_front;
         }
     private:
         static Trigger* krikthir_web_wrap(PlayerbotAI* ai) { return new KrikthirWebWrapTrigger(ai); }
@@ -35,6 +38,9 @@ class WotlkDungeonANTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* anubarak_pound_tank(PlayerbotAI* ai) { return new AnubarakPoundTankTrigger(ai); }
         static Trigger* anubarak_pound_healer(PlayerbotAI* ai) { return new AnubarakPoundHealerTrigger(ai); }
         static Trigger* anubarak_venomancer_focus(PlayerbotAI* ai) { return new AnubarakVenomancerFocusTrigger(ai); }
+        static Trigger* anubarak_offheal(PlayerbotAI* ai) { return new AnubarakOffhealTrigger(ai); }
+        static Trigger* anubarak_heroism(PlayerbotAI* ai) { return new AnubarakHeroismTrigger(ai); }
+        static Trigger* anubarak_melee_front(PlayerbotAI* ai) { return new AnubarakMeleeFrontTrigger(ai); }
 };
 
 #endif

@@ -44,6 +44,12 @@ void WotlkDungeonANStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     // drop target（99）：487/3 盗贼贴脸正面、读条 3 个 tick 被"目标死了→drop target→dps assist"吃光，26.7k 秒杀。再抬到躲踏 60、保距 58，
     // 只剩 drop target（一个 tick）和 ACTION_EMERGENCY 在其上。
     triggers.push_back(new TriggerNode("anub'arak ranged too close", { NextAction("anub'arak keep range", 58.0f) }));
+    // 近战默认绕背（第二十三轮）**已证伪、不接入**：最初量到「盗贼 35% 时间在锥内、中位夹角 50°」是错的，
+    // 那份统计把潜地期（boss 不可选中、锥不存在）也算了进去。只统计 boss 浮出期后：盗贼本来就在背后，
+    // 锥内占比 19%、中位夹角 116°；接入后 run 516 是 20% / 110°，两者无法区分，也没有别的中间量支持。
+    // 那两次 32k 一击秒杀（夹角 50°/44°）属于这 19% 里的偶发，只能靠读条期的 dodge pound 兜。
+    // 触发器与动作保留注册，等有「近战确实长期站正面」的 boss 再用。
+    // triggers.push_back(new TriggerNode("anub'arak melee front", { NextAction("anub'arak melee behind", 54.0f) }));
     // 毒疗者优先（第十六轮）实验后**停用**：run 488/1 第二次潜地期 DPS 全在打毒疗者（盗贼 23k vs 其他 1k），两只守卫 15 秒 28k 打死坦克，
     // 随后牧师/萨满也死，boss 脱战重置。守卫才是坦克杀手（破甲 + 5–8.5k 一刀），bot 原生目标选择本来就把约三分之一伤害给守卫。
     // 代码保留（触发器/动作仍注册），等有"没有守卫时才盯毒疗者"的设计再接。
@@ -54,10 +60,22 @@ void WotlkDungeonANStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     triggers.push_back(new TriggerNode("anub'arak pound healer",
         { NextAction("anub'arak pound shield tank", ACTION_CRITICAL_HEAL + 9),
           NextAction("anub'arak pound heal tank", ACTION_CRITICAL_HEAL + 8) }));
+
+    // 治疗没蓝后的补位治疗（第二十二轮）：60 场里坦克阵亡 39 次，其中 31 次死前 3 秒 boss 一下没碰到——
+    // 守卫+毒疗者磨死的，同时刻牧师蓝中位 38；萨满 18.5k 的池子整场只放 0.6 次治疗波。
+    // 相关性 55：压过元素萨的输出动作，但低于保距(58)和躲踏(60)——先别被践踏秒了再谈补奶。
+    triggers.push_back(new TriggerNode("anub'arak offheal", { NextAction("anub'arak offheal", 55.0f) }));
+
+    // 英勇卡在第三次出土后的最后冲刺（相关性 56：压过补位治疗 55，仍低于保距 58 / 躲踏 60）。
+    // 同时用 AnubarakHeroismMultiplier 把共享层 BoostTrigger 在此之前的施放归零，否则英勇早被它用掉、
+    // 5 分钟冷却一场只有一次机会。
+    triggers.push_back(new TriggerNode("anub'arak heroism",
+        { NextAction("heroism", 56.0f), NextAction("bloodlust", 56.0f) }));
 }
 
 void WotlkDungeonANStrategy::InitMultipliers(std::vector<Multiplier*> &multipliers)
 {
     multipliers.push_back(new KrikthirMultiplier(botAI));
     multipliers.push_back(new AnubarakMageManaMultiplier(botAI));
+    multipliers.push_back(new AnubarakHeroismMultiplier(botAI));
 }

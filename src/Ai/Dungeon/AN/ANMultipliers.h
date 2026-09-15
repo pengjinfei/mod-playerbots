@@ -31,4 +31,15 @@ class AnubarakMageManaMultiplier : public Multiplier
         float GetValue(Action* action) override;
 };
 
+// 把英勇/嗜血按在最后冲刺之前不许放：共享层的 BoostTrigger 不看阶段，39 场里 17 场落在第二次潜地附近，
+// 那 40 秒 boss 不可选中，急速全打在小怪身上。归零后由 AnubarakHeroismTrigger 在第三次出土后放。
+class AnubarakHeroismMultiplier : public Multiplier
+{
+    public:
+        AnubarakHeroismMultiplier(PlayerbotAI* ai) : Multiplier(ai, "anub'arak heroism") {}
+
+    public:
+        float GetValue(Action* action) override;
+};
+
 #endif

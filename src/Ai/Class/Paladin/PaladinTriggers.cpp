@@ -74,6 +74,17 @@ bool HandOfFreedomOnPartyTrigger::IsActive()
     return !ai::paladin::HasAnyPaladinHandFromCaster(target, bot) && botAI->IsMovementImpaired(target);
 }
 
+bool DivinePleaUptimeTrigger::IsActive()
+{
+    if (!bot->IsAlive() || !bot->IsInCombat())
+        return false;
+
+    if (botAI->HasAura("divine plea", bot))
+        return false;
+
+    return botAI->CanCastSpell("divine plea", bot);
+}
+
 Unit* PartyMemberMeleeAggroTrigger::GetTarget()
 {
     return ai::paladin::SelectMeleeAggroedPartyMember(botAI);

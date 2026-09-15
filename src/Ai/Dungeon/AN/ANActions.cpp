@@ -63,6 +63,9 @@ float OffAxisAngle(Unit* boss, Player* bot)
 }
 }  // namespace
 
+// 给 ANTriggers 用的公开包装：bot 相对 boss 朝向的偏轴角（0 = 正前，π = 正后）。
+float AnubarakOffAxisAngle(Unit* boss, Player* bot) { return OffAxisAngle(boss, bot); }
+
 bool AttackWebWrapAction::isUseful() { return !botAI->IsHeal(bot); }
 bool AttackWebWrapAction::Execute(Event /*event*/)
 {
@@ -274,6 +277,42 @@ bool AnubarakDodgePoundAction::Execute(Event /*event*/)
         LogArenaMove(botAI, bot, getName().c_str(), "ground_reject", x, y, z);
         return false;
     }
+    float const delay = MoveStraightNoPath(bot, x, y, z);
+    RecordLastMovement(bot->GetMapId(), x, y, z, delay, MovementPriority::MOVEMENT_FORCED);
+    LogArenaMove(botAI, bot, getName().c_str(), "ok", x, y, z);
+    return true;
+}
+
+bool AnubarakMeleeBehindAction::Execute(Event /*event*/)
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "anub'arak");
+    if (!boss)
+        return false;
+
+    if (bot->isMoving() && AI_VALUE(LastMovement&, "last movement").issuer == getName())
+        return false;  // 已经在绕过去了
+
+    if (!botAI->CanMove())
+        return false;
+
+    float const back = Position::NormalizeOrientation(boss->GetOrientation()) + float(M_PI);
+    float x = boss->GetPositionX() + std::cos(back) * kPoundMeleeBehindDistance;
+    float y = boss->GetPositionY() + std::sin(back) * kPoundMeleeBehindDistance;
+    float z = boss->GetPositionZ();
+
+    // 与躲踏同一条西沿护栏：不比现在更靠西（run 488/3 的教训，见 AnubarakDodgePoundAction）
+    if (!(x >= kArenaGuardX || x >= bot->GetPositionX()))
+    {
+        LogArenaMove(botAI, bot, getName().c_str(), "west_reject", x, y, z);
+        return false;
+    }
+
+    if (!ResolveGround(bot, x, y, z))
+    {
+        LogArenaMove(botAI, bot, getName().c_str(), "ground_reject", x, y, z);
+        return false;
+    }
+
     float const delay = MoveStraightNoPath(bot, x, y, z);
     RecordLastMovement(bot->GetMapId(), x, y, z, delay, MovementPriority::MOVEMENT_FORCED);
     LogArenaMove(botAI, bot, getName().c_str(), "ok", x, y, z);

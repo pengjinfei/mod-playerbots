@@ -248,6 +248,16 @@ public:
     bool IsActive() override;
 };
 
+// 神圣恳求常驻：战斗中只要恳求不在身上就重开。上游只有 HighManaTrigger（蓝<65% 才亮），
+// 而防骑的续蓝闭环要求恳求全程不断——圣光守护 2/2 靠近战攻击刷新它，刷新的前提是它在身上。
+class DivinePleaUptimeTrigger : public Trigger
+{
+public:
+    DivinePleaUptimeTrigger(PlayerbotAI* botAI) : Trigger(botAI, "divine plea uptime", 1) {}
+
+    bool IsActive() override;
+};
+
 // 队友身上贴着近战小怪（且不是坦克当前目标）——坦克该用正义防御把它们接走
 class PartyMemberMeleeAggroTrigger : public Trigger
 {
