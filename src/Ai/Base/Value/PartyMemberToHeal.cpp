@@ -27,6 +27,33 @@ public:
 
 inline bool compareByHealth(Unit const* u1, Unit const* u2) { return u1->GetHealthPct() < u2->GetHealthPct(); }
 
+namespace
+{
+// 治疗把自己排在最后是会死的。因格瓦尔 2026-09-15 十场实测：治疗在 50% 血以下停留 **94 秒**，
+// 其中只有 **12 秒**收到过任何治疗（含 HoT 跳动）；七次阵亡里，死前 12 秒收到的治疗是 0–4 次。
+// 不是没蓝（死时法力 11k/16.7k），是取值层的排序：probeValue = 血量% + 到自己的距离/10，
+// 自己的距离项恒为 0，而坦克隔着 25 码也只加 2.5——坦克 46+2.5=48.5 长期以微弱优势压过自己 49+0=49，
+// 于是治疗永远是"第二低"，永远轮不到自己。而它唯一的自保动作是 criticalHealth(25%) 的痛苦压制，
+// 一记 Dreadful Roar 就是血池的 25–40%，从 49% 直接到死，那条线根本来不及。
+//
+// 真人治疗的做法是：自己掉到中等血量就先把自己垫起来，除非队友已经危险。这里按同一条规则收口：
+// 自己是治疗、血量低于 mediumHealth，且当前选中的目标**并不危险**（高于 lowHealth）时，先治自己。
+// 队友一旦低于 lowHealth 就重新压过自己，不会出现"治疗光顾自己让坦克死"的反向问题。
+Unit* PreferSelfWhenHealerIsWounded(PlayerbotAI* botAI, Player* bot, Unit* target)
+{
+    if (!botAI->IsHeal(bot) || !bot->IsAlive())
+        return target;
+
+    if (bot->GetHealthPct() >= sPlayerbotAIConfig.mediumHealth)
+        return target;
+
+    if (target && target != bot && target->GetHealthPct() <= sPlayerbotAIConfig.lowHealth)
+        return target;
+
+    return bot;
+}
+}  // namespace
+
 Unit* PartyMemberToHeal::Calculate()
 {
     IsTargetOfHealingSpell predicate;
@@ -65,7 +92,7 @@ Unit* PartyMemberToHeal::Calculate()
             }
         }
 
-        return (Unit*)calc.param;
+        return PreferSelfWhenHealerIsWounded(botAI, bot, (Unit*)calc.param);
     }
 
     for (GroupReference* gref = group->GetFirstMember(); gref; gref = gref->next())
@@ -123,7 +150,7 @@ Unit* PartyMemberToHeal::Calculate()
             }
         }
     }
-    return (Unit*)calc.param;
+    return PreferSelfWhenHealerIsWounded(botAI, bot, (Unit*)calc.param);
 }
 
 bool PartyMemberToHeal::Check(Unit* player)
