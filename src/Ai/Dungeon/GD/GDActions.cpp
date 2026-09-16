@@ -113,8 +113,7 @@ bool AttackSnakeWrapAction::Execute(Event /*event*/)
         if (!unit || unit->GetEntry() != NPC_SNAKE_WRAP || !unit->IsAlive())
             continue;
 
-        char const* how = "none";
-        Player* victim = ResolveWrapVictim(unit, &how);
+        Player* victim = ResolveWrapVictim(unit);
         float score = bot->GetExactDist2d(unit);
         if (victim)
         {
@@ -133,16 +132,6 @@ bool AttackSnakeWrapAction::Execute(Event /*event*/)
 
     if (!best)
         return false;
-
-    // ⚠ 临时诊断探针（验证「包裹 ↔ 被困者」能不能解出来）。验完删除。
-    {
-        char const* how = "none";
-        Player* victim = ResolveWrapVictim(best, &how);
-        LOG_INFO("playerbots", "snakewrap_pick: bot={} wrap={} dist={:.1f} victim={} how={} isHeal={} candidates_score={:.1f}",
-                 bot->GetName(), best->GetGUID().ToString(), bot->GetExactDist2d(best),
-                 victim ? victim->GetName() : "?", how,
-                 victim ? (PlayerbotAI::IsHeal(victim) ? 1 : 0) : -1, bestScore);
-    }
 
     return Attack(best);
 }

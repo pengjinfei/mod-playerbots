@@ -385,7 +385,15 @@ public:
     bool isUseful() override;
 };
 
-PROTECT_ACTION(CastBlessingOfProtectionProtectAction, "blessing of protection");
+// 2026-09-16：法术名从 TBC 旧名 "blessing of protection" 改成 WotLK 的 "hand of protection"。
+// `SpellIdValue::Calculate()` 是**按名字**在 bot 已学法术里查的，而 DBC 里 1022/5599/10278
+// 的名字在 WotLK 是 "Hand of Protection"（1044 自由之手、1038 拯救之手、6940 牺牲之手同批改名；
+// Blessing of Might/Wisdom/Kings/Sanctuary 没改名，那四个是对的）。
+// 名字对不上 → 查不到法术 id → 动作永远 isPossible=false。
+// 这是藏在 `PartyMemberToProtect` 那行死代码**后面**的第二个独立缺陷：把死代码打通之后，
+// 牧师的 `pain suppression on party` 立刻从 0.18 次/场 跳到 1 次/场，而圣骑士这条仍然 0 次
+// —— 因为它卡在这里。
+PROTECT_ACTION(CastBlessingOfProtectionProtectAction, "hand of protection");
 
 class CastDivinePleaAction : public CastBuffSpellAction
 {

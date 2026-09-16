@@ -197,7 +197,32 @@ Unit* HealerLowMana::Calculate()
 
 Unit* PartyMemberToProtect::Calculate()
 {
-    return nullptr;
+    // 2026-09-16：删掉了这里的 `return nullptr;`。
+    //
+    // 那一行出自 2023-07-27 的 `6ba6bc361 "performance optimize"`（一次批量性能提交，
+    // 顺手加的一行），**没有记录任何正确性理由**——它不是在修 bug，是在省 CPU。
+    // 代价是 `ProtectPartyMemberTrigger::IsActive()` 就是
+    // `return AI_VALUE(Unit*, "party member to protect")`，于是
+    // **`protect party member` 这条触发器对所有职业永远不亮**，一次性废掉三条保护链：
+    //   圣骑士 `blessing of protection on party`（保护之手，GenericPaladinStrategy.cpp:31，
+    //          相关性 ACTION_EMERGENCY+3）
+    //   牧师   `pain suppression on party`（给队友的痛苦压制，−40% 任意学派，
+    //          HealPriestStrategy.cpp:116）
+    //   战士   援护 intervene（TankWarriorStrategy.cpp:324）
+    //
+    // 头寸（英雄斯拉德兰 17 场实测，heroic-gd-sladran-disc-n5）：
+    //   - 保护之手 1022/5599/10278 **三个等级全学会、0 次释放**；
+    //     牧师给队友的痛苦压制同样 0 次（3 次全来自「自己残血」那条）。
+    //   - 学派对得上：解 Spell.dbc 得知小怪伤害**压倒性是白字物理**
+    //     （缠绕者每场 204 次命中全白字；毒蛇 105 次里只有 20 次是自然的 Venomous Bite），
+    //     团灭场小怪承伤 105.0k/场 = 全部承伤的 48%。
+    //     （对照：因格瓦尔的致死来源全是暗影，保护之手在那里零头寸、已证伪。）
+    //   - 挂谁也对得上：首死 13 次里非坦克占 10 次，**这 10 个全是施法者**
+    //     （萨满 5 / 法师 3 / 牧师 2），保护之手只禁物理攻击、不禁施法；盗贼一次没先死过。
+    //
+    // 原来的性能顾虑没有被忽略，而是变成一个**可测的反向指标**：worldserver 的 tick diff
+    // 分位数（改前 r55a：mean 3ms、p95 9–11ms）。若明显恶化就回退或给这个取值加 checkInterval。
+    // 阈值（坦克 ≤10%、其他 ≤30%）**本轮一行未动**——一次只改一个变量。
     Group* group = bot->GetGroup();
     if (!group)
         return nullptr;
