@@ -135,6 +135,7 @@ public:
         creators["attacker without aura"] = &ValueContext::attacker_without_aura;
         creators["melee attacker without aura"] = &ValueContext::melee_attacker_without_aura;
         creators["party member to heal"] = &ValueContext::party_member_to_heal;
+        creators["party member to heal no los"] = &ValueContext::party_member_to_heal_no_los;
         creators["healer low mana"] = &ValueContext::healer_low_mana;
         creators["party member to resurrect"] = &ValueContext::party_member_to_resurrect;
         creators["current target"] = &ValueContext::current_target;
@@ -457,6 +458,7 @@ private:
         return new MeleeAttackerWithoutAuraTargetValue(botAI);
     }
     static UntypedValue* party_member_to_heal(PlayerbotAI* botAI) { return new PartyMemberToHeal(botAI); }
+    static UntypedValue* party_member_to_heal_no_los(PlayerbotAI* botAI) { return new PartyMemberToHealNoLos(botAI); }
     static UntypedValue* healer_low_mana(PlayerbotAI* botAI) { return new HealerLowMana(botAI); }
     static UntypedValue* party_member_to_resurrect(PlayerbotAI* botAI) { return new PartyMemberToResurrect(botAI); }
     static UntypedValue* party_member_to_dispel(PlayerbotAI* botAI) { return new PartyMemberToDispel(botAI); }

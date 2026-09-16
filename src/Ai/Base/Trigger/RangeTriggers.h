@@ -98,7 +98,10 @@ public:
     PartyMemberToHealOutOfSpellRangeTrigger(PlayerbotAI* botAI);
 
     bool IsActive() override;
-    std::string const GetTargetName() override { return "party member to heal"; }
+    // 取值必须是**不按视线过滤**的那个：否则视线一断，第一行 AI_VALUE 就返回空，
+    // 下面那条专门为视线写的 `|| !bot->IsWithinLOSInMap(target)` 永远够不到
+    // （上游写了这条分支却一直是死代码）。
+    std::string const GetTargetName() override { return "party member to heal no los"; }
 };
 
 class FarFromMasterTrigger : public Trigger

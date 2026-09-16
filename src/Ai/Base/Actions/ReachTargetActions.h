@@ -63,6 +63,11 @@ public:
     ReachSpellAction(PlayerbotAI* botAI);
 };
 
+// 「走到治疗目标看得见的地方」。两处与基类不同，都是为了修同一个缺陷
+// （看不见的队友被当成不存在，治疗静默停摆）：
+//   1. 取值用 "party member to heal no los"，否则视线一断目标就是空，连走都不会走；
+//   2. isUseful/Execute 把「距离够但看不见」也算需要移动——基类的 IsWithinCombatRange
+//      一为真就返回 false，而 ReachCombatTo 在距离已够时同样直接返回 false。
 class ReachPartyMemberToHealAction : public ReachTargetAction
 {
 public:
@@ -70,6 +75,8 @@ public:
 
     std::string const GetTargetName() override;
     bool ChasesEnemy() const override { return false; }
+    bool isUseful() override;
+    bool Execute(Event event) override;
 };
 
 class ReachPartyMemberToResurrectAction : public ReachTargetAction

@@ -162,6 +162,13 @@ bool PartyMemberToHeal::Check(Unit* player)
            bot->GetDistance2d(player) < sPlayerbotAIConfig.healDistance * 2 && bot->IsWithinLOSInMap(player);
 }
 
+bool PartyMemberToHealNoLos::Check(Unit* player)
+{
+    // 与基类同一套判据，去掉 IsWithinLOSInMap。距离仍然限制在治疗距离的两倍内。
+    return player->GetMapId() == bot->GetMapId() && !player->IsCharmed() &&
+           bot->GetDistance2d(player) < sPlayerbotAIConfig.healDistance * 2;
+}
+
 Unit* HealerLowMana::Calculate()
 {
     Group* group = bot->GetGroup();

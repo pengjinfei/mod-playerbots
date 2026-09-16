@@ -111,7 +111,45 @@ ReachPartyMemberToHealAction::ReachPartyMemberToHealAction(PlayerbotAI* botAI)
 {
 }
 
-std::string const ReachPartyMemberToHealAction::GetTargetName() { return "party member to heal"; }
+std::string const ReachPartyMemberToHealAction::GetTargetName() { return "party member to heal no los"; }
+
+bool ReachPartyMemberToHealAction::isUseful()
+{
+    if (botAI->HasStrategy("stay", botAI->GetState()))
+        return false;
+
+    if (bot->GetCurrentSpell(CURRENT_CHANNELED_SPELL) != nullptr)
+        return false;
+
+    Unit* target = GetTarget();
+    if (!target)
+        return false;
+
+    // 距离够但看不见 —— 基类在这里返回 false，于是治疗原地站着（实测德雷德一段 20 秒：
+    // 满血、不动、法杖平A、法力在回，18 码外的坦克被磨死）。这种情况要移动。
+    if (!bot->IsWithinLOSInMap(target))
+        return true;
+
+    return !bot->IsWithinCombatRange(target, distance);
+}
+
+bool ReachPartyMemberToHealAction::Execute(Event /*event*/)
+{
+    Unit* target = GetTarget();
+    if (!target)
+        return false;
+
+    if (bot->IsWithinLOSInMap(target))
+        return ReachCombatTo(target, distance);
+
+    // 看不见就往目标走：寻路会绕过遮挡，视线一恢复触发器就不再亮、动作自己停下。
+    // ⚠ 这里**不能**用 distance（= 治疗距离，40 码）：`ReachCombatTo` 一进门就判
+    // 「已经在这个距离内」→ 直接返回 false。第一版写成 max(8, distance*0.5) = 20 码，
+    // 而治疗本来就站在 17–19 码，实测 6 次推入 6 次 FAILED，一步没走。
+    // 先靠到 8 码；若已经在 10 码内还是看不见（贴着柱子），再靠到 2 码。
+    float const closeTo = bot->GetExactDist2d(target) > 10.0f ? 8.0f : 2.0f;
+    return ReachCombatTo(target, closeTo);
+}
 
 ReachPartyMemberToResurrectAction::ReachPartyMemberToResurrectAction(PlayerbotAI* botAI)
     : ReachTargetAction(botAI, "reach party member to resurrect", botAI->GetRange("spell"))
