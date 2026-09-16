@@ -25,6 +25,10 @@ class AttackSnakeWrapAction : public AttackAction
 public:
     AttackSnakeWrapAction(PlayerbotAI* ai) : AttackAction(ai, "attack snake wrap") {}
     bool Execute(Event event) override;
+
+private:
+    // 找出这个包裹困住的是谁（召唤者优先，读不到就取 8 码内最近的队友）
+    Player* ResolveWrapVictim(Unit* wrap, char const** how = nullptr);
 };
 
 class AvoidWhirlingSlashAction : public MovementAction
