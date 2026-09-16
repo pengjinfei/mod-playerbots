@@ -170,6 +170,14 @@ private:
     PlayerbotAI* botAI;
 };
 
+bool PartyMemberMainTankValue::Check(Unit* player)
+{
+    // 与 PartyMemberValue::Check 同一套判据，去掉 IsWithinLOS（理由见头文件注释）。
+    bool isGM = player->ToPlayer() && player->ToPlayer()->IsGameMaster();
+    return player && player->GetMapId() == bot->GetMapId() && !isGM &&
+           bot->GetDistance(player) < sPlayerbotAIConfig.spellDistance * 2;
+}
+
 Unit* PartyMemberMainTankValue::Calculate()
 {
     FindMainTankPlayer findMainTankPlayer(botAI);
