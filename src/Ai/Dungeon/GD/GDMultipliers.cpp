@@ -42,11 +42,21 @@ float SladranMultiplier::GetValue(Action* action)
     //     AoE 的产出随命中数放大，场上常驻 30–50 只，只要 5 只以上进圈就能追平刷怪速率。
     //     **AoE 是唯一追得上刷怪的手段，而它恰好就是这一段关掉的那个。**
     //
-    // 保留下面「场上有 Snake Wrap 时禁止 DpsAssistAction」那一段不动：它确实让
-    // 44–46% 的战斗时间里 DPS 的目标 100% 不在 boss 身上，但打包裹本身是正确打法，
-    // 而且 `attack snake wrap`(相关性 64) 本来就压过 `dps assist`(50)、这条乘子是冗余的 ——
-    // 收益不如本次改动确定，按「一次只改一个变量」留到下一轮。
-
+    // 2026-09-16 第二刀：**试过、判为净负面、已回退**，下面这段保持上游原样。
+    //
+    // 试的是删掉这段（上游注释 "Prevent auto-target acquisition during snake wraps"）。
+    // 头寸支持它：Snake Wrap 在场 = DPS 战斗 tick 的 44–46%，这段在那些 tick 里把
+    // `dps assist` 归零 68–78%，后果是有包裹在场时三个 DPS 的当前目标是 boss 的比例为 0%。
+    //
+    // A/B 实测（run 584 五场 vs run 582+583 十场，heroic-gd-sladran-disc-n5）：
+    //   boss 输出**占比** 38.9% → 52.2%（靶子指标确实动了）
+    //   但 boss 输出**速率** 2345 → 2373 /秒（没变）、每场打到 boss 的伤害 221.3k → 184.4k（−17%）
+    //   场次时长 95.1s → 77.3s（−19%，死得更快）、击杀 2/10 → 0/5
+    //   **包裹被打死 3.9 → 0.8 只/场（−79%）**，砸进包裹的输出 67.6k → 19.3k
+    // → 占比上涨是**分母塌了**：包裹没人管，被困的人出不来，队伍更快团灭。
+    //
+    // 另外：动手前担心的「删掉会造成目标抖动」**是错的**——每秒主目标变化率反而
+    // 44% → 33%。这段的真实作用不是防抖动，而是**不让 DPS 半路丢下包裹**。
     Unit* snakeWrap = nullptr;
     GuidVector targets = AI_VALUE(GuidVector, "possible targets no los");
     for (auto& target : targets)
