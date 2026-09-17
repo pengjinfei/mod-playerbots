@@ -25,6 +25,10 @@ void WotlkDungeonGDStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     // 所以「有包裹先打包裹」的顺序不变，只是打完/没有包裹时目标回到 boss 而不是小怪。
     triggers.push_back(new TriggerNode("slad'ran focus boss",
         { NextAction("slad'ran focus boss", 55.0f) }));
+    // 红蛇优先（相关性 56，压过 focus boss 55、低于 attack snake wrap 64）。
+    // 理由与实测数字见 GDActions.cpp 里 SladranFocusViperAction 上方的注释。
+    triggers.push_back(new TriggerNode("slad'ran focus viper",
+        { NextAction("slad'ran focus viper", 56.0f) }));
 
     // 2026-09-17：试过「开场就开英勇/嗜血」（挂在共享层的 `combat opening` 触发器、相关性 61），
     // **净负面、已回退**。共享层的 `CombatOpeningTrigger` 保留（可复用、不默认生效）。

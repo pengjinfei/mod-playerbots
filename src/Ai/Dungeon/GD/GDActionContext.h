@@ -19,12 +19,14 @@ class WotlkDungeonGDActionContext : public NamedObjectContext<Action>
             creators["attack snake wrap"] = &WotlkDungeonGDActionContext::attack_snake_wrap;
             creators["avoid whirling slash"] = &WotlkDungeonGDActionContext::avoid_whirling_slash;
             creators["slad'ran focus boss"] = &WotlkDungeonGDActionContext::sladran_focus_boss;
+            creators["slad'ran focus viper"] = &WotlkDungeonGDActionContext::sladran_focus_viper;
         }
     private:
         static Action* avoid_poison_nova(PlayerbotAI* ai) { return new AvoidPoisonNovaAction(ai); }
         static Action* attack_snake_wrap(PlayerbotAI* ai) { return new AttackSnakeWrapAction(ai); }
         static Action* avoid_whirling_slash(PlayerbotAI* ai) { return new AvoidWhirlingSlashAction(ai); }
         static Action* sladran_focus_boss(PlayerbotAI* ai) { return new SladranFocusBossAction(ai); }
+        static Action* sladran_focus_viper(PlayerbotAI* ai) { return new SladranFocusViperAction(ai); }
 };
 
 #endif

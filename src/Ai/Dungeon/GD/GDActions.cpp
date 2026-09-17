@@ -136,6 +136,37 @@ bool AttackSnakeWrapAction::Execute(Event /*event*/)
     return Attack(best);
 }
 
+// 2026-09-17：红蛇优先。
+//
+// 参照打法（真人）是「绿蛇优先」——因为缠绕（Grip 叠 5 层 → 蛇茧）对玩家是硬控。
+// 但英雄实测 19 场，对 bot 队伍**优先级是反的**：
+//   两种蛇血量相同（6,517），而**一只红蛇打出 3,521 伤害、一只绿蛇只有 907（3.9 倍差）**；
+//   杀一只的性价比：红蛇每 1 点输出换 0.54 点「少挨的伤害」，绿蛇只有 0.14。
+//   而现在的分配正好是反的 —— 我方砸进绿蛇 242.9k/场、红蛇只有 89.0k/场，
+//   **73% 的小怪输出花在性价比最低的那种上**。
+// 缠绕威胁之所以小：实测 **77% 的包裹没困住任何人**（坦克/法师照常输出施法，
+//   到下一次施法的间隔在各自平时的正常范围内），只有牧师那 16% 是真被困。
+// 数量级：红蛇打出 61.9k/场 ÷ 105.7 秒 = 585/秒；把 DTPS 从 1,819 减掉 585 = 1,234，
+//   正好等于治疗上限 1,237 HPS。
+//
+// 相关性 56：压过 `slad'ran focus boss`(55) 与 `dps assist`(50)，
+// 低于 `attack snake wrap`(64) —— 包裹仍然最优先。
+bool SladranFocusViperAction::Execute(Event /*event*/)
+{
+    GuidVector targets = AI_VALUE(GuidVector, "possible targets no los");
+    Unit* best = nullptr;
+    float bestDist = std::numeric_limits<float>::max();
+    for (auto& target : targets)
+    {
+        Unit* unit = botAI->GetUnit(target);
+        if (!unit || !unit->IsAlive() || unit->GetEntry() != NPC_SLADRAN_VIPER)
+            continue;
+        float const d = bot->GetExactDist2d(unit);
+        if (d < bestDist) { bestDist = d; best = unit; }
+    }
+    return best ? Attack(best) : false;
+}
+
 // 2026-09-17：新增。上游 GDStrategy.cpp 的 TODO 原文就是
 // "Might need to add target priority for heroic on the snakes or to burn down boss"，
 // 英雄难度从没测过。24 场实测给出的答案是**烧 boss**：

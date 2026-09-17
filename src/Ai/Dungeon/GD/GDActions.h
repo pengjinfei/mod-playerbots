@@ -31,6 +31,14 @@ private:
     Player* ResolveWrapVictim(Unit* wrap, char const** how = nullptr);
 };
 
+// 把 DPS 的目标切到最近的红蛇（毒蛇 29680）。
+class SladranFocusViperAction : public AttackAction
+{
+public:
+    SladranFocusViperAction(PlayerbotAI* ai) : AttackAction(ai, "slad'ran focus viper") {}
+    bool Execute(Event event) override;
+};
+
 // 把 DPS 的目标拉回斯拉德兰本人。
 class SladranFocusBossAction : public AttackAction
 {

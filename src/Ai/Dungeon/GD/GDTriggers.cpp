@@ -35,6 +35,29 @@ bool SladranSnakeWrapTrigger::IsActive()
     return false;
 }
 
+bool SladranFocusViperTrigger::IsActive()
+{
+    if (!botAI->IsDps(bot)) { return false; }
+
+    Unit* boss = AI_VALUE2(Unit*, "find target", "slad'ran");
+    if (!boss || !boss->IsAlive()) { return false; }
+
+    Unit* current = AI_VALUE(Unit*, "current target");
+    // 已经在打红蛇 / 在打包裹（第二刀证明半路丢下包裹是净负面）就别换
+    if (current && current->IsAlive() &&
+        (current->GetEntry() == NPC_SLADRAN_VIPER || current->GetEntry() == NPC_SNAKE_WRAP))
+        return false;
+
+    GuidVector targets = AI_VALUE(GuidVector, "possible targets no los");
+    for (auto& target : targets)
+    {
+        Unit* unit = botAI->GetUnit(target);
+        if (unit && unit->IsAlive() && unit->GetEntry() == NPC_SLADRAN_VIPER)
+            return true;
+    }
+    return false;
+}
+
 bool SladranFocusBossTrigger::IsActive()
 {
     if (!botAI->IsDps(bot)) { return false; }
