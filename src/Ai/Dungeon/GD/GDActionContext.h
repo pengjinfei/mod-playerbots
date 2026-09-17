@@ -17,12 +17,16 @@ class WotlkDungeonGDActionContext : public NamedObjectContext<Action>
         WotlkDungeonGDActionContext() {
             creators["avoid poison nova"] = &WotlkDungeonGDActionContext::avoid_poison_nova;
             creators["attack snake wrap"] = &WotlkDungeonGDActionContext::attack_snake_wrap;
+            creators["slad'ran stack on tank"] = &WotlkDungeonGDActionContext::sladran_stack_on_tank;
+            creators["slad'ran tank hold"] = &WotlkDungeonGDActionContext::sladran_tank_hold;
             creators["avoid whirling slash"] = &WotlkDungeonGDActionContext::avoid_whirling_slash;
             creators["slad'ran focus boss"] = &WotlkDungeonGDActionContext::sladran_focus_boss;
         }
     private:
         static Action* avoid_poison_nova(PlayerbotAI* ai) { return new AvoidPoisonNovaAction(ai); }
         static Action* attack_snake_wrap(PlayerbotAI* ai) { return new AttackSnakeWrapAction(ai); }
+        static Action* sladran_stack_on_tank(PlayerbotAI* ai) { return new SladranStackOnTankAction(ai); }
+        static Action* sladran_tank_hold(PlayerbotAI* ai) { return new SladranTankHoldAction(ai); }
         static Action* avoid_whirling_slash(PlayerbotAI* ai) { return new AvoidWhirlingSlashAction(ai); }
         static Action* sladran_focus_boss(PlayerbotAI* ai) { return new SladranFocusBossAction(ai); }
 };

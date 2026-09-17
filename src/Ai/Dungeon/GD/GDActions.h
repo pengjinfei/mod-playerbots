@@ -25,10 +25,6 @@ class AttackSnakeWrapAction : public AttackAction
 public:
     AttackSnakeWrapAction(PlayerbotAI* ai) : AttackAction(ai, "attack snake wrap") {}
     bool Execute(Event event) override;
-
-private:
-    // 找出这个包裹困住的是谁（召唤者优先，读不到就取 8 码内最近的队友）
-    Player* ResolveWrapVictim(Unit* wrap, char const** how = nullptr);
 };
 
 // 把 DPS 的目标拉回斯拉德兰本人。
@@ -36,6 +32,20 @@ class SladranFocusBossAction : public AttackAction
 {
 public:
     SladranFocusBossAction(PlayerbotAI* ai) : AttackAction(ai, "slad'ran focus boss") {}
+    bool Execute(Event event) override;
+};
+
+class SladranStackOnTankAction : public MovementAction
+{
+public:
+    SladranStackOnTankAction(PlayerbotAI* ai) : MovementAction(ai, "slad'ran stack on tank") {}
+    bool Execute(Event event) override;
+};
+
+class SladranTankHoldAction : public AttackAction
+{
+public:
+    SladranTankHoldAction(PlayerbotAI* ai) : AttackAction(ai, "slad'ran tank hold") {}
     bool Execute(Event event) override;
 };
 
