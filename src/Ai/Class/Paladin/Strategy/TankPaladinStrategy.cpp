@@ -107,7 +107,28 @@ void TankPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         new TriggerNode(
             "medium aoe",
             {
-                NextAction("consecration", ACTION_HIGH + 7),
+                // 2026-09-17：奉献相关性从 ACTION_HIGH+7(27) 提到 52。
+                //
+                // 奉献是防骑唯一的持续 AoE 仇恨来源（8 秒持续 / 8 秒冷却，本该接近 100% 覆盖）。
+                // 英雄斯拉德兰 16 场实测：**只放 4.6 次/场，而理论上限是 11.8 次/场（39% 饱和度）**；
+                // **相邻两次的间隔中位 12.5 秒**（冷却只有 8 秒 → 每次白等 4.5 秒），
+                // 只有 25% 的间隔 ≤10 秒、13 次 >20 秒（最长 41.7 秒），
+                // **最后一次释放到战斗结束还剩 32.5 秒**（末段完全断档）。
+                //
+                // tick 级（2 场，LogInGroupOnly=0）：推入 236 次只执行 8 次（3.4%）。
+                // 有奉献推入的 tick 里 96 次被别人抢到，**主抢占者就是 `tank assist`(50)×24**
+                // （其余相关性更高的 avoid poison nova(65)/drop target(99) 是对的，不该让）。
+                // 结果码里 USELESS 29 + IMPOSSIBLE 中带
+                // "Can cast spell failed. Spell not has cooldown." 59 次 —— 都是冷却，**不吃 tick**，
+                // 所以抬高相关性不会挤占其它动作（同「神圣恳求常驻」那次的理由）。
+                //
+                // 52：压过 tank assist(50)，低于 righteous defense on party(55)、
+                // avoid poison nova(65)、drop target(99)。
+                //
+                // 头寸来自哪里：第一刀放开 AoE 之后，**法师用暴风雪/烈焰风暴把小怪仇恨全拉到自己身上**
+                // （24 场里法师一个人承受 33.2% 的小怪伤害，是坦克的 1.4 倍）。
+                // 第六刀用镜像把这个比例压到 23%，剩下的要靠坦克自己的 AoE 仇恨。
+                NextAction("consecration", 52.0f),
                 NextAction("avenger's shield", ACTION_HIGH + 6)
             }
         )
