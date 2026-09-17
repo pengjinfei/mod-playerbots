@@ -374,6 +374,21 @@ std::string const TwoTriggers::getName()
     return name;
 }
 
+bool CombatOpeningTrigger::IsActive()
+{
+    if (!bot->IsInCombat())
+    {
+        combatStart = 0;   // 脱战清零：前置清怪那一段结束后会走到这里，
+                           // 所以 boss 开怪时会重新计时
+        return false;
+    }
+
+    if (!combatStart)
+        combatStart = time(nullptr);
+
+    return uint32(time(nullptr) - combatStart) <= seconds;
+}
+
 bool BoostTrigger::IsActive()
 {
     if (!BuffTrigger::IsActive())

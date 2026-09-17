@@ -438,6 +438,38 @@ public:
     std::string const getName() override { return spell + " on attacker"; }
 };
 
+// 「开场窗口」：战斗中，且本 bot 进入战斗不超过 seconds 秒。
+//
+// 2026-09-17 新增，用于「开场 rush」类打法（开英勇/嗜血、爆发冷却）。
+// **它不在任何策略里默认注册** —— 副本策略要用就自己加一个 TriggerNode，
+// 所以对现有 boss 零影响。复用方式：
+//     triggers.push_back(new TriggerNode("combat opening",
+//         { NextAction("heroism", 61.0f), NextAction("bloodlust", 61.0f) }));
+//
+// 为什么需要它：上游的 `BoostTrigger` 把英勇/嗜血卡在
+// `AI_VALUE(uint8, "balance") <= 50`，而 balance = 队伍等级总和 × 100 / 敌人加权等级总和。
+// 5 人 80 级 = 400；英雄斯拉德兰（精英 82 × 3 = 246）+ 每只小怪 81。
+// 算下来要**场上同时有 7 只以上小怪**才会亮 —— 实测 19/19 场英勇都在
+// **41.6 秒**（最早 35.9 秒）才开，正好是缠绕者刷起来之后。
+// 这个判据的本意是「劣势时开爆发」，但对持续刷怪的 boss 等于「等雪球滚大了才开」。
+// ⚠ 不要用 `AI_VALUE(time_t, "combat start time")` 来实现这个 ——
+// 那个取值**只在 bot 挂了 `"wait for attack"` 策略时才被维护**
+// （`PlayerbotAI::ChangeEngineOnCombat()`），我们的 raidtest bot 不挂它，
+// 所以它恒为 0。第一版就是这么写的，实测 `T:combat opening` 亮起 **0 次**。
+// 这里改成触发器自己记住「进入战斗的那一刻」，不依赖任何别的策略。
+class CombatOpeningTrigger : public Trigger
+{
+public:
+    CombatOpeningTrigger(PlayerbotAI* botAI, uint32 seconds = 15)
+        : Trigger(botAI, "combat opening"), seconds(seconds), combatStart(0) {}
+
+    bool IsActive() override;
+
+protected:
+    uint32 seconds;
+    time_t combatStart;
+};
+
 class BoostTrigger : public BuffTrigger
 {
 public:
