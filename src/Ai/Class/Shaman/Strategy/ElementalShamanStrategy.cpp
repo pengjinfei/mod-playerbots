@@ -39,6 +39,11 @@ void ElementalShamanStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         new TriggerNode(
             "low health",
             {
+                // 2026-09-17：试过把相关性从 40 提到 52，**没用、已回退**。
+                // 根因不是排不上队：`CastStoneclawTotemAction::isUseful()` 是
+                // `return !bot->GetGroup();` —— **只有单人时才算有用**，组队永远 USELESS。
+                // 而且这很可能是**上游有意为之**：岩石外壳图腾会嘲讽附近的怪，
+                // 组队时会把怪从坦克身上拉走。所以这条不是缺陷，别再动它。
                 NextAction("stoneclaw totem", 40.0f)
             }
         )

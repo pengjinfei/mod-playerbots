@@ -19,6 +19,12 @@ void GenericPriestStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     CombatStrategy::InitTriggers(triggers);
 
     triggers.push_back(new TriggerNode("medium threat", { NextAction("fade", 55.0f) }));
+    // 2026-09-17：试过把这里从 `critical health`(25%) 提到 `low health`(45%)，**已回退**。
+    // 依据本来是对的（英雄斯拉德兰 24 场全部死亡事件：首次跌破 25% 到死亡中位只有
+    // **2.0 秒**、p25 1.0 秒，而跌破 45% 还有 **6.6 秒**），但**头寸是 0**：
+    // 改成 45% 之后 tick 级实测 `PUSH:desperate prayer` 两场只有 **3 次** ——
+    // 触发器压根不亮，因为**牧师自己很少跌破 45%**（它在治别人，死的是法师/萨满）。
+    // 共享层改动没有可测收益就不要带着走。
     triggers.push_back(new TriggerNode("critical health", { NextAction("desperate prayer",
         ACTION_HIGH + 5) }));
     triggers.push_back(new TriggerNode(

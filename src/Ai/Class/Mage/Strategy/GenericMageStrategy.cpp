@@ -93,7 +93,15 @@ void GenericMageStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     RangedCombatStrategy::InitTriggers(triggers);
 
     // Threat Triggers
-    triggers.push_back(new TriggerNode("high threat", { NextAction("mirror image", 60.0f) }));
+    // 2026-09-17：原来挂的是 `"high threat"` —— **这个触发器名在整个代码库里没有任何 creator 注册**
+    // （`TriggerContext.h` 里只有 `creators["medium threat"]`），所以这个节点解析不出触发器，
+    // **法师的镜像永远不亮**。与「TBC 旧法术名」是同一类缺陷：名字对不上 → 整条链静默死掉。
+    // 实测：英雄斯拉德兰 24 场里镜像只放了 1 次（还是从下面几个 BoostTrigger 节点来的）。
+    // 换成已存在的 `medium threat`（= `MyAttackerCountTrigger(2)`：身上有 ≥2 个攻击者
+    // 且能解出主坦），语义正好对——法师被两只以上小怪咬住时转移仇恨。
+    // 头寸：那 24 场里**法师一个人承受了 33.2% 的小怪伤害（42.2k/场），是坦克的 1.4 倍**，
+    // 因为第一刀放开 AoE 之后它用暴风雪/烈焰风暴把全场小怪的仇恨拉到了自己身上。
+    triggers.push_back(new TriggerNode("medium threat", { NextAction("mirror image", 60.0f) }));
     triggers.push_back(new TriggerNode("medium threat", { NextAction("invisibility", 30.0f) }));
 
     // Defensive Triggers
