@@ -14,9 +14,6 @@
 
 enum GundrakIDs
 {
-    NPC_SLADRAN_VIPER               = 29680,   // 红蛇：单只打出 3,521（绿蛇只有 907）
-    NPC_SLADRAN_CONSTRICTOR         = 29713,   // 绿蛇：叠 Grip → 蛇茧
-
     // Slad'ran
     SPELL_POISON_NOVA_N             = 55081,
     SPELL_POISON_NOVA_H             = 59842,
@@ -45,14 +42,6 @@ public:
 };
 
 // DPS 的当前目标既不是斯拉德兰、也不是活着的包裹时亮起。
-// DPS 的当前目标不是活着的红蛇、也不是活着的包裹，而场上有活着的红蛇时亮起。
-class SladranFocusViperTrigger : public Trigger
-{
-public:
-    SladranFocusViperTrigger(PlayerbotAI* ai) : Trigger(ai, "slad'ran focus viper") {}
-    bool IsActive() override;
-};
-
 class SladranFocusBossTrigger : public Trigger
 {
 public:

@@ -74,29 +74,6 @@ float SladranMultiplier::GetValue(Action* action)
         return 0.0f;
     }
 
-    // 2026-09-17 第十刀第二处修：正打着活红蛇时也要把 `dps assist` 归零。
-    //
-    // 这是第二个和 `slad'ran focus viper`(56) 每 tick 拉锯的对手，
-    // 与第一个（`slad'ran focus boss` 的排除表）完全同形：
-    //   `NotDpsTargetActiveTrigger::IsActive()` 最后一行是 `return dps && target != dps;`
-    //   —— bot 正打着活红蛇时 `dps target` 解出的是别的目标，于是它为真，
-    //   `dps assist`(50) 把目标拉走；下一 tick `focus viper`(56) 相关性更高又拉回来。
-    //
-    // 第一次修（只修 focus boss）之后的有效 A/B（run 624 五场 vs 基线 19 场，同为
-    // heroic-gd-sladran-disc-n5）证明拉锯还在，只是换了对手：
-    //   砸进红蛇/场 89.1k → 64.2k（靶子方向仍然是反的）
-    //   红蛇占总输出份额 15.9% → 16.6%（基本没动）
-    //   总输出速率 5,443/秒 → 3,604/秒（−34%）
-    //   击杀 3/19 → 0/5、时长 103.2 → 107.1 秒
-    if (dynamic_cast<DpsAssistAction*>(action))
-    {
-        Unit* current = AI_VALUE(Unit*, "current target");
-        if (current && current->IsAlive() && current->GetEntry() == NPC_SLADRAN_VIPER)
-        {
-            return 0.0f;
-        }
-    }
-
     return 1.0f;
 }
 
