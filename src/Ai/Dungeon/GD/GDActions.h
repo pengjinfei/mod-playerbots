@@ -31,6 +31,14 @@ private:
     Player* ResolveWrapVictim(Unit* wrap, char const** how = nullptr);
 };
 
+// 把 DPS 的目标拉回斯拉德兰本人。
+class SladranFocusBossAction : public AttackAction
+{
+public:
+    SladranFocusBossAction(PlayerbotAI* ai) : AttackAction(ai, "slad'ran focus boss") {}
+    bool Execute(Event event) override;
+};
+
 class AvoidWhirlingSlashAction : public MovementAction
 {
 public:

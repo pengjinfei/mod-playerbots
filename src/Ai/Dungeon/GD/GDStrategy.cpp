@@ -20,6 +20,11 @@ void WotlkDungeonGDStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
         { NextAction("avoid poison nova", ACTION_RAID + 5) }));
     triggers.push_back(new TriggerNode("snake wrap",
         { NextAction("attack snake wrap", ACTION_RAID + 4) }));
+    // 2026-09-17：上游这行 TODO 的答案（"burn down boss"）。相关性 55：
+    // 压在 `dps assist`(50) 之上、`attack snake wrap`(64) 之下，
+    // 所以「有包裹先打包裹」的顺序不变，只是打完/没有包裹时目标回到 boss 而不是小怪。
+    triggers.push_back(new TriggerNode("slad'ran focus boss",
+        { NextAction("slad'ran focus boss", 55.0f) }));
 
     // Gal'darah
     triggers.push_back(new TriggerNode("whirling slash",

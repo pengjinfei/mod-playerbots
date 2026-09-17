@@ -35,6 +35,23 @@ bool SladranSnakeWrapTrigger::IsActive()
     return false;
 }
 
+bool SladranFocusBossTrigger::IsActive()
+{
+    if (!botAI->IsDps(bot)) { return false; }
+
+    Unit* boss = AI_VALUE2(Unit*, "find target", "slad'ran");
+    if (!boss || !boss->IsAlive()) { return false; }
+
+    Unit* current = AI_VALUE(Unit*, "current target");
+    if (current == boss) { return false; }
+
+    // 正在打包裹就别打断——第二刀的 A/B 已经证明「半路丢下包裹」是净负面
+    // （包裹被打死 3.9 → 0.8 只/场，场次时长 −19%，击杀 2/10 → 0/5）。
+    if (current && current->GetEntry() == NPC_SNAKE_WRAP && current->IsAlive()) { return false; }
+
+    return true;
+}
+
 bool GaldarahWhirlingSlashTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "gal'darah");

@@ -41,6 +41,14 @@ public:
     bool IsActive() override;
 };
 
+// DPS 的当前目标既不是斯拉德兰、也不是活着的包裹时亮起。
+class SladranFocusBossTrigger : public Trigger
+{
+public:
+    SladranFocusBossTrigger(PlayerbotAI* ai) : Trigger(ai, "slad'ran focus boss") {}
+    bool IsActive() override;
+};
+
 class GaldarahWhirlingSlashTrigger : public Trigger
 {
 public:

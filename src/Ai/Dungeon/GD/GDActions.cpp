@@ -136,6 +136,30 @@ bool AttackSnakeWrapAction::Execute(Event /*event*/)
     return Attack(best);
 }
 
+// 2026-09-17：新增。上游 GDStrategy.cpp 的 TODO 原文就是
+// "Might need to add target priority for heroic on the snakes or to burn down boss"，
+// 英雄难度从没测过。24 场实测给出的答案是**烧 boss**：
+//   - 全队总输出 5,699（团灭）–6,933（击杀）/秒，**若全部打 boss 只要 47–57 秒**，
+//     而队伍实际能活 94–99 秒 —— 输出总量绰绰有余；
+//   - 但只有 37–43% 打在 boss 身上；团灭场按实际 boss 输出速率（2,129/秒）要 152 秒，
+//     队伍只活 94 秒，差 58 秒；
+//   - 小怪清不完（刷怪 4,888 HP/秒），单体点杀只打死 40%；
+//   - 治疗是硬上限（击杀场 1,237 HPS vs 团灭场 1,217 HPS，承伤差 42% 而治疗差 1.6%）。
+// 根因：`DpsAssistAction` 让 DPS 镜像坦克的目标，而**坦克自己只有 31–38% 的输出在 boss 上**
+// （它在接小怪，那是它的本职），于是全队被带着打小怪。
+//
+// 规则：**DPS 的目标就是 boss，除非正在打一个活着的包裹**。
+// 相关性 55 —— 压在 `dps assist`(50) 之上、`attack snake wrap`(64) 之下，
+// 所以「有包裹先打包裹」的顺序不变。
+bool SladranFocusBossAction::Execute(Event /*event*/)
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "slad'ran");
+    if (!boss || !boss->IsAlive())
+        return false;
+
+    return Attack(boss);
+}
+
 bool AvoidWhirlingSlashAction::Execute(Event /*event*/)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "gal'darah");
