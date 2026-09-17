@@ -70,7 +70,15 @@ bool SladranFocusBossTrigger::IsActive()
 
     // 正在打包裹就别打断——第二刀的 A/B 已经证明「半路丢下包裹」是净负面
     // （包裹被打死 3.9 → 0.8 只/场，场次时长 −19%，击杀 2/10 → 0/5）。
-    if (current && current->GetEntry() == NPC_SNAKE_WRAP && current->IsAlive()) { return false; }
+    //
+    // 2026-09-17 第十刀修：活红蛇也必须排除。否则「活红蛇」对本触发器算
+    // 「既不是 boss 也不是包裹」→ 本节点亮起把 bot 从红蛇上拉走，
+    // 下一 tick `slad'ran focus viper`(56) 相关性更高又拉回来 —— 每 tick 拉锯，
+    // 而换目标要 4 个 tick≈2.8 秒，实测总输出速率直接崩 65%
+    // （5,176/秒 → 1,792/秒，run 622 两场）。
+    if (current && current->IsAlive() &&
+        (current->GetEntry() == NPC_SNAKE_WRAP || current->GetEntry() == NPC_SLADRAN_VIPER))
+        return false;
 
     return true;
 }
