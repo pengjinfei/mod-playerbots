@@ -103,6 +103,9 @@ uint32 TrashCcIconAgeMs(PlayerbotAI* botAI, uint8 icon);
 std::vector<Creature*> TrashCcCollectPack(PlayerbotAI* botAI, Player* bot, Unit* pull);
 // 队里在场且学会该控制的成员；没有则 nullptr。
 Player* TrashCcFindCaster(Player* bot, TrashCcRole const& role);
+// 仅对指定 map 禁用某些控制职业的 pre-pull 分工。用于局部几何不满足 Sap 等控制前提的副本；
+// 不改变其它副本的共享固定分工。
+void TrashCcRegisterDisabledClasses(uint32 mapId, std::initializer_list<uint8> classes);
 // 这个控制能不能真的落在这只怪身上：**生物类型**（按法术自己的 TargetCreatureType 掩码判）
 // 与**机制免疫**（creature_immunities 的 MechanicsMask）两关都要过。caster 用来解析法术 id
 // 并做 IsImmunedToSpell 的施法者判定。

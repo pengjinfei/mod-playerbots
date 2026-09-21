@@ -132,11 +132,31 @@ namespace
         static std::set<uint32> entries;
         return entries;
     }
+
+    std::map<uint32, std::set<uint8>>& TrashCcDisabledClasses()
+    {
+        static std::map<uint32, std::set<uint8>> classes;
+        return classes;
+    }
+
+    bool TrashCcRoleEnabled(Player const* bot, TrashCcRole const& role)
+    {
+        if (!bot)
+            return false;
+        auto const it = TrashCcDisabledClasses().find(bot->GetMapId());
+        return it == TrashCcDisabledClasses().end() || !it->second.count(role.casterClass);
+    }
 }
 
 void TrashCcRegisterHealerEntries(std::initializer_list<uint32> entries)
 {
     TrashCcHealerEntries().insert(entries.begin(), entries.end());
+}
+
+void TrashCcRegisterDisabledClasses(uint32 mapId, std::initializer_list<uint8> classes)
+{
+    auto& disabled = TrashCcDisabledClasses()[mapId];
+    disabled.insert(classes.begin(), classes.end());
 }
 
 int TrashCcPreference(Creature* creature)
@@ -270,6 +290,9 @@ bool TrashCcPullInProgress(PlayerbotAI* botAI)
 
 Player* TrashCcFindCaster(Player* bot, TrashCcRole const& role)
 {
+    if (!TrashCcRoleEnabled(bot, role))
+        return nullptr;
+
     Group* group = bot->GetGroup();
     if (!group)
         return nullptr;
@@ -319,7 +342,7 @@ std::vector<Creature*> TrashCcCollectPack(PlayerbotAI* botAI, Player* bot, Unit*
 
 Unit* TrashCcCastTarget(PlayerbotAI* botAI, Player* bot, TrashCcRole const& role)
 {
-    if (bot->getClass() != role.casterClass)
+    if (!TrashCcRoleEnabled(bot, role) || bot->getClass() != role.casterClass)
         return nullptr;
 
     // 名字解析失败（没学会/不在 spellmap）就别让触发器每 tick 空转。
