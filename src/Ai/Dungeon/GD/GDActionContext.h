@@ -21,6 +21,7 @@ class WotlkDungeonGDActionContext : public NamedObjectContext<Action>
             creators["slad'ran tank hold"] = &WotlkDungeonGDActionContext::sladran_tank_hold;
             creators["avoid whirling slash"] = &WotlkDungeonGDActionContext::avoid_whirling_slash;
             creators["slad'ran focus boss"] = &WotlkDungeonGDActionContext::sladran_focus_boss;
+            creators["moorabi lancer retaliation wait"] = &WotlkDungeonGDActionContext::moorabi_lancer_retaliation_wait;
         }
     private:
         static Action* avoid_poison_nova(PlayerbotAI* ai) { return new AvoidPoisonNovaAction(ai); }
@@ -29,6 +30,7 @@ class WotlkDungeonGDActionContext : public NamedObjectContext<Action>
         static Action* sladran_tank_hold(PlayerbotAI* ai) { return new SladranTankHoldAction(ai); }
         static Action* avoid_whirling_slash(PlayerbotAI* ai) { return new AvoidWhirlingSlashAction(ai); }
         static Action* sladran_focus_boss(PlayerbotAI* ai) { return new SladranFocusBossAction(ai); }
+        static Action* moorabi_lancer_retaliation_wait(PlayerbotAI* ai) { return new MoorabiLancerRetaliationWaitAction(ai); }
 };
 
 #endif

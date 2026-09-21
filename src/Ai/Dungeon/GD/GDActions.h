@@ -56,4 +56,18 @@ public:
     bool Execute(Event event) override;
 };
 
+// 只在 29819 的 40546 窗口停止盗贼的白字攻击；技能动作由同名 multiplier
+// 精确过滤，窗口外立即恢复。不是 raidtest 编排动作，也不改变仇恨。
+class MoorabiLancerRetaliationWaitAction : public Action
+{
+public:
+    MoorabiLancerRetaliationWaitAction(PlayerbotAI* ai) : Action(ai, "moorabi lancer retaliation wait") {}
+    bool Execute(Event event) override
+    {
+        (void)event;
+        bot->AttackStop();
+        return true;
+    }
+};
+
 #endif

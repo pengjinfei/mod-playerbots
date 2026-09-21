@@ -230,3 +230,14 @@ bool GaldarahWhirlingSlashTrigger::IsActive()
     Unit* boss = AI_VALUE2(Unit*, "find target", "gal'darah");
     return boss && boss->HasAura(SPELL_WHIRLING_SLASH);
 }
+
+bool MoorabiLancerRetaliationTrigger::IsActive()
+{
+    if (bot->getClass() != CLASS_ROGUE)
+        return false;
+
+    Unit* target = bot->GetVictim();
+    if (!target)
+        target = AI_VALUE(Unit*, "current target");
+    return target && target->GetEntry() == NPC_DRAKKARI_LANCER && target->HasAura(SPELL_LANCER_RETALIATION);
+}

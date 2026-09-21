@@ -26,6 +26,11 @@ enum GundrakIDs
     // Gal'darah
     SPELL_WHIRLING_SLASH_N          = 55250,
     SPELL_WHIRLING_SLASH_H          = 59824,
+
+    // Moorabi 前置 Drakkari Lancer。40546 的 22858 反伤在 run681–683 连续击杀
+    // 刺杀盗贼；仅 GD/盗贼/该目标的这个短 aura 窗口需要抑制进攻。
+    NPC_DRAKKARI_LANCER             = 29819,
+    SPELL_LANCER_RETALIATION        = 40546,
 };
 
 #define SPELL_POISON_NOVA           DUNGEON_MODE(bot, SPELL_POISON_NOVA_N, SPELL_POISON_NOVA_H)
@@ -84,6 +89,13 @@ class GaldarahWhirlingSlashTrigger : public Trigger
 {
 public:
     GaldarahWhirlingSlashTrigger(PlayerbotAI* ai) : Trigger(ai, "gal'darah whirling slash") {}
+    bool IsActive() override;
+};
+
+class MoorabiLancerRetaliationTrigger : public Trigger
+{
+public:
+    MoorabiLancerRetaliationTrigger(PlayerbotAI* ai) : Trigger(ai, "moorabi lancer retaliation") {}
     bool IsActive() override;
 };
 

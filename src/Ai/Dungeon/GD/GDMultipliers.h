@@ -27,4 +27,11 @@ class GaldarahMultiplier : public Multiplier
         float GetValue(Action* action) override;
 };
 
+class MoorabiLancerRetaliationMultiplier : public Multiplier
+{
+public:
+    MoorabiLancerRetaliationMultiplier(PlayerbotAI* ai) : Multiplier(ai, "moorabi lancer retaliation") {}
+    float GetValue(Action* action) override;
+};
+
 #endif

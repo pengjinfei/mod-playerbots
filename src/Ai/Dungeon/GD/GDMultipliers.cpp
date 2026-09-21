@@ -6,6 +6,7 @@
 
 #include "GDMultipliers.h"
 #include "Action.h"
+#include "AttackAction.h"
 #include "ChooseTargetActions.h"
 #include "GDActions.h"
 #include "GDTriggers.h"
@@ -88,5 +89,27 @@ float GaldarahMultiplier::GetValue(Action* action)
                 return 0.0f;
             }
         }
+    return 1.0f;
+}
+
+float MoorabiLancerRetaliationMultiplier::GetValue(Action* action)
+{
+    // run681–683: Lancer 保持 tank victim 时，盗贼仍在 40546 窗口攻击并被 22858
+    // 连续反伤击杀。只拦截「当前目标」上的攻击；self 防御、移动、治疗和其它职业不受影响。
+    if (bot->getClass() != CLASS_ROGUE)
+        return 1.0f;
+
+    Unit* target = bot->GetVictim();
+    if (!target)
+        target = AI_VALUE(Unit*, "current target");
+    if (!target || target->GetEntry() != NPC_DRAKKARI_LANCER || !target->HasAura(SPELL_LANCER_RETALIATION))
+        return 1.0f;
+
+    if (dynamic_cast<AttackAction*>(action))
+        return 0.0f;
+
+    if (CastSpellAction* spell = dynamic_cast<CastSpellAction*>(action))
+        return spell->GetTargetName() == "current target" ? 0.0f : 1.0f;
+
     return 1.0f;
 }

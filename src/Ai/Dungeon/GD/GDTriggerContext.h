@@ -21,6 +21,7 @@ class WotlkDungeonGDTriggerContext : public NamedObjectContext<Trigger>
             creators["slad'ran tank hold"] = &WotlkDungeonGDTriggerContext::sladran_tank_hold;
             creators["whirling slash"] = &WotlkDungeonGDTriggerContext::whirling_slash;
             creators["slad'ran focus boss"] = &WotlkDungeonGDTriggerContext::sladran_focus_boss;
+            creators["moorabi lancer retaliation"] = &WotlkDungeonGDTriggerContext::moorabi_lancer_retaliation;
         }
     private:
         static Trigger* poison_nova(PlayerbotAI* ai) { return new SladranPoisonNovaTrigger(ai); }
@@ -29,6 +30,7 @@ class WotlkDungeonGDTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* sladran_tank_hold(PlayerbotAI* ai) { return new SladranTankHoldTrigger(ai); }
         static Trigger* whirling_slash(PlayerbotAI* ai) { return new GaldarahWhirlingSlashTrigger(ai); }
         static Trigger* sladran_focus_boss(PlayerbotAI* ai) { return new SladranFocusBossTrigger(ai); }
+        static Trigger* moorabi_lancer_retaliation(PlayerbotAI* ai) { return new MoorabiLancerRetaliationTrigger(ai); }
 };
 
 #endif
