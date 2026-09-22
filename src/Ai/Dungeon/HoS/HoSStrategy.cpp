@@ -18,9 +18,15 @@ void WotlkDungeonHoSStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
         { NextAction("shatter spread", ACTION_RAID + 5) }));
 
     // Tribunal of Ages
-    // Seems fine, maybe add focus targeting strat if needed on heroic.
-    // Main issue is dps will immediately rambo in and sometimes die before tank gets aggro,
-    // this is mostly an issue with the bot AI as they do it on every fight
+    // Reconnect a tank with the healer-side fight only when LOS filtering has left
+    // it with no attacker or current target; the action paths but does not attack.
+    triggers.push_back(new TriggerNode("tribunal los reacquire",
+        { NextAction("tribunal los reacquire", ACTION_RAID + 5) }));
+
+    // Searing Gaze creates a short-lived ground trigger at a selected player's
+    // position. Leave it rather than changing targets or tank threat.
+    triggers.push_back(new TriggerNode("tribunal searing gaze",
+        { NextAction("tribunal flee searing gaze", ACTION_EMERGENCY + 10) }));
 
     // Sjonnir The Ironshaper
     // Possibly tank in place in the middle of the room, assign a dps to adds?

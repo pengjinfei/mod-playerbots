@@ -27,4 +27,18 @@ public:
     bool Execute(Event event) override;
 };
 
+class TribunalLosReacquireAction : public MovementAction
+{
+public:
+    TribunalLosReacquireAction(PlayerbotAI* ai) : MovementAction(ai, "tribunal los reacquire") {}
+    bool Execute(Event event) override;
+};
+
+class TribunalFleeSearingGazeAction : public MovementAction
+{
+public:
+    TribunalFleeSearingGazeAction(PlayerbotAI* ai) : MovementAction(ai, "tribunal flee searing gaze") {}
+    bool Execute(Event event) override;
+};
+
 #endif

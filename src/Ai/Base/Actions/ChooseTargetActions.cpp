@@ -8,6 +8,7 @@
 #include "ChooseRpgTargetAction.h"
 #include "Event.h"
 #include "LootObjectStack.h"
+#include "Log.h"
 #include "NewRpgStrategy.h"
 #include "Playerbots.h"
 #include "PossibleRpgTargetsValue.h"
@@ -167,6 +168,21 @@ bool DpsAssistAction::isUseful()
         return false;
 
     return true;
+}
+
+bool TankAssistAction::Execute(Event event)
+{
+    Unit* target = GetTarget();
+    bool const los = target && target->IsInWorld() && bot->IsWithinLOSInMap(target);
+    bool const result = AttackAction::Execute(event);
+
+    if (bot->GetMapId() == 599 && PlayerbotAI::IsTank(bot) && bot->IsInCombat())
+    {
+        LOG_DEBUG("playerbots", "tribunal-tank-assist-action bot={} target={} los={} result={}", bot->GetName(),
+                  target ? target->GetEntry() : 0, los, result);
+    }
+
+    return result;
 }
 
 bool AttackRtiTargetAction::Execute(Event /*event*/)

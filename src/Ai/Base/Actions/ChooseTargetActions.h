@@ -34,6 +34,7 @@ public:
     TankAssistAction(PlayerbotAI* botAI) : AttackAction(botAI, "tank assist") {}
 
     std::string const GetTargetName() override { return "tank target"; }
+    bool Execute(Event event) override;
 };
 
 class AggressiveTargetAction : public AttackAction

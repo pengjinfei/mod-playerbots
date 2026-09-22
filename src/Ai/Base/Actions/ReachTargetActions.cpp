@@ -81,6 +81,15 @@ bool ReachTargetAction::IsChaseLeashed(Unit* target) const
     if (anchorDist <= leash)
         return false;
 
+    // Tribunal's active adds may spawn just beyond the healer's nominal range
+    // while the tank is already close enough to collect them. Keep the generic
+    // anti-runaway guard for distant adds; only admit this tight map/entry/range
+    // exception so the tank can finish the short pickup.
+    bool const tribunalAdd = target->GetEntry() == 27983 || target->GetEntry() == 27984 || target->GetEntry() == 27985;
+    if (PlayerbotAI::IsTank(bot) && bot->GetMapId() == 599 && tribunalAdd &&
+        bot->GetExactDist(target) <= 20.0f && anchorDist <= leash + 6.5f)
+        return false;
+
     LOG_DEBUG("playerbots", "reach-leash bot={} action={} target={} refused: anchor={} anchorDist={:.1f} leash={:.1f} "
               "toTarget={:.1f}",
               bot->GetName(), name, target->GetName(), anchor->GetName(), anchorDist, leash, bot->GetExactDist(target));

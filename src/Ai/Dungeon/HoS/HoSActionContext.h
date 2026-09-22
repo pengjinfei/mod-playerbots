@@ -17,10 +17,14 @@ class WotlkDungeonHoSActionContext : public NamedObjectContext<Action>
         WotlkDungeonHoSActionContext() {
             creators["shatter spread"] = &WotlkDungeonHoSActionContext::shatter_spread;
             creators["avoid lightning ring"] = &WotlkDungeonHoSActionContext::avoid_lightning_ring;
+            creators["tribunal los reacquire"] = &WotlkDungeonHoSActionContext::tribunal_los_reacquire;
+            creators["tribunal flee searing gaze"] = &WotlkDungeonHoSActionContext::tribunal_flee_searing_gaze;
         }
     private:
         static Action* shatter_spread(PlayerbotAI* ai) { return new ShatterSpreadAction(ai); }
         static Action* avoid_lightning_ring(PlayerbotAI* ai) { return new AvoidLightningRingAction(ai); }
+        static Action* tribunal_los_reacquire(PlayerbotAI* ai) { return new TribunalLosReacquireAction(ai); }
+        static Action* tribunal_flee_searing_gaze(PlayerbotAI* ai) { return new TribunalFleeSearingGazeAction(ai); }
 };
 
 #endif

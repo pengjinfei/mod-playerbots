@@ -10,6 +10,7 @@
 #include "GenericBuffUtils.h"
 #include "ItemVisitors.h"
 #include "LastSpellCastValue.h"
+#include "Log.h"
 #include "ObjectGuid.h"
 #include "Player.h"
 #include "PlayerbotAI.h"
@@ -561,18 +562,32 @@ bool HasNoAuraTrigger::IsActive() { return !botAI->HasAura(getName(), GetTarget(
 
 bool TankAssistTrigger::IsActive()
 {
-    if (!AI_VALUE(uint8, "attacker count"))
-        return false;
-
+    uint8 const attackerCount = AI_VALUE(uint8, "attacker count");
     Unit* currentTarget = AI_VALUE(Unit*, "current target");
-    if (!currentTarget)
-        return true;
+    Unit* tankTarget = nullptr;
+    bool active = false;
 
-    Unit* tankTarget = AI_VALUE(Unit*, "tank target");
-    if (!tankTarget || currentTarget == tankTarget)
-        return false;
+    if (attackerCount)
+    {
+        if (!currentTarget)
+        {
+            active = true;
+        }
+        else
+        {
+            tankTarget = AI_VALUE(Unit*, "tank target");
+            active = tankTarget && currentTarget != tankTarget && AI_VALUE2(bool, "has aggro", "current target");
+        }
+    }
 
-    return AI_VALUE2(bool, "has aggro", "current target");
+    if (bot->GetMapId() == 599 && PlayerbotAI::IsTank(bot) && bot->IsInCombat())
+    {
+        LOG_DEBUG("playerbots", "tribunal-tank-assist bot={} attackers={} current={} tank_target={} active={}",
+                  bot->GetName(), attackerCount, currentTarget ? currentTarget->GetEntry() : 0,
+                  tankTarget ? tankTarget->GetEntry() : 0, active);
+    }
+
+    return active;
 }
 
 bool IsBehindTargetTrigger::IsActive()

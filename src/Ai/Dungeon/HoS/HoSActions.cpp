@@ -5,7 +5,10 @@
  */
 
 #include "HoSActions.h"
+#include "Group.h"
+#include "Log.h"
 #include "Playerbots.h"
+#include "Timer.h"
 
 bool ShatterSpreadAction::Execute(Event /*event*/)
 {
@@ -55,4 +58,50 @@ bool AvoidLightningRingAction::Execute(Event /*event*/)
     }
 
     return false;
+}
+
+bool TribunalLosReacquireAction::Execute(Event /*event*/)
+{
+    Unit* target = FindTribunalLosReacquireTarget(botAI);
+    if (!target)
+        return false;
+
+    Unit* victim = target->GetVictim();
+    float healerDistance = -1.0f;
+    if (Group* group = bot->GetGroup())
+    {
+        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        {
+            Player* member = ref->GetSource();
+            if (!member || !member->IsAlive() || member->GetMapId() != bot->GetMapId() || !PlayerbotAI::IsHeal(member))
+                continue;
+
+            float const distance = target->GetExactDist(member);
+            if (healerDistance < 0.0f || distance < healerDistance)
+                healerDistance = distance;
+        }
+    }
+
+    float const botX = bot->GetPositionX();
+    float const botY = bot->GetPositionY();
+    float const botZ = bot->GetPositionZ();
+    float const targetX = target->GetPositionX();
+    float const targetY = target->GetPositionY();
+    float const targetZ = target->GetPositionZ();
+    bool const moved = ReachCombatTo(target);
+    LOG_INFO("playerbots", "tribunal-los-reacquire app_ms={} bot={} target={} victim_low={} healer_dist={:.2f} "
+                           "bot_pos={:.2f},{:.2f},{:.2f} target_pos={:.2f},{:.2f},{:.2f} moved={}",
+             getMSTime(), bot->GetName(), target->GetEntry(), victim ? victim->GetGUID().GetCounter() : 0,
+             healerDistance, botX, botY, botZ, targetX, targetY, targetZ, moved);
+    return moved;
+}
+
+bool TribunalFleeSearingGazeAction::Execute(Event /*event*/)
+{
+    Creature* gaze = bot->FindNearestCreature(NPC_SEARING_GAZE_TRIGGER, 5.0f);
+    if (!gaze)
+        return false;
+
+    constexpr float safeDistance = 12.0f;
+    return MoveAway(gaze, safeDistance - bot->GetExactDist2d(gaze));
 }

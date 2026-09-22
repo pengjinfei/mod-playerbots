@@ -21,9 +21,14 @@ enum HallsOfStoneIDs
     // Sjonnir The Ironshaper
     SPELL_LIGHTNING_RING_N          = 50840,
     SPELL_LIGHTNING_RING_H          = 59848,
+
+    // Tribunal of Ages
+    NPC_SEARING_GAZE_TRIGGER        = 28265,
 };
 
 #define SPELL_LIGHTNING_RING        DUNGEON_MODE(bot, SPELL_LIGHTNING_RING_N, SPELL_LIGHTNING_RING_H)
+
+Unit* FindTribunalLosReacquireTarget(PlayerbotAI* botAI);
 
 class KrystallusGroundSlamTrigger : public Trigger
 {
@@ -36,6 +41,20 @@ class SjonnirLightningRingTrigger : public Trigger
 {
 public:
     SjonnirLightningRingTrigger(PlayerbotAI* ai) : Trigger(ai, "sjonnir lightning ring") {}
+    bool IsActive() override;
+};
+
+class TribunalLosReacquireTrigger : public Trigger
+{
+public:
+    TribunalLosReacquireTrigger(PlayerbotAI* ai) : Trigger(ai, "tribunal los reacquire") {}
+    bool IsActive() override;
+};
+
+class TribunalSearingGazeTrigger : public Trigger
+{
+public:
+    TribunalSearingGazeTrigger(PlayerbotAI* ai) : Trigger(ai, "tribunal searing gaze") {}
     bool IsActive() override;
 };
 
