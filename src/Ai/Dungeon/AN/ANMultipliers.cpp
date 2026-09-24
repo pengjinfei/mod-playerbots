@@ -59,6 +59,22 @@ float KrikthirMultiplier::GetValue(Action* action)
     return 1.0f;
 }
 
+float HadronoxCrusherMageMultiplier::GetValue(Action* action)
+{
+    if (!action || bot->getClass() != CLASS_MAGE || !bot->IsInCombat())
+        return 1.0f;
+
+    std::string const& name = action->getName();
+    bool const aoe = name == "blizzard" || name == "flamestrike" || name == "blast wave" || name == "dragon's breath" ||
+                     name == "living bomb on attacker" || name == "living bomb on attackers";
+    if (!aoe)
+        return 1.0f;
+
+    constexpr uint32 kAnubArCrusher = 28922;
+    Creature* crusher = bot->FindNearestCreature(kAnubArCrusher, 60.0f);
+    return (crusher && crusher->IsAlive()) ? 0.0f : 1.0f;
+}
+
 float AnubarakMageManaMultiplier::GetValue(Action* action)
 {
     if (!action || bot->getClass() != CLASS_MAGE)
