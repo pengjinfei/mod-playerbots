@@ -138,6 +138,17 @@ bool KrikthirWebWrapTrigger::IsActive()
     return false;
 }
 
+bool HadronoxTankAcidTrigger::IsActive()
+{
+    if (!botAI->IsTank(bot) || !bot->IsAlive() || !bot->IsInCombat())
+        return false;
+    constexpr uint32 kHadronox = 28921;
+    Creature* boss = bot->FindNearestCreature(kHadronox, 40.0f);
+    if (!boss || !boss->IsAlive() || !boss->IsInCombat() || boss->GetVictim() != bot)
+        return false;
+    return bot->HasAura(59419) || bot->HasAura(53400);
+}
+
 bool KrikthirWatchersTrigger::IsActive()
 {
     if (!botAI->IsDps(bot)) { return false; }
@@ -149,7 +160,11 @@ bool KrikthirWatchersTrigger::IsActive()
     for (auto i = targets.begin(); i != targets.end(); ++i)
     {
         Unit* unit = botAI->GetUnit(*i);
-        if (unit && unit->GetEntry() == NPC_KRIKTHIR)
+        // 只在克里克希尔的门厅里生效：「possible targets no los」在哈多诺克斯平台上也能看到楼上活着的
+        // 克里克希尔（z≈777 对平台 733），节点（64）每 tick 压过 dps assist(50) 又执行失败，
+        // 盗贼 30/31 场哈多诺克斯零输出。要求同层且 60 码内。
+        if (unit && unit->GetEntry() == NPC_KRIKTHIR && unit->IsAlive() && bot->GetExactDist2d(unit) <= 60.0f &&
+            std::fabs(unit->GetPositionZ() - bot->GetPositionZ()) <= 15.0f)
         {
             return true;
         }

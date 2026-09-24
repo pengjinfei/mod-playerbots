@@ -17,6 +17,7 @@ class WotlkDungeonANTriggerContext : public NamedObjectContext<Trigger>
         {
             creators["krik'thir web wrap"] = &WotlkDungeonANTriggerContext::krikthir_web_wrap;
             creators["krik'thir watchers"] = &WotlkDungeonANTriggerContext::krikthir_watchers;
+            creators["hadronox tank acid"] = &WotlkDungeonANTriggerContext::hadronox_tank_acid;
             creators["anub'arak impale"] = &WotlkDungeonANTriggerContext::anubarak_impale;
             creators["anub'arak pound"] = &WotlkDungeonANTriggerContext::anubarak_pound;
             creators["anub'arak rim"] = &WotlkDungeonANTriggerContext::anubarak_rim;
@@ -31,6 +32,7 @@ class WotlkDungeonANTriggerContext : public NamedObjectContext<Trigger>
     private:
         static Trigger* krikthir_web_wrap(PlayerbotAI* ai) { return new KrikthirWebWrapTrigger(ai); }
         static Trigger* krikthir_watchers(PlayerbotAI* ai) { return new KrikthirWatchersTrigger(ai); }
+        static Trigger* hadronox_tank_acid(PlayerbotAI* ai) { return new HadronoxTankAcidTrigger(ai); }
         static Trigger* anubarak_impale(PlayerbotAI* ai) { return new AnubarakImpaleTrigger(ai); }
         static Trigger* anubarak_pound(PlayerbotAI* ai) { return new AnubarakPoundTrigger(ai); }
         static Trigger* anubarak_rim(PlayerbotAI* ai) { return new AnubarakRimTrigger(ai); }

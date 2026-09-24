@@ -97,6 +97,13 @@ public:
 };
 
 // 远程保距：沿 boss->自己 方向退到 kRangedKeepTarget，目标点被西沿安全线夹住。
+class HadronoxTankLeaveAcidAction : public MovementAction
+{
+public:
+    HadronoxTankLeaveAcidAction(PlayerbotAI* ai) : MovementAction(ai, "hadronox tank leave acid") {}
+    bool Execute(Event event) override;
+};
+
 class AnubarakKeepRangeAction : public MovementAction
 {
 public:

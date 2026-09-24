@@ -22,7 +22,9 @@ void WotlkDungeonANStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
         { NextAction("krik'thir priority", ACTION_RAID + 4) }));
 
     // Hadronox
-    // The core AC triggers are very buggy with this boss, but default strat seems to play correctly
+    // 坦克被她盯着且站在酸液云里时，带她移到附近无云处；近战随 boss 离开云区。
+    triggers.push_back(new TriggerNode("hadronox tank acid",
+        { NextAction("hadronox tank leave acid", ACTION_EMERGENCY + 5) }));
 
     //Anub'arak
     // 穿刺：上游原注释说追踪不到这些尖刺，实测不成立——它是 creature 29184，

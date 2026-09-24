@@ -47,6 +47,15 @@ public:
     bool IsActive() override;
 };
 
+// 哈多诺克斯：酸液云 59419（5 码、90 秒、每 25 秒一片）铺满 boss 身边，坦克原地坦、近战贴 boss，
+// 150 秒后酸液云占 boss 对全队伤害的绝大部分（坦克一人 30 万 / 5 场）。坦克被 boss 盯着且站在云里时带她离开。
+class HadronoxTankAcidTrigger : public Trigger
+{
+public:
+    HadronoxTankAcidTrigger(PlayerbotAI* ai) : Trigger(ai, "hadronox tank acid", 1) {}
+    bool IsActive() override;
+};
+
 class KrikthirWatchersTrigger : public Trigger
 {
 public:

@@ -17,6 +17,7 @@ class WotlkDungeonANActionContext : public NamedObjectContext<Action>
         WotlkDungeonANActionContext() {
             creators["attack web wrap"] = &WotlkDungeonANActionContext::attack_web_wrap;
             creators["krik'thir priority"] = &WotlkDungeonANActionContext::krikthir_priority;
+            creators["hadronox tank leave acid"] = &WotlkDungeonANActionContext::hadronox_tank_leave_acid;
             creators["dodge pound"] = &WotlkDungeonANActionContext::dodge_pound;
             creators["dodge impale"] = &WotlkDungeonANActionContext::dodge_impale;
             creators["anub'arak rim guard"] = &WotlkDungeonANActionContext::anubarak_rim_guard;
@@ -30,6 +31,7 @@ class WotlkDungeonANActionContext : public NamedObjectContext<Action>
     private:
         static Action* attack_web_wrap(PlayerbotAI* ai) { return new AttackWebWrapAction(ai); }
         static Action* krikthir_priority(PlayerbotAI* ai) { return new WatchersTargetAction(ai); }
+        static Action* hadronox_tank_leave_acid(PlayerbotAI* ai) { return new HadronoxTankLeaveAcidAction(ai); }
         static Action* dodge_pound(PlayerbotAI* ai) { return new AnubarakDodgePoundAction(ai); }
         static Action* dodge_impale(PlayerbotAI* ai) { return new AnubarakDodgeImpaleAction(ai); }
         static Action* anubarak_rim_guard(PlayerbotAI* ai) { return new AnubarakRimGuardAction(ai); }

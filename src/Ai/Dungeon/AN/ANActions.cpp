@@ -5,6 +5,8 @@
  */
 
 #include "ANActions.h"
+#include "PathGenerator.h"
+#include "EncounterHelpers.h"
 #include "Playerbots.h"
 #include "MotionMaster.h"
 #include "Log.h"
@@ -386,6 +388,99 @@ bool AnubarakKeepRangeAction::PickPointAwayFromBoss(Unit* boss, Player* bot, flo
             return true;
     }
     return false;
+}
+
+bool HadronoxTankLeaveAcidAction::Execute(Event /*event*/)
+{
+    if (bot->isMoving() && AI_VALUE(LastMovement&, "last movement").issuer == getName())
+        return false;
+    if (!botAI->CanMove())
+        return false;
+
+    // 酸液云为 5 码 dynobj；候选点距每片云中心 >= 7.5 码（半径 + 2.5 码余量），且同层有地面。
+    constexpr float kCloudClearance = 7.5f;
+    std::vector<Position> clouds = EncounterHelpers::GetDynamicObjectPositions(bot, 40.0f, 59419);
+    std::vector<Position> const normal = EncounterHelpers::GetDynamicObjectPositions(bot, 40.0f, 53400);
+    clouds.insert(clouds.end(), normal.begin(), normal.end());
+
+    constexpr uint32 kHadronox = 28921;
+    Creature* boss = bot->FindNearestCreature(kHadronox, 40.0f);
+    if (!boss)
+        return false;
+    float bestX = 0.f, bestY = 0.f, bestZ = 0.f;
+    bool found = false;
+    bool usedStraight = false;
+    uint32 noGround = 0;
+    uint32 inCloud = 0;
+    for (float step : { 8.0f, 12.0f, 16.0f, 20.0f })
+    {
+        for (int i = 0; i < 16 && !found; ++i)
+        {
+            float const angle = float(i) * float(M_PI) / 8.0f;
+            float const x = bot->GetPositionX() + std::cos(angle) * step;
+            float const y = bot->GetPositionY() + std::sin(angle) * step;
+            bool clear = true;
+            for (Position const& cloud : clouds)
+                if (cloud.GetExactDist2d(x, y) < kCloudClearance)
+                {
+                    clear = false;
+                    break;
+                }
+            if (!clear)
+            {
+                ++inCloud;
+                continue;
+            }
+            // 平台地面在高度图里取不到（run904：808 次查找里 64/64 候选全部 no_ground），改用寻路判可达：
+            // 路径正常且终点落在候选点 2 码内才接受，z 取路径终点。
+            PathGenerator path(bot);
+            path.CalculatePath(x, y, bot->GetPositionZ(), false);
+            G3D::Vector3 const& end = path.GetActualEndPosition();
+            float z = end.z;
+            bool straight = false;
+            if ((path.GetPathType() & (PATHFIND_NOPATH | PATHFIND_INCOMPLETE | PATHFIND_SHORTCUT | PATHFIND_FARFROMPOLY)) ||
+                std::hypot(end.x - x, end.y - y) > 2.0f || std::fabs(end.z - bot->GetPositionZ()) > 4.0f)
+            {
+                // 坦克可能站在导航网格外（run906：整场悬在 boss 头顶 z=742.6，平台地面 733.5），寻路全失败。
+                // 退回：以 boss 脚下地面高度取点，vmap 有地面且坦克到点有视线则直线走过去。
+                float const floorZ = bot->GetMapHeight(x, y, boss->GetPositionZ() + 2.0f);
+                if (floorZ <= INVALID_HEIGHT || std::fabs(floorZ - boss->GetPositionZ()) > 3.0f ||
+                    !bot->IsWithinLOS(x, y, floorZ + 1.5f))
+                {
+                    ++noGround;
+                    continue;
+                }
+                z = floorZ;
+                straight = true;
+            }
+            usedStraight = straight;
+            bestX = x;
+            bestY = y;
+            bestZ = z;
+            found = true;
+        }
+        if (found)
+            break;
+    }
+    if (!found)
+    {
+        LOG_INFO("playerbots", "hadronox-tank-leave-acid bot={} clouds={} result=no_candidate no_ground={} in_cloud={} "
+                 "pos={:.1f},{:.1f},{:.1f}", bot->GetName(), clouds.size(), noGround, inCloud, bot->GetPositionX(),
+                 bot->GetPositionY(), bot->GetPositionZ());
+        return false;
+    }
+
+    MotionMaster* mm = bot->GetMotionMaster();
+    mm->Clear();
+    mm->MovePoint(0, bestX, bestY, bestZ, FORCED_MOVEMENT_NONE, 0.f, 0.f, /*generatePath*/ !usedStraight,
+                  /*forceDestination*/ false);
+    float const speed = bot->GetSpeed(MOVE_RUN);
+    float const delay = speed > 0.1f ? 1000.0f * bot->GetExactDist(bestX, bestY, bestZ) / speed : 1000.0f;
+    RecordLastMovement(bot->GetMapId(), bestX, bestY, bestZ, delay, MovementPriority::MOVEMENT_FORCED);
+    LOG_INFO("playerbots", "hadronox-tank-leave-acid bot={} clouds={} from={:.1f},{:.1f},{:.1f} to={:.1f},{:.1f},{:.1f} "
+             "straight={}", bot->GetName(), clouds.size(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(),
+             bestX, bestY, bestZ, usedStraight);
+    return true;
 }
 
 bool AnubarakKeepRangeAction::Execute(Event /*event*/)
