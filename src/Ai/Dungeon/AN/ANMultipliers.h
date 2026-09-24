@@ -31,18 +31,6 @@ class AnubarakMageManaMultiplier : public Multiplier
         float GetValue(Action* action) override;
 };
 
-// 哈多诺克斯粉碎者阶段：三包（3 粉碎者 + 6 随从 + 门怪）几乎同时到，火法前 60 秒群攻打出 36–49 万，
-// 把粉碎者仇恨拉走后 56–59 秒被砸死（10 场 4 次）；法师一死 boss 阶段输出不足，拖成 900 秒僵持。
-// 附近有活着的粉碎者时归零群攻，单体不变；粉碎者死光后自动恢复。
-class HadronoxCrusherMageMultiplier : public Multiplier
-{
-    public:
-        HadronoxCrusherMageMultiplier(PlayerbotAI* ai) : Multiplier(ai, "hadronox crusher mage") {}
-
-    public:
-        float GetValue(Action* action) override;
-};
-
 // 把英勇/嗜血按在最后冲刺之前不许放：共享层的 BoostTrigger 不看阶段，39 场里 17 场落在第二次潜地附近，
 // 那 40 秒 boss 不可选中，急速全打在小怪身上。归零后由 AnubarakHeroismTrigger 在第三次出土后放。
 class AnubarakHeroismMultiplier : public Multiplier

@@ -77,6 +77,5 @@ void WotlkDungeonANStrategy::InitMultipliers(std::vector<Multiplier*> &multiplie
 {
     multipliers.push_back(new KrikthirMultiplier(botAI));
     multipliers.push_back(new AnubarakMageManaMultiplier(botAI));
-    multipliers.push_back(new HadronoxCrusherMageMultiplier(botAI));
     multipliers.push_back(new AnubarakHeroismMultiplier(botAI));
 }
