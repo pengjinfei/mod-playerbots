@@ -96,6 +96,32 @@ bool TribunalLosReacquireAction::Execute(Event /*event*/)
     return moved;
 }
 
+bool TribunalRangedLosRegainAction::Execute(Event /*event*/)
+{
+    Unit* target = FindTribunalRangedLosRegainTarget(botAI);
+    if (!target)
+        return false;
+
+    // The main tank is in melee with the fight, so standing near it restores LOS
+    // without choosing a target or threat for the bot.
+    Unit* tank = AI_VALUE(Unit*, "main tank");
+    if (!tank || !tank->IsAlive() || tank->GetMapId() != bot->GetMapId() || bot->GetExactDist(tank) > 60.0f)
+    {
+        LOG_INFO("playerbots", "tribunal-ranged-los-regain app_ms={} bot={} target={} target_dist={:.1f} "
+                               "tank=none moved=false",
+                 getMSTime(), bot->GetName(), target->GetEntry(), bot->GetExactDist(target));
+        return false;
+    }
+
+    float const tankDistance = bot->GetExactDist(tank);
+    bool const moved = MoveNear(tank, 8.0f);
+    LOG_INFO("playerbots", "tribunal-ranged-los-regain app_ms={} bot={} target={} target_dist={:.1f} "
+                           "tank_dist={:.1f} bot_pos={:.1f},{:.1f},{:.1f} moved={}",
+             getMSTime(), bot->GetName(), target->GetEntry(), bot->GetExactDist(target), tankDistance,
+             bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), moved);
+    return moved;
+}
+
 bool TribunalFleeSearingGazeAction::Execute(Event /*event*/)
 {
     Creature* gaze = bot->FindNearestCreature(NPC_SEARING_GAZE_TRIGGER, 5.0f);

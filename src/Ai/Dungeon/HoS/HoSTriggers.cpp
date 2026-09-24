@@ -8,6 +8,7 @@
 #include "AiObjectContext.h"
 #include "Group.h"
 #include "Playerbots.h"
+#include "Spell.h"
 
 bool KrystallusGroundSlamTrigger::IsActive()
 {
@@ -71,7 +72,101 @@ Unit* FindTribunalLosReacquireTarget(PlayerbotAI* botAI)
     return result;
 }
 
+Unit* FindTribunalRangedLosRegainTarget(PlayerbotAI* botAI)
+{
+    Player* bot = botAI->GetBot();
+    Group* group = bot->GetGroup();
+    AiObjectContext* context = botAI->GetAiObjectContext();
+    if (bot->GetMapId() != 599 || !bot->IsAlive() || !bot->IsInCombat() || !group ||
+        !PlayerbotAI::IsRanged(bot) || PlayerbotAI::IsHeal(bot) || PlayerbotAI::IsTank(bot) ||
+        botAI->HasStrategy("stay", botAI->GetState()) || bot->IsNonMeleeSpellCast(false) ||
+        !context->GetValue<GuidVector>("attackers")->Get().empty() || context->GetValue<Unit*>("current target")->Get())
+    {
+        return nullptr;
+    }
+
+    Unit* result = nullptr;
+    for (ObjectGuid const guid : context->GetValue<GuidVector>("possible targets no los")->Get())
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (!unit || !unit->IsAlive() || unit->GetMapId() != bot->GetMapId() ||
+            (unit->GetEntry() != 27983 && unit->GetEntry() != 27984 && unit->GetEntry() != 27985) ||
+            bot->GetExactDist(unit) > 40.0f || bot->IsWithinLOSInMap(unit))
+        {
+            continue;
+        }
+
+        Player* victim = unit->GetVictim() ? unit->GetVictim()->ToPlayer() : nullptr;
+        if (!victim || !victim->IsAlive() || victim->GetGroup() != group)
+            continue;
+
+        if (!result || bot->GetExactDist(unit) < bot->GetExactDist(result))
+            result = unit;
+    }
+
+    return result;
+}
+
+bool TribunalRangedLosRegainTrigger::IsActive() { return FindTribunalRangedLosRegainTarget(botAI) != nullptr; }
+
 bool TribunalLosReacquireTrigger::IsActive() { return FindTribunalLosReacquireTarget(botAI) != nullptr; }
+
+bool TribunalRangedIdleProbeTrigger::IsActive()
+{
+    if (bot->GetMapId() != 599 || !bot->IsAlive() || !bot->IsInCombat() || !PlayerbotAI::IsRanged(bot) ||
+        PlayerbotAI::IsHeal(bot) || PlayerbotAI::IsTank(bot))
+    {
+        return false;
+    }
+
+    uint32 const now = getMSTime();
+    if (lastLogMs && getMSTimeDiff(lastLogMs, now) < 1000)
+        return false;
+    lastLogMs = now;
+
+    AiObjectContext* context = botAI->GetAiObjectContext();
+    GuidVector const attackers = context->GetValue<GuidVector>("attackers")->Get();
+    Unit* current = context->GetValue<Unit*>("current target")->Get();
+
+    uint32 adds = 0;
+    uint32 addsLos = 0;
+    float nearest = -1.0f;
+    bool nearestLos = false;
+    for (ObjectGuid const guid : context->GetValue<GuidVector>("possible targets no los")->Get())
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (!unit || !unit->IsAlive() ||
+            (unit->GetEntry() != 27983 && unit->GetEntry() != 27984 && unit->GetEntry() != 27985))
+        {
+            continue;
+        }
+
+        bool const los = bot->IsWithinLOSInMap(unit);
+        float const dist = bot->GetExactDist(unit);
+        ++adds;
+        addsLos += los ? 1 : 0;
+        if (nearest < 0.0f || dist < nearest)
+        {
+            nearest = dist;
+            nearestLos = los;
+        }
+    }
+
+    Spell* spell = bot->GetCurrentSpell(CURRENT_GENERIC_SPELL);
+    if (!spell)
+        spell = bot->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
+
+    LOG_INFO("playerbots", "tribunal-ranged-probe app_ms={} bot={} attackers={} adds={} adds_los={} "
+        "nearest={:.1f} nearest_los={} current={} current_dist={:.1f} current_los={} victim={} casting={} "
+        "moving={} mgen={} pos={:.1f},{:.1f},{:.1f}",
+        now, bot->GetName(), attackers.size(), adds, addsLos, nearest, nearestLos,
+        current ? current->GetEntry() : 0, current ? bot->GetExactDist(current) : -1.0f,
+        current ? bot->IsWithinLOSInMap(current) : false, bot->GetVictim() ? bot->GetVictim()->GetEntry() : 0,
+        spell ? spell->m_spellInfo->Id : 0, bot->isMoving(),
+        uint32(bot->GetMotionMaster()->GetCurrentMovementGeneratorType()),
+        bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
+    return false;
+}
 
 bool TribunalSearingGazeTrigger::IsActive()
 {

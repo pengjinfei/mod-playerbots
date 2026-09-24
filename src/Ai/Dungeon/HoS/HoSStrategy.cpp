@@ -18,10 +18,14 @@ void WotlkDungeonHoSStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
         { NextAction("shatter spread", ACTION_RAID + 5) }));
 
     // Tribunal of Ages
-    // Reconnect a tank with the healer-side fight only when LOS filtering has left
-    // it with no attacker or current target; the action paths but does not attack.
-    triggers.push_back(new TriggerNode("tribunal los reacquire",
-        { NextAction("tribunal los reacquire", ACTION_RAID + 5) }));
+    // Ranged DPS whose attacker list was emptied by LOS filtering walks back toward
+    // the main tank; it does not pick a target or change threat.
+    triggers.push_back(new TriggerNode("tribunal ranged los regain",
+        { NextAction("tribunal ranged los regain", ACTION_RAID + 4) }));
+
+    // Telemetry only (never active): ranged DPS target/LOS sample once per second.
+    triggers.push_back(new TriggerNode("tribunal ranged idle probe",
+        { NextAction("tribunal flee searing gaze", ACTION_EMERGENCY + 10) }));
 
     // Searing Gaze creates a short-lived ground trigger at a selected player's
     // position. Leave it rather than changing targets or tank threat.

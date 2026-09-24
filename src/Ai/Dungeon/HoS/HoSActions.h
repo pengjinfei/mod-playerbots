@@ -34,6 +34,13 @@ public:
     bool Execute(Event event) override;
 };
 
+class TribunalRangedLosRegainAction : public MovementAction
+{
+public:
+    TribunalRangedLosRegainAction(PlayerbotAI* ai) : MovementAction(ai, "tribunal ranged los regain") {}
+    bool Execute(Event event) override;
+};
+
 class TribunalFleeSearingGazeAction : public MovementAction
 {
 public:
