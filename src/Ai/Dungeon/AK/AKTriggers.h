@@ -23,7 +23,15 @@ enum OldKingdomIDs
     // Forgotten One(s)
     SPELL_SHADOW_CRASH_N               = 60833,
     SPELL_SHADOW_CRASH_H               = 60848,
+
+    // Amanitar (heroic only)
+    NPC_HEALTHY_MUSHROOM               = 30391,
+    SPELL_MINI                         = 57055,  // -75% damage done, permanent until removed
 };
+
+// Healthy Mushroom closest to Amanitar, or nullptr. Its death casts Potent Fungus
+// (56648, +100% damage done) on players within 3 yards, which offsets Mini.
+Unit* FindAmanitarHealthyMushroom(PlayerbotAI* botAI, Unit* boss);
 
 #define SPELL_SHADOW_CRASH             DUNGEON_MODE(bot, SPELL_SHADOW_CRASH_N, SPELL_SHADOW_CRASH_H)
 
@@ -38,6 +46,13 @@ class JedogaVolunteerTrigger : public Trigger
 {
 public:
     JedogaVolunteerTrigger(PlayerbotAI* ai) : Trigger(ai, "jedoga volunteer") {}
+    bool IsActive() override;
+};
+
+class AmanitarMiniTrigger : public Trigger
+{
+public:
+    AmanitarMiniTrigger(PlayerbotAI* ai) : Trigger(ai, "amanitar mini") {}
     bool IsActive() override;
 };
 

@@ -45,6 +45,24 @@ bool AttackJedogaVolunteerAction::Execute(Event /*event*/)
     return Attack(target);
 }
 
+bool AttackAmanitarHealthyMushroomAction::Execute(Event /*event*/)
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "amanitar");
+    Unit* mushroom = FindAmanitarHealthyMushroom(botAI, boss);
+    if (!mushroom)
+        return false;
+
+    // Potent Fungus only reaches players within 3 yards of the mushroom when it dies, so every
+    // damage dealer (ranged included) must stand next to it, not just shoot it from range.
+    if (bot->GetExactDist2d(mushroom) > 2.0f)
+        return MoveTo(mushroom, 1.0f, MovementPriority::MOVEMENT_COMBAT);
+
+    if (AI_VALUE(Unit*, "current target") == mushroom)
+        return false;
+
+    return Attack(mushroom);
+}
+
 bool AvoidShadowCrashAction::Execute(Event /*event*/)
 {
     // Could check all enemy units in range as it's possible to pull multiple of these mobs.

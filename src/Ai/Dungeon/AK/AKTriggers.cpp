@@ -38,6 +38,46 @@ bool JedogaVolunteerTrigger::IsActive()
     return false;
 }
 
+Unit* FindAmanitarHealthyMushroom(PlayerbotAI* botAI, Unit* boss)
+{
+    if (!boss)
+        return nullptr;
+
+    Unit* best = nullptr;
+    float bestDist = 0.0f;
+    // Mushrooms are passive and never threaten anyone, so they are not in the threat-based
+    // target values; scan the no-LOS candidate list by entry (same as the Jedoga volunteers).
+    GuidVector targets = botAI->GetAiObjectContext()->GetValue<GuidVector>("possible targets no los")->Get();
+    for (ObjectGuid const& guid : targets)
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (!unit || !unit->IsAlive() || unit->GetEntry() != NPC_HEALTHY_MUSHROOM)
+            continue;
+
+        float const dist = boss->GetExactDist2d(unit);
+        if (!best || dist < bestDist)
+        {
+            best = unit;
+            bestDist = dist;
+        }
+    }
+    return best;
+}
+
+bool AmanitarMiniTrigger::IsActive()
+{
+    // Only damage dealers benefit: Mini/Potent Fungus change damage done, the tank must stay
+    // on the boss and healers are unaffected.
+    if (!botAI->IsDps(bot) || !bot->HasAura(SPELL_MINI))
+        return false;
+
+    Unit* boss = AI_VALUE2(Unit*, "find target", "amanitar");
+    if (!boss || !boss->IsInCombat())
+        return false;
+
+    return FindAmanitarHealthyMushroom(botAI, boss) != nullptr;
+}
+
 bool ShadowCrashTrigger::IsActive()
 {
     Unit* unit = AI_VALUE2(Unit*, "find target", "forgotten one");

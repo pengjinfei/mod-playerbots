@@ -27,6 +27,13 @@ public:
     bool Execute(Event event) override;
 };
 
+class AttackAmanitarHealthyMushroomAction : public AttackAction
+{
+public:
+    AttackAmanitarHealthyMushroomAction(PlayerbotAI* ai) : AttackAction(ai, "attack healthy mushroom") {}
+    bool Execute(Event event) override;
+};
+
 class AvoidShadowCrashAction : public MovementAction
 {
 public:

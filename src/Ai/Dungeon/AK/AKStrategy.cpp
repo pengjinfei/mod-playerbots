@@ -30,7 +30,10 @@ void WotlkDungeonOKStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     // Volazj is not implemented properly in AC, insanity phase does nothing.
 
     // Amanitar (Heroic Only)
-    // TODO: once I get to heroics
+    // Mini (57055) is a permanent -75% damage-done debuff on the whole party. Killing a Healthy
+    // Mushroom grants Potent Fungus (+100% damage done) to players within 3 yards of it.
+    triggers.push_back(new TriggerNode("amanitar mini",
+        { NextAction("attack healthy mushroom", ACTION_RAID + 5) }));
 }
 
 void WotlkDungeonOKStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
