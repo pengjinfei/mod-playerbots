@@ -6,6 +6,7 @@
 
 #include "UPMultipliers.h"
 #include "ChooseTargetActions.h"
+#include "GenericSpellActions.h"
 #include "MovementActions.h"
 #include "Playerbots.h"
 #include "UPActions.h"
@@ -98,6 +99,15 @@ float YmironMultiplier::GetValue(Action* action)
         if (dynamic_cast<AttackAction*>(action))
         {
             return 0.0f;
+        }
+        // Bane reflects every hit on Ymiron, not just melee: spells cast on him (tank judgements, priest smites,
+        // rogue/mage abilities) made Bane (59302) over half of all damage taken on heroic.
+        if (CastSpellAction* spell = dynamic_cast<CastSpellAction*>(action))
+        {
+            if (spell->GetTargetName() == "current target" && AI_VALUE(Unit*, "current target") == boss)
+            {
+                return 0.0f;
+            }
         }
     }
     return 1.0f;

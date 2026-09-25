@@ -5,8 +5,42 @@
  */
 
 #include "UPActions.h"
+#include "Spell.h"
 #include "Playerbots.h"
 #include "UPTriggers.h"
+
+bool YmironBaneStopAttackAction::isUseful()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "king ymiron");
+    if (!boss)
+        return false;
+
+    Spell* spell = bot->GetCurrentSpell(CURRENT_GENERIC_SPELL);
+    return bot->GetVictim() == boss || AI_VALUE(Unit*, "current target") == boss ||
+        (spell && spell->m_targets.GetUnitTarget() == boss);
+}
+
+bool YmironBaneStopAttackAction::Execute(Event /*event*/)
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "king ymiron");
+    if (!boss)
+        return false;
+
+    if (bot->GetVictim() == boss)
+        bot->AttackStop();
+
+    for (CurrentSpellTypes type : { CURRENT_GENERIC_SPELL, CURRENT_CHANNELED_SPELL })
+        if (Spell* spell = bot->GetCurrentSpell(type))
+            if (spell->m_targets.GetUnitTarget() == boss)
+                bot->InterruptSpell(type);
+
+    if (AI_VALUE(Unit*, "current target") == boss)
+    {
+        context->GetValue<Unit*>("current target")->Set(nullptr);
+        bot->SetTarget(ObjectGuid::Empty);
+    }
+    return true;
+}
 
 bool AvoidFreezingCloudAction::Execute(Event /*event*/)
 {

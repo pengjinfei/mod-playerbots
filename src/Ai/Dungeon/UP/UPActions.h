@@ -23,4 +23,14 @@ public:
     bool Execute(Event event) override;
 };
 
+// Bane reflects every hit on King Ymiron as shadow damage to the whole group. The generic "drop target" only clears
+// the target value, leaves melee auto-attack swinging and is itself an AttackAction that the Bane multiplier blocks.
+class YmironBaneStopAttackAction : public Action
+{
+public:
+    YmironBaneStopAttackAction(PlayerbotAI* ai) : Action(ai, "ymiron bane stop attack") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
 #endif
