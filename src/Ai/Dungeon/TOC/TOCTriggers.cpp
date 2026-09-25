@@ -87,3 +87,21 @@ bool ToCEadricTrigger::IsActive()
 
     return true;
 }
+
+bool ToCPaletressShieldTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "argent confessor paletress");
+    if (!boss || !boss->HasAura(SPELL_PALETRESS_REFLECTIVE_SHIELD))
+        return false;
+
+    // The shield only breaks by absorbing damage, so holding off her for good lets Renew heal her back to full
+    // (run1223: 23% -> 100%). Stay off her only while her Memory is alive, then break the shield.
+    GuidVector targets = AI_VALUE(GuidVector, "possible targets");
+    for (ObjectGuid const& guid : targets)
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (unit && unit != boss && unit->IsAlive() && unit->IsInCombat())
+            return true;
+    }
+    return false;
+}

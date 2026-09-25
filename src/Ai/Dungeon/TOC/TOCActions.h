@@ -62,4 +62,15 @@ public:
         : MovementAction(botAI, name) {}
     bool Execute(Event event) override;
 };
+
+// Reflective Shield sends a share of every hit back to the attacker (heroic run1211: 884 reflected hits, 152k
+// damage) while her Memory, the add she summons at the same moment, is left alone. Move off her onto the Memory
+// while it lives; the shield has to be broken on her afterwards.
+class ToCPaletressShieldAction : public AttackAction
+{
+public:
+    ToCPaletressShieldAction(PlayerbotAI* botAI) : AttackAction(botAI, "toc paletress shield") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
 #endif

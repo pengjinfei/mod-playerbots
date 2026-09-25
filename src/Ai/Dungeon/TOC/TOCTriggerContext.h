@@ -20,6 +20,7 @@ class WotlkDungeonToCTriggerContext : public NamedObjectContext<Trigger>
             creators["toc mount near"] = &WotlkDungeonToCTriggerContext::toc_mount_near;
             creators["toc mounted"] = &WotlkDungeonToCTriggerContext::toc_mounted;
             creators["toc eadric"] = &WotlkDungeonToCTriggerContext::toc_eadric;
+            creators["toc paletress shield"] = &WotlkDungeonToCTriggerContext::toc_paletress_shield;
         }
     private:
         static Trigger* toc_lance(PlayerbotAI* ai) { return new ToCLanceTrigger(ai); }
@@ -27,6 +28,7 @@ class WotlkDungeonToCTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* toc_mount_near(PlayerbotAI* ai) { return new ToCMountNearTrigger(ai); }
         static Trigger* toc_mounted(PlayerbotAI* ai) { return new ToCMountedTrigger(ai); }
         static Trigger* toc_eadric(PlayerbotAI* ai) { return new ToCEadricTrigger(ai); }
+        static Trigger* toc_paletress_shield(PlayerbotAI* ai) { return new ToCPaletressShieldTrigger(ai); }
 };
 
 #endif

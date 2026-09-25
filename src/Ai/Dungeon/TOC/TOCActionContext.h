@@ -20,6 +20,7 @@ class WotlkDungeonToCActionContext : public NamedObjectContext<Action>
             creators["toc mount"] = &WotlkDungeonToCActionContext::toc_mount;
             creators["toc mounted"] = &WotlkDungeonToCActionContext::toc_mounted;
             creators["toc eadric"] = &WotlkDungeonToCActionContext::toc_eadric;
+            creators["toc paletress shield"] = &WotlkDungeonToCActionContext::toc_paletress_shield;
         }
     private:
         static Action* toc_lance(PlayerbotAI* ai) { return new ToCLanceAction(ai); }
@@ -27,6 +28,7 @@ class WotlkDungeonToCActionContext : public NamedObjectContext<Action>
         static Action* toc_mount(PlayerbotAI* ai) { return new ToCMountAction(ai); }
         static Action* toc_mounted(PlayerbotAI* ai) { return new ToCMountedAction(ai); }
         static Action* toc_eadric(PlayerbotAI* ai) { return new ToCEadricAction(ai); }
+        static Action* toc_paletress_shield(PlayerbotAI* ai) { return new ToCPaletressShieldAction(ai); }
 };
 
 #endif

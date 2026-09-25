@@ -260,3 +260,35 @@ bool ToCEadricAction::Execute(Event /*event*/)
 
     return false;
 }
+
+bool ToCPaletressShieldAction::isUseful()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "argent confessor paletress");
+    if (!boss)
+        return false;
+
+    Spell* spell = bot->GetCurrentSpell(CURRENT_GENERIC_SPELL);
+    return bot->GetVictim() == boss || AI_VALUE(Unit*, "current target") == boss ||
+        (spell && spell->m_targets.GetUnitTarget() == boss);
+}
+
+bool ToCPaletressShieldAction::Execute(Event /*event*/)
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "argent confessor paletress");
+    if (!boss)
+        return false;
+
+    for (CurrentSpellTypes type : { CURRENT_GENERIC_SPELL, CURRENT_CHANNELED_SPELL })
+        if (Spell* spell = bot->GetCurrentSpell(type))
+            if (spell->m_targets.GetUnitTarget() == boss)
+                bot->InterruptSpell(type);
+
+    GuidVector targets = AI_VALUE(GuidVector, "possible targets");
+    for (ObjectGuid const& guid : targets)
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (unit && unit != boss && unit->IsAlive() && unit->IsInCombat())
+            return Attack(unit);
+    }
+    return false;
+}

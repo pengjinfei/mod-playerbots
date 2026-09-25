@@ -21,6 +21,7 @@ enum TocC_IDs
 
     //Eadric
     SPELL_RADIANCE                  = 66935,
+    SPELL_PALETRESS_REFLECTIVE_SHIELD = 66515,
 
     // Objects
     OBJECT_LANCE_RACK               = 196398,
@@ -118,6 +119,13 @@ class ToCEadricTrigger : public Trigger
 {
 public:
     ToCEadricTrigger(PlayerbotAI* botAI) : Trigger(botAI, "toc eadric") {}
+    bool IsActive() override;
+};
+
+class ToCPaletressShieldTrigger : public Trigger
+{
+public:
+    ToCPaletressShieldTrigger(PlayerbotAI* botAI) : Trigger(botAI, "toc paletress shield") {}
     bool IsActive() override;
 };
 
