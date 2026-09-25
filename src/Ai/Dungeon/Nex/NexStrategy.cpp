@@ -15,7 +15,7 @@ WotlkDungeonNexStrategy::WotlkDungeonNexStrategy(PlayerbotAI* ai) : TrashCcPullS
                                    NPC_MAGE_HUNTER_INITIATE, NPC_MAGE_HUNTER_INITIATE_HEROIC });
 }
 
-void WotlkDungeonNexStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
+void WotlkDungeonNexStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     // Horde Commander (Alliance N)/Commander Kolurg (Alliance H)
     // or
@@ -46,7 +46,7 @@ void WotlkDungeonNexStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     // TODO: Add frost resist aura for paladins?
 }
 
-void WotlkDungeonNexStrategy::InitMultipliers(std::vector<Multiplier*> &multipliers)
+void WotlkDungeonNexStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
 {
     multipliers.push_back(new FactionCommanderMultiplier(botAI));
     multipliers.push_back(new TelestraMultiplier(botAI));

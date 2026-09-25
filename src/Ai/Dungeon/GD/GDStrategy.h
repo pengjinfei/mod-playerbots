@@ -42,9 +42,9 @@ public:
         // 只在古达克禁用 Sap，让两个远程名额给羊/妖术；共享链和其它副本不受影响。
         TrashCcRegisterDisabledClasses(604, { CLASS_ROGUE });
     }
-    virtual std::string const getName() override { return "gundrak"; }
-    virtual void InitTriggers(std::vector<TriggerNode*> &triggers) override;
-    virtual void InitMultipliers(std::vector<Multiplier*> &multipliers) override;
+    std::string const getName() override { return "wotlk-gd"; }
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
 };
 
 #endif

@@ -16,9 +16,9 @@ class WotlkDungeonNexStrategy : public TrashCcPullStrategy
 {
 public:
     WotlkDungeonNexStrategy(PlayerbotAI* ai);
-    virtual std::string const getName() override { return "nexus"; }
-    virtual void InitTriggers(std::vector<TriggerNode*> &triggers) override;
-    virtual void InitMultipliers(std::vector<Multiplier*> &multipliers) override;
+    std::string const getName() override { return "wotlk-nex"; }
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
 };
 
 #endif

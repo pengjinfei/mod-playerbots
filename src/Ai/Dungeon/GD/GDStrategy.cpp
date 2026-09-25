@@ -7,7 +7,7 @@
 #include "GDStrategy.h"
 #include "GDMultipliers.h"
 
-void WotlkDungeonGDStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
+void WotlkDungeonGDStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     // 前置清怪的控制链（共享实现在 TrashCcPullStrategy，MarkRtiStrategy.h）：
     // 坦克按队伍图标指派（骷髅=先杀、月亮=法师羊、方块=萨满妖术、十字=盗贼闷棍）→ 闷棍先、
@@ -44,7 +44,7 @@ void WotlkDungeonGDStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
     // Eck the Ferocious (Heroic only)
 }
 
-void WotlkDungeonGDStrategy::InitMultipliers(std::vector<Multiplier*> &multipliers)
+void WotlkDungeonGDStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
 {
     multipliers.push_back(new SladranMultiplier(botAI));
     multipliers.push_back(new GaldarahMultiplier(botAI));

@@ -7,7 +7,7 @@
 #include "ANStrategy.h"
 #include "ANMultipliers.h"
 
-void WotlkDungeonANStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
+void WotlkDungeonANStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     // 清怪控制链：门厅那两组守望者（6 只，彼此只隔 15 码）在基线 run436 里 3–5 秒内一起进战斗，
     // 四场承伤 424,711、五场只杀掉 2 只。整本小怪是亡灵，唯一有效的控制是牧师束缚亡灵。
@@ -75,7 +75,7 @@ void WotlkDungeonANStrategy::InitTriggers(std::vector<TriggerNode*> &triggers)
         { NextAction("heroism", 56.0f), NextAction("bloodlust", 56.0f) }));
 }
 
-void WotlkDungeonANStrategy::InitMultipliers(std::vector<Multiplier*> &multipliers)
+void WotlkDungeonANStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
 {
     multipliers.push_back(new KrikthirMultiplier(botAI));
     multipliers.push_back(new AnubarakMageManaMultiplier(botAI));
