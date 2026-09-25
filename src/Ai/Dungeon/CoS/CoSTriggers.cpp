@@ -19,7 +19,7 @@ bool ExplodeGhoulTrigger::IsActive()
     for (auto i = corpses.begin(); i != corpses.end(); ++i)
     {
         Unit* unit = botAI->GetUnit(*i);
-        if (unit && unit->GetEntry() == NPC_RISEN_GHOUL)
+        if (unit && unit->GetEntry() == NPC_GHOUL_MINION)
         {
             if (bot->GetExactDist2d(unit) < distance + distanceExtra)
             {
