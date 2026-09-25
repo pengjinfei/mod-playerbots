@@ -65,6 +65,15 @@ public:
         if (!attacker->IsAlive())
             return;
 
+        // A passive creature that is not attacking anyone can never be picked up: HasAggro()
+        // stays false forever, so IsBetter() would rank it above a boss the tank already holds
+        // (GetIntervalLevel == 2) and the tank keeps walking to the nearest one. Seen on
+        // Amanitar: the boss summons passive Healthy/Poisonous Mushrooms that respawn in place,
+        // and the main tank spent 233 of 269 s of the fight on them (run100030).
+        if (Creature* creature = attacker->ToCreature())
+            if (creature->HasReactState(REACT_PASSIVE) && !creature->GetVictim())
+                return;
+
         if (!result || IsBetter(attacker, result))
             result = attacker;
     }
