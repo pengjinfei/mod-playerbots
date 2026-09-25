@@ -18,10 +18,12 @@ class WotlkDungeonPoSActionContext : public NamedObjectContext<Action>
         {
             creators["ick and krick"] = &WotlkDungeonPoSActionContext::ick_and_krick;
             creators["tyrannus"] = &WotlkDungeonPoSActionContext::tyrannus;
+            creators["garfrost hide behind rock"] = &WotlkDungeonPoSActionContext::garfrost_hide_behind_rock;
         }
     private:
         static Action* ick_and_krick(PlayerbotAI* ai) { return new IckAndKrickAction(ai); }
         static Action* tyrannus(PlayerbotAI* ai) { return new TyrannusAction(ai); }
+        static Action* garfrost_hide_behind_rock(PlayerbotAI* ai) { return new GarfrostHideBehindRockAction(ai); }
 };
 
 #endif

@@ -69,6 +69,9 @@ constexpr uint32 SPELL_GRAVITY_LAPSE_MGT = 44226;
 std::vector<std::string> PlayerbotAI::dispel_whitelist = {
     "mutating injection",
     "frostbolt",
+    // Garfrost reapplies Permafrost every 2 seconds while the boss has line of sight; dispelling it only
+    // burns the healer's global cooldowns (heroic PoS: a priest spent 40 seconds casting Dispel Magic).
+    "permafrost",
 };
 
 std::vector<std::string>& split(std::string const s, char delim, std::vector<std::string>& elems);

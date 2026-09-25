@@ -17,6 +17,30 @@ bool IckAndKrickTrigger::IsActive()
     return true;
 }
 
+bool GarfrostPermafrostTrigger::IsActive()
+{
+    // Permafrost skips any target out of melee range with a Saronite Rock between it and Garfrost.
+    // Only ranged damage dealers can use that: melee and tanks are always hit, and a healer behind a rock
+    // loses line of sight to the tank standing next to Garfrost.
+    if (botAI->IsTank(bot) || botAI->IsHeal(bot) || !botAI->IsRanged(bot))
+        return false;
+
+    // Hide once the stacks start to hurt; behind the rock they are no longer refreshed, the aura runs out
+    // and the trigger releases the bot back to its rotation.
+    constexpr uint8 hideAtStacks = 6;
+    Aura* permafrost = bot->GetAura(SPELL_PERMAFROST_AURA_HC);
+    if (!permafrost)
+        permafrost = bot->GetAura(SPELL_PERMAFROST_AURA);
+    if (!permafrost || permafrost->GetStackAmount() < hideAtStacks)
+        return false;
+
+    Unit* boss = AI_VALUE2(Unit*, "find target", "forgemaster garfrost");
+    if (!boss || !boss->IsInCombat())
+        return false;
+
+    return bot->FindNearestGameObject(GO_SARONITE_ROCK, 80.0f) != nullptr;
+}
+
 bool TyrannusTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "scourgelord tyrannus");

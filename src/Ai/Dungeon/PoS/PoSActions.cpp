@@ -5,6 +5,11 @@
  */
 
 #include "PoSActions.h"
+
+#include <cmath>
+#include <limits>
+
+#include "GameObject.h"
 #include "Playerbots.h"
 
 bool IckAndKrickAction::Execute(Event /*event*/)
@@ -314,4 +319,53 @@ bool TyrannusAction::RangedSpread(bool rangedSpread)
     }
 
     return false;
+}
+
+bool GarfrostHideBehindRockAction::Execute(Event /*event*/)
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "forgemaster garfrost");
+    if (!boss)
+        return false;
+
+    std::list<GameObject*> rocks;
+    boss->GetGameObjectListWithEntryInGrid(rocks, GO_SARONITE_ROCK, 80.0f);
+
+    // Stand this far behind the rock, on the far side from Garfrost; the script needs the rock within
+    // 4 yards of the line between him and the target.
+    constexpr float hideDistance = 3.0f;
+    // Keep the hiding spot within spell and heal range of the fight.
+    constexpr float maxBossDistance = 35.0f;
+
+    float bestTravel = std::numeric_limits<float>::max();
+    Position bestSpot;
+    for (GameObject* rock : rocks)
+    {
+        if (!rock || !rock->isSpawned() || rock->IsInvisibleDueToDespawn())
+            continue;
+
+        if (rock->IsInBetween(boss, bot, 3.5f) && !boss->IsWithinMeleeRange(bot))
+            return false;
+
+        float angle = boss->GetAngle(rock);
+        float x = rock->GetPositionX() + hideDistance * std::cos(angle);
+        float y = rock->GetPositionY() + hideDistance * std::sin(angle);
+        float z = rock->GetPositionZ();
+        Position spot(x, y, z);
+        if (boss->GetExactDist2d(spot) > maxBossDistance)
+            continue;
+
+        float travel = bot->GetExactDist2d(spot);
+        if (travel < bestTravel)
+        {
+            bestTravel = travel;
+            bestSpot = spot;
+        }
+    }
+
+    // The spot can sit inside the rock's collision; close enough counts as arrived.
+    if (bestTravel == std::numeric_limits<float>::max() || bestTravel < 2.5f)
+        return false;
+
+    return MoveTo(bot->GetMapId(), bestSpot.GetPositionX(), bestSpot.GetPositionY(), bestSpot.GetPositionZ(), false,
+                  false, false, true, MovementPriority::MOVEMENT_COMBAT);
 }

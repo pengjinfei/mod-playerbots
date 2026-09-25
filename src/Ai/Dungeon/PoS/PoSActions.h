@@ -9,6 +9,7 @@
 
 #include "Action.h"
 #include "AttackAction.h"
+#include "MovementActions.h"
 #include "PlayerbotAI.h"
 #include "Playerbots.h"
 #include "PoSTriggers.h"
@@ -25,6 +26,13 @@ public:
     bool Pursuit(bool pursuit, Unit* boss);
     bool PoisonNova(bool poisonNova, Unit* boss);
     bool ExplosiveBarrage(bool explosiveBarrage, Unit* boss);
+};
+
+class GarfrostHideBehindRockAction : public MovementAction
+{
+public:
+    GarfrostHideBehindRockAction(PlayerbotAI* ai) : MovementAction(ai, "garfrost hide behind rock") {}
+    bool Execute(Event event) override;
 };
 
 class TyrannusAction : public AttackAction

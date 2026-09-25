@@ -21,6 +21,9 @@ enum PitOfSaronIDs
     NPC_TYRANNUS                        = 36658,
     NPC_RIMEFANG                        = 36661,
 
+    //GameObjects
+    GO_SARONITE_ROCK                    = 196485,
+
     //Spells
     SPELL_PURSUIT                       = 68987,
     SPELL_POISON_NOVA_POS               = 68989,
@@ -33,12 +36,22 @@ enum PitOfSaronIDs
     RIMEFANG_SPELL_HOARFROST            = 69246,
     RIMEFANG_SPELL_HOARFROST_HC         = 69245,
     RIMEFANG_SPELL_HOARFROST_HC2        = 69645,
+    SPELL_PERMAFROST_AURA               = 68786,
+    SPELL_PERMAFROST_AURA_HC            = 70336,
 };
 
 class IckAndKrickTrigger : public Trigger
 {
 public:
     IckAndKrickTrigger(PlayerbotAI* ai) : Trigger(ai, "ick and krick") {}
+
+    bool IsActive() override;
+};
+
+class GarfrostPermafrostTrigger : public Trigger
+{
+public:
+    GarfrostPermafrostTrigger(PlayerbotAI* ai) : Trigger(ai, "garfrost permafrost") {}
 
     bool IsActive() override;
 };
