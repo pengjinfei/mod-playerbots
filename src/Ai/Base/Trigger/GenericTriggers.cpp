@@ -399,6 +399,12 @@ bool BoostTrigger::IsActive()
     if (target && target->ToPlayer())
         return true;
 
+    // "balance" never reaches the threshold against a single 5-man boss (5x80 against one 82 elite = 162%),
+    // so without this cooldowns were only ever used on packs of elites, never on the boss.
+    if (Creature* creature = target ? target->ToCreature() : nullptr)
+        if (creature->IsDungeonBoss() || creature->isWorldBoss())
+            return true;
+
     return AI_VALUE(uint8, "balance") <= balance;
 }
 
