@@ -15,7 +15,10 @@ void WotlkDungeonUPStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     // Gortok Palehoof
 
     // Skadi the Ruthless
-    // TODO: Harpoons launchable via GameObject. For now players should do them
+    triggers.push_back(new TriggerNode("skadi harpoon pickup",
+        { NextAction("skadi harpoon pickup", ACTION_RAID + 2) }));
+    triggers.push_back(new TriggerNode("skadi harpoon launch",
+        { NextAction("skadi harpoon launch", ACTION_RAID + 3) }));
     triggers.push_back(new TriggerNode("freezing cloud",
         { NextAction("avoid freezing cloud", ACTION_RAID + 5) }));
     triggers.push_back(new TriggerNode("skadi whirlwind",

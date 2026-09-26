@@ -14,6 +14,12 @@
 
 float SkadiMultiplier::GetValue(Action* action)
 {
+    // A bot carrying a harpoon stays at the launcher until it fires; only the freezing cloud may move it.
+    if (bot->HasItemCount(ITEM_HARPOON, 1) && dynamic_cast<MovementAction*>(action) &&
+        !dynamic_cast<SkadiHarpoonLaunchAction*>(action) && !dynamic_cast<AvoidFreezingCloudAction*>(action) &&
+        bot->FindNearestCreature(NPC_GRAUF, 250.0f, true))
+        return 0.0f;
+
     Unit* boss = AI_VALUE2(Unit*, "find target", "skadi the ruthless");
     if (!boss) { return 1.0f; }
 

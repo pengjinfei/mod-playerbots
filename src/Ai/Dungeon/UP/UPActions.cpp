@@ -5,6 +5,9 @@
  */
 
 #include "UPActions.h"
+#include "GameObject.h"
+#include "WorldPacket.h"
+#include "WorldSession.h"
 #include "Spell.h"
 #include "Playerbots.h"
 #include "UPTriggers.h"
@@ -98,4 +101,68 @@ bool AvoidSkadiWhirlwindAction::Execute(Event /*event*/)
     }
 
     return false;
+}
+
+bool SkadiHarpoonPickupAction::Execute(Event /*event*/)
+{
+    GameObject* harpoon = bot->FindNearestGameObject(GO_HARPOON, 60.0f);
+    if (!harpoon || !harpoon->isSpawned())
+        return false;
+
+    if (bot->GetDistance(harpoon) > INTERACTION_DISTANCE - 1.0f)
+        return MoveTo(bot->GetMapId(), harpoon->GetPositionX(), harpoon->GetPositionY(), harpoon->GetPositionZ());
+
+    // Same path as a client click (the GO is a goober with no lock): it casts Create Harpoon on the user.
+    WorldPacket usePacket(CMSG_GAMEOBJ_USE);
+    usePacket << harpoon->GetGUID();
+    bot->GetSession()->HandleGameObjectUseOpcode(usePacket);
+    return true;
+}
+
+bool SkadiHarpoonLaunchAction::Execute(Event /*event*/)
+{
+    Item* item = bot->GetItemByEntry(ITEM_HARPOON);
+    Creature* grauf = bot->FindNearestCreature(NPC_GRAUF, 250.0f, true);
+    if (!item || !grauf)
+        return false;
+
+    GameObject* launcher = nullptr;
+    for (uint32 entry : { GO_HARPOON_LAUNCHER_1, GO_HARPOON_LAUNCHER_2, GO_HARPOON_LAUNCHER_3 })
+        if (GameObject* go = bot->FindNearestGameObject(entry, 250.0f))
+            if (!launcher || bot->GetDistance(go) < bot->GetDistance(launcher))
+                launcher = go;
+    if (!launcher)
+        return false;
+
+    if (bot->GetDistance(launcher) > INTERACTION_DISTANCE - 1.0f)
+        return MoveTo(bot->GetMapId(), launcher->GetPositionX(), launcher->GetPositionY(), launcher->GetPositionZ());
+
+    // The launcher fires a 60 yd cone that only reaches Grauf at his hover point; wait for him there.
+    if (grauf->GetExactDist2d(GRAUF_HOVER_POSITION) > 15.0f || bot->IsNonMeleeSpellCast(false))
+    {
+        if (!sPlayerbotAIConfig.logInGroupOnly)
+            LOG_DEBUG("playerbots", "skadi-harpoon bot={} waiting grauf=({:.1f},{:.1f},{:.1f}) hoverDist={:.1f}",
+                      bot->GetName(), grauf->GetPositionX(), grauf->GetPositionY(), grauf->GetPositionZ(),
+                      grauf->GetExactDist2d(GRAUF_HOVER_POSITION));
+        return false;
+    }
+
+    uint32 spellId = 0;
+    for (uint8 i = 0; i < MAX_ITEM_PROTO_SPELLS; ++i)
+        if (item->GetTemplate()->Spells[i].SpellId > 0)
+            spellId = item->GetTemplate()->Spells[i].SpellId;
+    if (!spellId)
+        return false;
+
+    // Use the item on the launcher the way the client does (CMSG_USE_ITEM with a gameobject target), so the
+    // launcher's lock checks the harpoon.
+    WorldPacket packet(CMSG_USE_ITEM);
+    packet << item->GetBagSlot() << item->GetSlot() << uint8(1) << spellId << item->GetGUID() << uint32(0)
+           << uint8(0) << uint32(TARGET_FLAG_GAMEOBJECT);
+    packet << launcher->GetGUID().WriteAsPacked();
+    bot->GetSession()->HandleUseItemOpcode(packet);
+    if (!sPlayerbotAIConfig.logInGroupOnly)
+        LOG_DEBUG("playerbots", "skadi-harpoon bot={} used launcher={} spell={} stillHasItem={}", bot->GetName(),
+                  launcher->GetEntry(), spellId, bot->HasItemCount(ITEM_HARPOON, 1));
+    return true;
 }

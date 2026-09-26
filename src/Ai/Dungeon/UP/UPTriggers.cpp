@@ -59,3 +59,21 @@ bool YmironBaneTrigger::IsActive()
 
     return boss->FindCurrentSpellBySpellId(SPELL_BANE) || boss->HasAura(SPELL_BANE);
 }
+
+bool SkadiHarpoonPickupTrigger::IsActive()
+{
+    // Damage dealers fetch harpoons; the tank holds the gauntlet adds and the healer stays on the group.
+    if (botAI->IsTank(bot) || botAI->IsHeal(bot) || bot->HasItemCount(ITEM_HARPOON, 1))
+        return false;
+
+    if (!bot->FindNearestCreature(NPC_GRAUF, 250.0f, true))
+        return false;
+
+    GameObject* harpoon = bot->FindNearestGameObject(GO_HARPOON, 60.0f);
+    return harpoon && harpoon->isSpawned();
+}
+
+bool SkadiHarpoonLaunchTrigger::IsActive()
+{
+    return bot->HasItemCount(ITEM_HARPOON, 1) && bot->FindNearestCreature(NPC_GRAUF, 250.0f, true);
+}
