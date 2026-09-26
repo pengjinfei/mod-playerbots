@@ -187,6 +187,12 @@ bool ToCMountedAction::Execute(Event /*event*/)
         return true;
     }
 
+    // Nothing castable from here: the mount's own spells only cast, so ride into Thrust range. Most failures were
+    // out of range (Thrust, Shield-Breaker) or too close for Charge.
+    if (vehicleBase->GetExactDist2d(target) > 4.0f)
+        return MoveTo(target->GetMapId(), target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), false,
+                      false, false, true, MovementPriority::MOVEMENT_COMBAT);
+
     return false;
 }
 

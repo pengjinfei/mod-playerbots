@@ -49,7 +49,7 @@ struct HoREscape
     Creature* leader = nullptr;
 };
 
-// Both are set only while the escape runs (the Lich King has Remorseless Winter).
+// Both are set only while the escape runs (the Lich King is in combat or has Remorseless Winter).
 HoREscape GetHoREscape(Player* bot);
 
 // Keep up with the leader and stay clear of the Lich King's back: behind him, or a wall cleared and the leader gone

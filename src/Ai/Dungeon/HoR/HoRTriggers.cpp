@@ -26,7 +26,9 @@ HoREscape GetHoREscape(Player* bot)
 {
     HoREscape escape;
     Creature* lichKing = bot->FindNearestCreature(NPC_ESCAPE_LICH_KING, 200.0f);
-    if (!lichKing || !lichKing->IsAlive() || !lichKing->HasAura(SPELL_REMORSELESS_WINTER))
+    // The run starts at the gossip (he leaves the ice prison and pulls everyone into combat); Remorseless Winter
+    // only comes up at his second waypoint, by which time the leader is already ~90 yd ahead.
+    if (!lichKing || !lichKing->IsAlive() || (!lichKing->IsInCombat() && !lichKing->HasAura(SPELL_REMORSELESS_WINTER)))
         return escape;
 
     Creature* leader = bot->FindNearestCreature(NPC_ESCAPE_LEADER_JAINA, 250.0f);

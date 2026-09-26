@@ -45,11 +45,11 @@ public:
     bool Execute(Event event) override;
 };
 
-class ToCMountedAction : public Action
+class ToCMountedAction : public MovementAction
 {
 public:
     ToCMountedAction(PlayerbotAI* botAI, std::string const name = "toc mounted")
-        : Action(botAI, name) {}
+        : MovementAction(botAI, name) {}
     bool Execute(Event event) override;
 };
 
