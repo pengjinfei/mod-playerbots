@@ -16,6 +16,7 @@ class WotlkDungeonToCActionContext : public NamedObjectContext<Action>
     public:
         WotlkDungeonToCActionContext() {
             creators["toc lance"] = &WotlkDungeonToCActionContext::toc_lance;
+            creators["toc trample champion"] = &WotlkDungeonToCActionContext::toc_trample_champion;
             creators["toc ue lance"] = &WotlkDungeonToCActionContext::toc_ue_lance;
             creators["toc mount"] = &WotlkDungeonToCActionContext::toc_mount;
             creators["toc mounted"] = &WotlkDungeonToCActionContext::toc_mounted;
@@ -23,6 +24,7 @@ class WotlkDungeonToCActionContext : public NamedObjectContext<Action>
             creators["toc paletress shield"] = &WotlkDungeonToCActionContext::toc_paletress_shield;
         }
     private:
+        static Action* toc_trample_champion(PlayerbotAI* ai) { return new ToCTrampleChampionAction(ai); }
         static Action* toc_lance(PlayerbotAI* ai) { return new ToCLanceAction(ai); }
         static Action* toc_ue_lance(PlayerbotAI* ai) { return new ToCUELanceAction(ai); }
         static Action* toc_mount(PlayerbotAI* ai) { return new ToCMountAction(ai); }

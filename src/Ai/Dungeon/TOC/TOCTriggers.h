@@ -87,6 +87,19 @@ const std::vector<uint32> availableTargets = {
     NPC_ORGRIMMAR_MINION, NPC_SILVERMOON_MINION, NPC_THUNDER_BLUFF_MINION, NPC_SENJIN_MINION,    NPC_UNDERCITY_MINION,
 };
 
+// A Grand Champion knocked off his horse walks, unattackable, to a spare mount and remounts at 50k health; he
+// only stays down when a mounted player tramples him (within 5 yd) on the way. The mounted phase ends once all
+// three are down at the same time.
+constexpr uint32 SPELL_TOC_TRAMPLE_STUN = 67867;
+Creature* ToCFindWalkingChampion(Player* bot, float range);
+
+class ToCTrampleChampionTrigger : public Trigger
+{
+public:
+    ToCTrampleChampionTrigger(PlayerbotAI* ai) : Trigger(ai, "toc trample champion") {}
+    bool IsActive() override;
+};
+
 class ToCLanceTrigger : public Trigger
 {
 public:

@@ -24,6 +24,13 @@
 #include "StatsWeightCalculator.h"
 #include "TOCTriggers.h"
 
+class ToCTrampleChampionAction : public MovementAction
+{
+public:
+    ToCTrampleChampionAction(PlayerbotAI* ai) : MovementAction(ai, "toc trample champion") {}
+    bool Execute(Event event) override;
+};
+
 class ToCLanceAction : public AttackAction
 {
 public:

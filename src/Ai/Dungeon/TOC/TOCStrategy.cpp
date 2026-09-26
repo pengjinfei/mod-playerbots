@@ -15,6 +15,8 @@ void WotlkDungeonToCStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         { NextAction("toc ue lance", ACTION_RAID + 2) }));
     triggers.push_back(new TriggerNode("toc mount near",
         { NextAction("toc mount", ACTION_RAID + 4) }));
+    triggers.push_back(new TriggerNode("toc trample champion",
+        { NextAction("toc trample champion", ACTION_RAID + 7) }));
     triggers.push_back(new TriggerNode("toc mounted",
         { NextAction("toc mounted", ACTION_RAID + 6) }));
     triggers.push_back(new TriggerNode("toc eadric",

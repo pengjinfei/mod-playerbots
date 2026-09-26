@@ -16,6 +16,7 @@ class WotlkDungeonToCTriggerContext : public NamedObjectContext<Trigger>
         WotlkDungeonToCTriggerContext()
         {
             creators["toc lance"] = &WotlkDungeonToCTriggerContext::toc_lance;
+            creators["toc trample champion"] = &WotlkDungeonToCTriggerContext::toc_trample_champion;
             creators["toc ue lance"] = &WotlkDungeonToCTriggerContext::toc_ue_lance;
             creators["toc mount near"] = &WotlkDungeonToCTriggerContext::toc_mount_near;
             creators["toc mounted"] = &WotlkDungeonToCTriggerContext::toc_mounted;
@@ -23,6 +24,7 @@ class WotlkDungeonToCTriggerContext : public NamedObjectContext<Trigger>
             creators["toc paletress shield"] = &WotlkDungeonToCTriggerContext::toc_paletress_shield;
         }
     private:
+        static Trigger* toc_trample_champion(PlayerbotAI* ai) { return new ToCTrampleChampionTrigger(ai); }
         static Trigger* toc_lance(PlayerbotAI* ai) { return new ToCLanceTrigger(ai); }
         static Trigger* toc_ue_lance(PlayerbotAI* ai) { return new ToCUELanceTrigger(ai); }
         static Trigger* toc_mount_near(PlayerbotAI* ai) { return new ToCMountNearTrigger(ai); }

@@ -11,6 +11,21 @@
 #include "Playerbots.h"
 #include "Vehicle.h"
 
+bool ToCTrampleChampionAction::Execute(Event /*event*/)
+{
+    Unit* vehicleBase = bot->GetVehicleBase();
+    Creature* champion = ToCFindWalkingChampion(bot, 80.0f);
+    if (!vehicleBase || !champion)
+        return false;
+
+    // Ride onto him: the trample check is the rider within 5 yd of the walking champion.
+    if (!sPlayerbotAIConfig.logInGroupOnly)
+        LOG_DEBUG("playerbots", "toc-trample bot={} champion={} dist={:.1f}", bot->GetName(), champion->GetEntry(),
+                  vehicleBase->GetExactDist2d(champion));
+    return MoveTo(champion->GetMapId(), champion->GetPositionX(), champion->GetPositionY(), champion->GetPositionZ(),
+                  false, false, false, true, MovementPriority::MOVEMENT_COMBAT);
+}
+
 bool ToCLanceAction::Execute(Event /*event*/)
 {
     // If already has lance equipped, do nothing

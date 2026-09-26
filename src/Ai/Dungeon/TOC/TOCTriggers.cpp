@@ -9,6 +9,37 @@
 #include "AiObjectContext.h"
 #include "Playerbots.h"
 
+Creature* ToCFindWalkingChampion(Player* bot, float range)
+{
+    Creature* nearest = nullptr;
+    for (size_t i = 0; i < 10; ++i)  // the ten Grand Champions head availableTargets
+    {
+        std::list<Creature*> champions;
+        bot->GetCreatureListWithEntryInGrid(champions, availableTargets[i], range);
+        for (Creature* champion : champions)
+        {
+            if (!champion->IsAlive() || champion->GetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID) ||
+                !champion->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE) || champion->HasAura(SPELL_TOC_TRAMPLE_STUN))
+                continue;
+            // Walking to a new mount (the dismount sets the walk flag); the ground phase has no walk flag.
+            if (!champion->HasUnitMovementFlag(MOVEMENTFLAG_WALKING))
+                continue;
+            if (!nearest || bot->GetExactDist2d(champion) < bot->GetExactDist2d(nearest))
+                nearest = champion;
+        }
+    }
+    return nearest;
+}
+
+bool ToCTrampleChampionTrigger::IsActive()
+{
+    Unit* vehicleBase = bot->GetVehicleBase();
+    if (!vehicleBase || vehicleBase->GetEntry() != NPC_ARGENT_WARHORSE)
+        return false;
+
+    return ToCFindWalkingChampion(bot, 80.0f) != nullptr;
+}
+
 bool ToCLanceTrigger::IsActive()
 {
     if (bot->GetVehicle())
