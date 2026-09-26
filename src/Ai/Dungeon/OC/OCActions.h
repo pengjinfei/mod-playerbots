@@ -49,6 +49,13 @@ public:
     bool Execute(Event event) override;
 };
 
+class AvoidPlanarAnomalyAction : public MovementAction
+{
+public:
+    AvoidPlanarAnomalyAction(PlayerbotAI* ai) : MovementAction(ai, "avoid planar anomaly") {}
+    bool Execute(Event event) override;
+};
+
 class OccDrakeAttackAction : public Action
 {
 public:

@@ -19,6 +19,7 @@ class WotlkDungeonOccActionContext : public NamedObjectContext<Action>
             creators["mount drake"] = &WotlkDungeonOccActionContext::mount_drake;
             creators["dismount drake"] = &WotlkDungeonOccActionContext::dismount_drake;
             creators["occ fly drake"] = &WotlkDungeonOccActionContext::occ_fly_drake;
+            creators["avoid planar anomaly"] = &WotlkDungeonOccActionContext::avoid_planar_anomaly;
             creators["occ drake attack"] = &WotlkDungeonOccActionContext::occ_drake_attack;
             creators["avoid arcane explosion"] = &WotlkDungeonOccActionContext::avoid_arcane_explosion;
             creators["time bomb spread"] = &WotlkDungeonOccActionContext::time_bomb_spread;
@@ -28,6 +29,7 @@ class WotlkDungeonOccActionContext : public NamedObjectContext<Action>
         static Action* mount_drake(PlayerbotAI* ai) { return new MountDrakeAction(ai); }
         static Action* dismount_drake(PlayerbotAI* ai) { return new DismountDrakeAction(ai); }
         static Action* occ_fly_drake(PlayerbotAI* ai) { return new OccFlyDrakeAction(ai); }
+        static Action* avoid_planar_anomaly(PlayerbotAI* ai) { return new AvoidPlanarAnomalyAction(ai); }
         static Action* occ_drake_attack(PlayerbotAI* ai) { return new OccDrakeAttackAction(ai); }
         static Action* avoid_arcane_explosion(PlayerbotAI* ai) { return new AvoidArcaneExplosionAction(ai); }
         static Action* time_bomb_spread(PlayerbotAI* ai) { return new TimeBombSpreadAction(ai); }

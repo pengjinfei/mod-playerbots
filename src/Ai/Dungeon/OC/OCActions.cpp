@@ -190,6 +190,57 @@ bool OccFlyDrakeAction::Execute(Event /*event*/)
     return false;
 }
 
+bool AvoidPlanarAnomalyAction::Execute(Event /*event*/)
+{
+    Unit* vehicleBase = bot->GetVehicleBase();
+    if (!vehicleBase)
+        return false;
+
+    // Fly directly away from the anomalies in range; they chase at run speed, a drake outruns them.
+    std::list<Creature*> anomalies;
+    vehicleBase->GetCreatureListWithEntryInGrid(anomalies, NPC_PLANAR_ANOMALY, PLANAR_ANOMALY_DANGER_RANGE);
+    float dx = 0.0f;
+    float dy = 0.0f;
+    for (Creature* anomaly : anomalies)
+    {
+        if (!anomaly->IsAlive())
+            continue;
+
+        float const dist = std::max(1.0f, vehicleBase->GetExactDist2d(anomaly));
+        dx += (vehicleBase->GetPositionX() - anomaly->GetPositionX()) / dist;
+        dy += (vehicleBase->GetPositionY() - anomaly->GetPositionY()) / dist;
+    }
+
+    float angle = (dx == 0.0f && dy == 0.0f) ? vehicleBase->GetOrientation() : std::atan2(dy, dx);
+    // Stay near the fight: with Eregos far behind, bend the escape sideways around him instead of away.
+    constexpr float fleeDistance = 40.0f;
+    constexpr float maxBossDistance = 80.0f;
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ley-guardian eregos");
+    float x = vehicleBase->GetPositionX() + fleeDistance * std::cos(angle);
+    float y = vehicleBase->GetPositionY() + fleeDistance * std::sin(angle);
+    if (boss && boss->GetExactDist2d(x, y) > maxBossDistance)
+    {
+        float const toBoss = vehicleBase->GetAbsoluteAngle(boss);
+        float const side = Position::NormalizeOrientation(angle - toBoss) < M_PI ? M_PI_2 : -M_PI_2;
+        angle = toBoss + side;
+        x = vehicleBase->GetPositionX() + fleeDistance * std::cos(angle);
+        y = vehicleBase->GetPositionY() + fleeDistance * std::sin(angle);
+    }
+
+    if (vehicleBase->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
+        vehicleBase->InterruptSpell(CURRENT_CHANNELED_SPELL);
+
+    MotionMaster* mm = vehicleBase->GetMotionMaster();
+    mm->Clear(false);
+    vehicleBase->SetCanFly(true);
+    mm->MovePoint(0, x, y, vehicleBase->GetPositionZ(), FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
+    vehicleBase->SendMovementFlagUpdate();
+    if (!sPlayerbotAIConfig.logInGroupOnly)
+        LOG_DEBUG("playerbots", "eregos-anomaly bot={} anomalies={} flee=({:.1f},{:.1f})", bot->GetName(),
+                  anomalies.size(), x, y);
+    return true;
+}
+
 bool OccDrakeAttackAction::Execute(Event /*event*/)
 {
     vehicleBase = bot->GetVehicleBase();

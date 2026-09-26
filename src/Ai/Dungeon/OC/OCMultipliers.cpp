@@ -38,7 +38,8 @@ float OccFlyingMultiplier::GetValue(Action* action)
     if (bot->GetMapId() != OCULUS_MAP_ID || !bot->GetVehicleBase()) { return 1.0f; }
 
     // Suppresses FollowAction as well as some attack-based movements
-    if (dynamic_cast<MovementAction*>(action) && !dynamic_cast<OccFlyDrakeAction*>(action))
+    if (dynamic_cast<MovementAction*>(action) && !dynamic_cast<OccFlyDrakeAction*>(action) &&
+        !dynamic_cast<AvoidPlanarAnomalyAction*>(action))
         return 0.0f;
 
     return 1.0f;
@@ -100,6 +101,12 @@ float EregosMultiplier::GetValue(Action* action)
     if (!boss) { return 1.0f; }
 
     if (boss->HasAura(SPELL_PLANAR_SHIFT) && dynamic_cast<OccDrakeAttackAction*>(action))
+        return 0.0f;
+
+    // Casting or channeling from a drake stops it; while an anomaly is close, flying away comes first.
+    Unit* vehicleBase = bot->GetVehicleBase();
+    if (vehicleBase && dynamic_cast<OccDrakeAttackAction*>(action) &&
+        vehicleBase->FindNearestCreature(NPC_PLANAR_ANOMALY, PLANAR_ANOMALY_DANGER_RANGE, true))
         return 0.0f;
 
     return 1.0f;

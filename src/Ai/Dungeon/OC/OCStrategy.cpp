@@ -36,6 +36,8 @@ void WotlkDungeonOccStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         { NextAction("time bomb spread", ACTION_MOVE + 4) }));
 
     // Ley-Guardian Eregos
+    triggers.push_back(new TriggerNode("eregos planar anomaly",
+        { NextAction("avoid planar anomaly", ACTION_RAID + 5) }));
 }
 
 void WotlkDungeonOccStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)

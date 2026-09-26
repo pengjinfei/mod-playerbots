@@ -59,6 +59,9 @@ enum OculusIDs
     // Ley-Guardian Eregos
     SPELL_ENRAGED_ASSAULT           = 51170,
     SPELL_PLANAR_SHIFT              = 51162,
+    // Planar Shift summons three of these on Eregos; each chases a random player at run speed and casts
+    // Planar Blast (57976, 20 yd, ~14k) 15.5 s later.
+    NPC_PLANAR_ANOMALY              = 30879,
 };
 
 #define SPELL_EMPOWERED_ARCANE_EXPLOSION        DUNGEON_MODE(bot, SPELL_EMPOWERED_ARCANE_EXPLOSION_N, SPELL_EMPOWERED_ARCANE_EXPLOSION_H)
@@ -113,6 +116,16 @@ class DrakeCombatTrigger : public Trigger
 {
 public:
     DrakeCombatTrigger(PlayerbotAI* ai) : Trigger(ai, "drake combat") {}
+    bool IsActive() override;
+};
+
+// Fly clear of a Planar Anomaly before its Planar Blast goes off.
+constexpr float PLANAR_ANOMALY_DANGER_RANGE = 28.0f;
+
+class EregosPlanarAnomalyTrigger : public Trigger
+{
+public:
+    EregosPlanarAnomalyTrigger(PlayerbotAI* ai) : Trigger(ai, "eregos planar anomaly") {}
     bool IsActive() override;
 };
 

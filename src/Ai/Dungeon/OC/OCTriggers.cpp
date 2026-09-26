@@ -58,6 +58,15 @@ bool DrakeDismountTrigger::IsActive()
     return !master->GetVehicleBase() && bot->GetVehicleBase();
 }
 
+bool EregosPlanarAnomalyTrigger::IsActive()
+{
+    Unit* vehicleBase = bot->GetVehicleBase();
+    if (bot->GetMapId() != OCULUS_MAP_ID || !vehicleBase)
+        return false;
+
+    return vehicleBase->FindNearestCreature(NPC_PLANAR_ANOMALY, PLANAR_ANOMALY_DANGER_RANGE, true) != nullptr;
+}
+
 bool GroupFlyingTrigger::IsActive()
 {
     Player* master = botAI->GetMaster();

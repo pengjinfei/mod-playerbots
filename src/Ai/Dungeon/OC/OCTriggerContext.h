@@ -20,6 +20,7 @@ class WotlkDungeonOccTriggerContext : public NamedObjectContext<Trigger>
             creators["drake dismount"] = &WotlkDungeonOccTriggerContext::drake_dismount;
             creators["group flying"] = &WotlkDungeonOccTriggerContext::group_flying;
             creators["drake combat"] = &WotlkDungeonOccTriggerContext::drake_combat;
+            creators["eregos planar anomaly"] = &WotlkDungeonOccTriggerContext::eregos_planar_anomaly;
             creators["varos cloudstrider"] = &WotlkDungeonOccTriggerContext::varos_cloudstrider;
             creators["arcane explosion"] = &WotlkDungeonOccTriggerContext::arcane_explosion;
             creators["time bomb"] = &WotlkDungeonOccTriggerContext::time_bomb;
@@ -30,6 +31,7 @@ class WotlkDungeonOccTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* drake_dismount(PlayerbotAI* ai) { return new DrakeDismountTrigger(ai); }
         static Trigger* group_flying(PlayerbotAI* ai) { return new GroupFlyingTrigger(ai); }
         static Trigger* drake_combat(PlayerbotAI* ai) { return new DrakeCombatTrigger(ai); }
+        static Trigger* eregos_planar_anomaly(PlayerbotAI* ai) { return new EregosPlanarAnomalyTrigger(ai); }
         static Trigger* varos_cloudstrider(PlayerbotAI* ai) { return new VarosCloudstriderTrigger(ai); }
         static Trigger* arcane_explosion(PlayerbotAI* ai) { return new UromArcaneExplosionTrigger(ai); }
         static Trigger* time_bomb(PlayerbotAI* ai) { return new UromTimeBombTrigger(ai); }
