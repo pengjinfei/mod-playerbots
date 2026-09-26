@@ -8,6 +8,7 @@
 #include "Corpse.h"
 #include "Event.h"
 #include "GameGraveyard.h"
+#include "Group.h"
 #include "Log.h"
 #include "NearestNpcsValue.h"
 #include "ObjectDefines.h"
@@ -15,6 +16,7 @@
 #include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
+#include "SpellMgr.h"
 
 // ReleaseSpiritAction implementation
 bool ReleaseSpiritAction::Execute(Event event)
@@ -113,7 +115,81 @@ bool AutoReleaseSpiritAction::isUseful()
     if (bot->HasPlayerFlag(PLAYER_FLAGS_GHOST))
         return false;
 
-    return ShouldAutoRelease();
+    if (!ShouldAutoRelease())
+        return false;
+
+    return !ShouldWaitForGroupResurrect();
+}
+
+namespace
+{
+    // First rank of each out-of-combat or battle resurrection spell a party member can cast on a corpse.
+    constexpr uint32 RESURRECT_SPELL_FIRST_RANKS[] = {
+        2006,   // Priest: Resurrection
+        7328,   // Paladin: Redemption
+        2008,   // Shaman: Ancestral Spirit
+        50769,  // Druid: Revive
+        20484,  // Druid: Rebirth
+    };
+
+    bool KnowsResurrectSpell(Player* player)
+    {
+        for (uint32 spellId : RESURRECT_SPELL_FIRST_RANKS)
+        {
+            for (uint32 rank = spellId; rank; rank = sSpellMgr->GetNextSpellInChain(rank))
+            {
+                if (player->HasSpell(rank))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+// Without a real master nobody tells the bot to stay down, so it used to release at once and
+// run back as a ghost from outside the instance. A real player in a dungeon lies still while a
+// living party member can bring them back; do the same, with a cap in case nobody ever does.
+bool AutoReleaseSpiritAction::ShouldWaitForGroupResurrect()
+{
+    constexpr time_t MAX_WAIT_SECONDS = 5 * MINUTE;
+    constexpr time_t NEW_DEATH_GAP_SECONDS = 30;
+
+    Map* map = bot->GetMap();
+    Group* group = bot->GetGroup();
+    if (!map || !group || !(map->IsDungeon() || map->IsRaid()) || IsRealPlayer(botAI->GetMaster()))
+        return false;
+
+    time_t const now = time(nullptr);
+    if (!m_deadSince || now - m_lastDeadCheck > NEW_DEATH_GAP_SECONDS)
+        m_deadSince = now;
+    m_lastDeadCheck = now;
+
+    if (now - m_deadSince >= MAX_WAIT_SECONDS)
+    {
+        LOG_INFO("playerbots", "Bot {} <{}> releases: no resurrect after {}s", bot->GetGUID().ToString(),
+                 bot->GetName(), now - m_deadSince);
+        return false;
+    }
+
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+    {
+        Player* member = ref->GetSource();
+        if (!member || member == bot || !member->IsInWorld() || !member->IsAlive() || !member->IsInMap(bot))
+            continue;
+
+        if (!KnowsResurrectSpell(member))
+            continue;
+
+        if (now == m_deadSince)
+            LOG_INFO("playerbots", "Bot {} <{}> holds release: {} can resurrect", bot->GetGUID().ToString(),
+                     bot->GetName(), member->GetName());
+        return true;
+    }
+
+    LOG_INFO("playerbots", "Bot {} <{}> releases: no living party member can resurrect", bot->GetGUID().ToString(),
+             bot->GetName());
+    return false;
 }
 
 bool AutoReleaseSpiritAction::HandleBattlegroundSpiritHealer()
