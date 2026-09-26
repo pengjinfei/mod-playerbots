@@ -24,6 +24,8 @@ enum ForgeOfSoulsBronjahmIDs
 
     // Devourer of Souls
     SPELL_WAILING_SOULS         = 68899,
+    SPELL_WAILING_SOULS_PERIODIC   = 68875,
+    SPELL_WAILING_SOULS_PERIODIC_2 = 68876,
 };
 
 class MoveFromBronjahmTrigger : public Trigger

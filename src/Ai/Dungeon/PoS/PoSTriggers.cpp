@@ -20,8 +20,9 @@ bool IckAndKrickTrigger::IsActive()
 bool GarfrostPermafrostTrigger::IsActive()
 {
     // Permafrost skips any target out of melee range with a Saronite Rock between it and Garfrost.
-    // Only ranged damage dealers can use that: melee and tanks are always hit, and a healer behind a rock
-    // loses line of sight to the tank standing next to Garfrost.
+    // Only ranged damage dealers use that: the tank is always in melee range, a healer behind a rock loses line of
+    // sight to the tank beside him, and melee damage dealers stepping out cost more damage than the stacks they
+    // save (heroic run1288-1291 with melee hiding: 0/4, boss at 39-69%, against 1/3 ranged-only).
     if (botAI->IsTank(bot) || botAI->IsHeal(bot) || !botAI->IsRanged(bot))
         return false;
 

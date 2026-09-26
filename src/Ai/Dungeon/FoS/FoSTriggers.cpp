@@ -14,9 +14,9 @@ bool MoveFromBronjahmTrigger::IsActive()
     if (!boss)
         return false;
 
-    if (!boss->FindCurrentSpellBySpellId(SPELL_CORRUPT_SOUL))
-        return false;
-
+    // The fragment spawns where the target stands when the 4 s debuff ends and walks to Bronjahm; the farther out it
+    // appears, the longer the group has to kill it (heroic run1125: one fragment reached him and healed 34% -> 61%).
+    // Hold the distance for the whole debuff, not only during his cast.
     if (!bot->HasAura(SPELL_CORRUPT_SOUL))
         return false;
 

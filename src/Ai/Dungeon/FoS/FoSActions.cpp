@@ -5,6 +5,9 @@
  */
 
 #include "FoSActions.h"
+
+#include <cmath>
+
 #include "Playerbots.h"
 
 bool MoveFromBronjahmAction::Execute(Event /*event*/)
@@ -13,11 +16,11 @@ bool MoveFromBronjahmAction::Execute(Event /*event*/)
     if (!boss)
         return false;
 
-    if (bot->GetExactDist2d(boss) < 10.0f)
-        return FleePosition(boss->GetPosition(), 15.0f, 2000U);
-    else
-        return true;
+    constexpr float fragmentSpawnDistance = 25.0f;
+    if (bot->GetExactDist2d(boss) < fragmentSpawnDistance)
+        return FleePosition(boss->GetPosition(), fragmentSpawnDistance, 2000U);
 
+    // Far enough: do not hold the tick, so the bot keeps casting while it waits for the debuff to run out.
     return false;
 }
 
@@ -43,6 +46,10 @@ bool AttackCorruptedSoulFragmentAction::Execute(Event /*event*/)
                         group->SetTargetIcon(7, bot->GetGUID(), unit->GetGUID());  // 7 = skull
                     }
                 }
+                // The skull alone did not move everyone: in run1125 a fragment walked into Bronjahm with 40k damage
+                // on it. Damage dealers attack it directly; the tank keeps Bronjahm.
+                if (botAI->IsDps(bot) && AI_VALUE(Unit*, "current target") != unit)
+                    return Attack(unit);
                 break;
         }
 
@@ -146,6 +153,20 @@ bool DevourerOfSoulsAction::Execute(Event /*event*/)
     Unit* boss = AI_VALUE2(Unit*, "find target", "devourer of souls");
     if (!boss)
         return false;
+
+    // Wailing Souls: he roots facing one target and sweeps a beam 90 degrees from there (heroic run1121: ~130k damage
+    // on the group). Behind him is outside the sweep.
+    bool const wailing = boss->FindCurrentSpellBySpellId(SPELL_WAILING_SOULS) ||
+        boss->HasAura(SPELL_WAILING_SOULS_PERIODIC) || boss->HasAura(SPELL_WAILING_SOULS_PERIODIC_2);
+    if (wailing && !botAI->IsTank(bot))
+    {
+        float const behind = Position::NormalizeOrientation(boss->GetOrientation() + M_PI);
+        float const x = boss->GetPositionX() + 6.0f * std::cos(behind);
+        float const y = boss->GetPositionY() + 6.0f * std::sin(behind);
+        if (bot->GetExactDist2d(x, y) > 2.5f)
+            return MoveTo(bot->GetMapId(), x, y, boss->GetPositionZ(), false, false, false, true,
+                          MovementPriority::MOVEMENT_COMBAT);
+    }
 
     Aura* aura = botAI->GetAura("mirrored soul", boss);
     bool hasAura = aura;
