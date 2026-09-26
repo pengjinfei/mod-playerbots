@@ -9,15 +9,15 @@
 
 #include "Strategy.h"
 
-// Halls of Reflection. No encounter-specific behaviour yet: the strategy exists so map 668 has an
-// instance strategy like every other WotLK dungeon, and gives Falric/Marwyn/Frostsworn General/the
-// Lich King escape a place for their triggers.
+// Halls of Reflection. Map 668 needs an instance strategy like every other WotLK dungeon; it also
+// carries the Falric/Marwyn wave handling.
 class WotlkDungeonHoRStrategy : public Strategy
 {
 public:
     WotlkDungeonHoRStrategy(PlayerbotAI* ai) : Strategy(ai) {}
     std::string const getName() override { return "wotlk-hor"; }
-    void InitTriggers(std::vector<TriggerNode*>& /*triggers*/) override {}
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
 };
 
 #endif
