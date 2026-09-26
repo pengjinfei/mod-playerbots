@@ -4095,6 +4095,9 @@ bool PlayerbotAI::CanCastVehicleSpell(uint32 spellId, Unit* target)
         case SPELL_CAST_OK:
             return true;
         default:
+            if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && HasGameClientMaster()))
+                LOG_DEBUG("playerbots", "vehicle-cast bot={} spell={} target={} result={}", bot->GetName(), spellId,
+                          spellTarget->GetName(), uint32(result));
             return false;
     }
 
@@ -4155,9 +4158,12 @@ bool PlayerbotAI::CastVehicleSpell(uint32 spellId, Unit* target)
     // ObjectGuid oldSel = bot->GetSelectionGuid();
     // bot->SetSelectionGuid(target->GetGUID());
 
-    // turn vehicle if target is not in front
+    // turn vehicle if target is not in front. Only hostile targets need facing (the core checks the arc for
+    // them only); turning for an ally made the next attack turn back, so Oculus Emerald drakes never landed
+    // Dream Funnel on another drake.
     bool failWithDelay = false;
-    if (spellTarget != vehicleBase && (seat->CanControl() || (seat->m_flags & VEHICLE_SEAT_FLAG_ALLOW_TURNING)))
+    if (spellTarget != vehicleBase && !vehicleBase->IsFriendlyTo(spellTarget) &&
+        (seat->CanControl() || (seat->m_flags & VEHICLE_SEAT_FLAG_ALLOW_TURNING)))
     {
         if (!vehicleBase->HasInArc(CAST_ANGLE_IN_FRONT, spellTarget, 100.0f))
         {

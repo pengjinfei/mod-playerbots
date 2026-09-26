@@ -67,6 +67,11 @@ enum OculusIDs
 const std::vector<uint32> DRAKE_ITEMS = {ITEM_AMBER_ESSENCE, ITEM_EMERALD_ESSENCE, ITEM_RUBY_ESSENCE};
 const std::vector<uint32> DRAKE_SPELLS = {SPELL_AMBER_ESSENCE, SPELL_EMERALD_ESSENCE, SPELL_RUBY_ESSENCE};
 const uint32 OCULUS_MAP_ID = 578;
+const uint32 NPC_LEY_GUARDIAN_EREGOS = 27656;
+
+// With no human master there is no master's drake to mount after or to follow. Masterless bots take a drake and
+// fly at Eregos once he is attackable (Urom DONE clears his NON_ATTACKABLE). Returns him, or nullptr.
+Unit* OccMasterlessDrakeTarget(Player* bot);
 
 // const float uromCoords[4][4] =
 // {

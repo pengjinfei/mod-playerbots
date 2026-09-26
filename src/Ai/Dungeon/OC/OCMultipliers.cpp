@@ -21,11 +21,11 @@ float MountingDrakeMultiplier::GetValue(Action* action)
     // and no drake comes down.
     // It seems like this is due to moving/other actions being processed during the 0.5 secs.
     // If we suppress everything, they seem to mount properly. A bit of a ham-fisted solution but it works
-    Player* master = botAI->GetMaster();
-    if (!master)
-        return 1.0f;
+    if (bot->GetMapId() != OCULUS_MAP_ID || bot->GetVehicleBase()) { return 1.0f; }
 
-    if (bot->GetMapId() != OCULUS_MAP_ID || !master->GetVehicleBase() || bot->GetVehicleBase()) { return 1.0f; }
+    Player* master = botAI->GetMaster();
+    bool const mounting = master ? master->GetVehicleBase() != nullptr : OccMasterlessDrakeTarget(bot) != nullptr;
+    if (!mounting) { return 1.0f; }
 
     if (!dynamic_cast<MountDrakeAction*>(action))
         return 0.0f;

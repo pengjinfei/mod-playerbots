@@ -29,10 +29,23 @@ bool DrakosUnstableSphereTrigger::IsActive()
     return false;
 }
 
+Unit* OccMasterlessDrakeTarget(Player* bot)
+{
+    if (bot->GetMapId() != OCULUS_MAP_ID)
+        return nullptr;
+
+    Creature* eregos = bot->FindNearestCreature(NPC_LEY_GUARDIAN_EREGOS, 250.0f, true);
+    if (!eregos || eregos->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE))
+        return nullptr;
+
+    return eregos;
+}
+
 bool DrakeMountTrigger::IsActive()
 {
     Player* master = botAI->GetMaster();
-    if (!master) { return false; }
+    if (!master)
+        return !bot->GetVehicleBase() && OccMasterlessDrakeTarget(bot);
 
     return master->GetVehicleBase() && !bot->GetVehicleBase();
 }
@@ -48,7 +61,8 @@ bool DrakeDismountTrigger::IsActive()
 bool GroupFlyingTrigger::IsActive()
 {
     Player* master = botAI->GetMaster();
-    if (!master) { return false; }
+    if (!master)
+        return bot->GetMapId() == OCULUS_MAP_ID && bot->GetVehicleBase();
 
     return master->GetVehicleBase() && bot->GetVehicleBase();
 }
@@ -56,7 +70,11 @@ bool GroupFlyingTrigger::IsActive()
 bool DrakeCombatTrigger::IsActive()
 {
     GuidVector targets = AI_VALUE(GuidVector, "possible targets");
-    return !targets.empty();
+    if (!targets.empty())
+        return true;
+
+    // Masterless parties have nobody to start the fight from a drake: open on Eregos ourselves.
+    return !botAI->GetMaster() && bot->GetVehicleBase() && OccMasterlessDrakeTarget(bot);
 }
 
 bool VarosCloudstriderTrigger::IsActive()

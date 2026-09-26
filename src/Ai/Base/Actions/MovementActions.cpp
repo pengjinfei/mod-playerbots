@@ -76,6 +76,10 @@ bool MovementAction::IsSameFloorDestination(float x, float y, float z)
 {
     if (bot->IsFlying() || bot->isSwimming())
         return true;
+    // A rider does not carry the flying flag itself; a flying vehicle legitimately climbs and dives.
+    if (Unit* vehicleBase = bot->GetVehicleBase())
+        if (vehicleBase->CanFly())
+            return true;
     float const dist2d = bot->GetExactDist2d(x, y);
     if (dist2d >= 30.0f)
         return true;  // long moves legitimately change floors; the path search owns those

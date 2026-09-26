@@ -5,6 +5,7 @@
  */
 
 #include "OCActions.h"
+#include "InstanceScript.h"
 #include "LastSpellCastValue.h"
 #include "OCTriggers.h"
 #include "Playerbots.h"
@@ -49,23 +50,29 @@ bool MountDrakeAction::Execute(Event /*event*/)
     // std::vector<uint8> composition = {3, 1, 1};
     int32 myIndex = botAI->GetGroupSlotIndex(bot);
 
-    Player* master = botAI->GetMaster();
-    if (!master) { return false; }
-    Unit* vehicle = master->GetVehicleBase();
-    if (!vehicle) { return false; }
-
-    // Subtract the player's chosen mount type from the composition so player can play whichever they prefer
-    switch (vehicle->GetEntry())
+    // With a master, subtract the player's chosen mount type from the composition so the player can play whichever
+    // they prefer. A masterless party runs 3 Amber / 2 Emerald: the Ruby drake builds Evasive Charges only while
+    // it is attacked, and Eregos went for the healing Emerald instead, so Martyr came up once in a whole fight
+    // (heroic run1312) while the Ruby's Searing Wrath added little damage.
+    if (!botAI->GetMaster())
+        composition = {3, 2, 0};
+    if (Player* master = botAI->GetMaster())
     {
-        case NPC_AMBER_DRAKE:
-            composition[0]--;
-            break;
-        case NPC_EMERALD_DRAKE:
-            composition[1]--;
-            break;
-        case NPC_RUBY_DRAKE:
-            composition[2]--;
-            break;
+        Unit* vehicle = master->GetVehicleBase();
+        if (!vehicle) { return false; }
+
+        switch (vehicle->GetEntry())
+        {
+            case NPC_AMBER_DRAKE:
+                composition[0]--;
+                break;
+            case NPC_EMERALD_DRAKE:
+                composition[1]--;
+                break;
+            case NPC_RUBY_DRAKE:
+                composition[2]--;
+                break;
+        }
     }
 
     std::vector<Player*> players = botAI->GetAllPlayersInGroup();
@@ -110,7 +117,12 @@ bool MountDrakeAction::Execute(Event /*event*/)
         break;
     }
 
-    // Bot does not have the correct drake item
+    // Bot does not have the correct drake item. The drake NPCs only hand out essences once Drakos is dead (their
+    // gossip checks DATA_DRAKOS), so do not grant one before that either.
+    InstanceScript* instance = bot->GetInstanceScript();
+    if (!instance || instance->GetData(0 /*DATA_DRAKOS*/) != DONE)
+        return false;
+
     bot->AddItem(drakeAssignments[myIndex], 1);
     return false;
 }
@@ -127,23 +139,31 @@ bool DismountDrakeAction::Execute(Event /*event*/)
 
 bool OccFlyDrakeAction::Execute(Event /*event*/)
 {
-    Player* master = botAI->GetMaster();
-    if (!master) { return false; }
-    Unit* masterVehicle = master->GetVehicleBase();
     Unit* vehicleBase = bot->GetVehicleBase();
-    if (!vehicleBase || !masterVehicle) { return false; }
+    if (!vehicleBase) { return false; }
+
+    // Channeled drake spells (Dream Funnel, Temporal Rift) cannot start while the drake moves and stop when it
+    // does (PlayerbotAI::CanCastVehicleSpell / CastVehicleSpell): do not move a channeling drake.
+    if (vehicleBase->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
+        return false;
 
     MotionMaster* mm = vehicleBase->GetMotionMaster();
     Unit* boss = AI_VALUE2(Unit*, "find target", "ley-guardian eregos");
+    if (!boss && !botAI->GetMaster())
+        boss = OccMasterlessDrakeTarget(bot);
     if (boss && !boss->HasAura(SPELL_PLANAR_SHIFT))
     {
-        // Handle as boss encounter instead of formation flight
-        mm->Clear(false);
+        // Handle as boss encounter instead of formation flight. Drake spells reach 60 yd; Eregos wanders 50 yd,
+        // so close to 45 yd to keep him in range without chasing him every tick.
         float distance = vehicleBase->GetExactDist(boss);
-        float range = 55.0f;    // Drake range is 60yd
-        if (distance > range)
+        float range = 45.0f;
+        if (distance > range + 10.0f)
         {
-            mm->MoveForwards(boss, range - distance);
+            // MoveForwards(target, dist) ends dist yards from the target on our side; the old "range - distance" was
+            // negative here and put the end point on the far side of Eregos.
+            mm->Clear(false);
+            vehicleBase->SetCanFly(true);
+            mm->MoveForwards(boss, range);
             vehicleBase->SendMovementFlagUpdate();
             return true;
         }
@@ -153,6 +173,10 @@ bool OccFlyDrakeAction::Execute(Event /*event*/)
         vehicleBase->SendMovementFlagUpdate();
         return false;
     }
+
+    Player* master = botAI->GetMaster();
+    Unit* masterVehicle = master ? master->GetVehicleBase() : nullptr;
+    if (!masterVehicle) { return false; }
 
     if (vehicleBase->GetExactDist(masterVehicle) > 20.0f)
     {
@@ -185,6 +209,8 @@ bool OccDrakeAttackAction::Execute(Event /*event*/)
             break;
         }
     }
+    if (!target && !botAI->GetMaster())
+        target = OccMasterlessDrakeTarget(bot);
     // Check this again to see if a target was assigned
     if (!target) { return false; }
 
@@ -208,6 +234,9 @@ bool OccDrakeAttackAction::CastDrakeSpellAction(Unit* target, uint32 spellId, ui
         if (botAI->CastVehicleSpell(spellId, target))
         {
             vehicleBase->AddSpellCooldown(spellId, 0, cooldown);
+            if (!sPlayerbotAIConfig.logInGroupOnly)
+                LOG_DEBUG("playerbots", "drake-cast bot={} drake={} spell={} target={}", bot->GetName(),
+                          vehicleBase->GetEntry(), spellId, target->GetName());
             return true;
         }
     return false;
@@ -220,7 +249,8 @@ bool OccDrakeAttackAction::AmberDrakeAction(Unit* target)
     {
         // At 9 charges, better to detonate and re-channel rather than stacking the last charge due to gcd
         // If stacking Amber drakes, may need to drop this even lower as the charges stack so fast
-        return CastDrakeSpellAction(target, SPELL_SHOCK_LANCE, 0);
+        if (CastDrakeSpellAction(target, SPELL_SHOCK_LANCE, 0))
+            return true;
     }
 
     // Deal with enrage after shock charges, as Stop Time adds 5 charges and they may get wasted
@@ -228,12 +258,17 @@ bool OccDrakeAttackAction::AmberDrakeAction(Unit* target)
         !target->HasAura(SPELL_STOP_TIME) &&
         !vehicleBase->HasSpellCooldown(SPELL_STOP_TIME))
     {
-        return CastDrakeSpellAction(target, SPELL_STOP_TIME, 60000);
+        if (CastDrakeSpellAction(target, SPELL_STOP_TIME, 60000))
+            return true;
     }
 
     if (!vehicleBase->FindCurrentSpellBySpellId(SPELL_TEMPORAL_RIFT))
     {
-        return CastDrakeSpellAction(target, SPELL_TEMPORAL_RIFT, 0);
+        // Channeled: a moving drake cannot start it. Stop and try in the same tick.
+        if (vehicleBase->isMoving())
+            vehicleBase->StopMoving();
+        if (CastDrakeSpellAction(target, SPELL_TEMPORAL_RIFT, 0))
+            return true;
     }
 
     return false;
@@ -241,19 +276,8 @@ bool OccDrakeAttackAction::AmberDrakeAction(Unit* target)
 
 bool OccDrakeAttackAction::EmeraldDrakeAction(Unit* target)
 {
-    Aura* poisonStacks = target->GetAura(SPELL_LEECHING_POISON, vehicleBase->GetGUID());
-    if (!poisonStacks || (poisonStacks->GetStackAmount() < 3 ||
-                         poisonStacks->GetDuration() < 4000))
-    {
-        return CastDrakeSpellAction(target, SPELL_LEECHING_POISON, 0);
-    }
-
-    if (!vehicleBase->HasSpellCooldown(SPELL_TOUCH_THE_NIGHTMARE) &&
-        (!target->HasAura(SPELL_TOUCH_THE_NIGHTMARE) || vehicleBase->HealthAbovePct(90)))
-    {
-        return CastDrakeSpellAction(target, SPELL_TOUCH_THE_NIGHTMARE, 10000);
-    }
-
+    // Lowest-health other drake in the group. Dream Funnel is the group's only healing on drakes; in masterless
+    // run1282 it was never cast and three drakes died within 50 s.
     Unit* healingTarget = nullptr;
     GuidVector members = AI_VALUE(GuidVector, "group members");
     for (auto& member : members)
@@ -265,36 +289,65 @@ bool OccDrakeAttackAction::EmeraldDrakeAction(Unit* target)
         }
 
         Unit* drake = unit->GetVehicleBase();
-        if (!drake || drake->IsFullHealth()) { continue; }
+        if (!drake || !drake->IsAlive() || drake->IsFullHealth()) { continue; }
 
-        if (!healingTarget || drake->GetHealthPct() < healingTarget->GetHealthPct() - 15.0f)
+        if (!healingTarget || drake->GetHealthPct() < healingTarget->GetHealthPct())
         {
             healingTarget = drake;
         }
     }
 
     Spell* currentSpell = vehicleBase->FindCurrentSpellBySpellId(SPELL_DREAM_FUNNEL);
-    if (healingTarget)
+    auto funnel = [&]() -> bool
     {
-        if (!currentSpell || currentSpell->m_targets.GetUnitTarget() != healingTarget)
+        if (!healingTarget || (currentSpell && currentSpell->m_targets.GetUnitTarget() == healingTarget))
+            return false;
+
+        float distance = vehicleBase->GetExactDist(healingTarget);
+        float range = 58.0f;  // Dream Funnel reaches 60 yd
+        if (distance > range)
         {
-            float distance = vehicleBase->GetExactDist(healingTarget);
-            float range = 55.0f;
-            if (distance > range)
-            {
-                MotionMaster* mm = vehicleBase->GetMotionMaster();
-                mm->Clear(false);
-                mm->MoveForwards(healingTarget, distance - range - 10.0f);
-                vehicleBase->SendMovementFlagUpdate();
-                return false;
-            }
-            return CastDrakeSpellAction(healingTarget, SPELL_DREAM_FUNNEL, 0);
+            // MoveForwards(target, dist) ends dist yards short of the target on our side.
+            MotionMaster* mm = vehicleBase->GetMotionMaster();
+            mm->Clear(false);
+            mm->MoveForwards(healingTarget, range - 10.0f);
+            vehicleBase->SendMovementFlagUpdate();
+            return true;
         }
+        // A moving drake cannot start the channel. Stop and try in the same tick: returning here and trying next
+        // tick left the drake stopping and being moved again every tick (run1310: 30 attempts, no Dream Funnel).
+        if (vehicleBase->isMoving())
+            vehicleBase->StopMoving();
+        return CastDrakeSpellAction(healingTarget, SPELL_DREAM_FUNNEL, 0);
+    };
+
+    // Heal before damage whenever a drake is hurt: Leeching Poison refreshes took every global cooldown before.
+    if (healingTarget && healingTarget->HealthBelowPct(90) && funnel())
+        return true;
+
+    Aura* poisonStacks = target->GetAura(SPELL_LEECHING_POISON, vehicleBase->GetGUID());
+    if (!poisonStacks || (poisonStacks->GetStackAmount() < 3 ||
+                         poisonStacks->GetDuration() < 4000))
+    {
+        if (CastDrakeSpellAction(target, SPELL_LEECHING_POISON, 0))
+            return true;
     }
+
+    if (!vehicleBase->HasSpellCooldown(SPELL_TOUCH_THE_NIGHTMARE) &&
+        (!target->HasAura(SPELL_TOUCH_THE_NIGHTMARE) || vehicleBase->HealthAbovePct(90)))
+    {
+        if (CastDrakeSpellAction(target, SPELL_TOUCH_THE_NIGHTMARE, 10000))
+            return true;
+    }
+
+    if (funnel())
+        return true;
+
     // Fill GCDs with Leeching Poison to refresh timer, rather than idling
     if (!currentSpell)
     {
-        return CastDrakeSpellAction(target, SPELL_LEECHING_POISON, 0);
+        if (CastDrakeSpellAction(target, SPELL_LEECHING_POISON, 0))
+            return true;
     }
 
     return false;
@@ -312,17 +365,20 @@ bool OccDrakeAttackAction::RubyDrakeAction(Unit* target)
             evasiveManeuvers->GetDuration() > 10000 &&
             evasiveCharges->GetStackAmount() >= 5)
         {
-            return CastDrakeSpellAction(vehicleBase, SPELL_MARTYR, 10000);
+            if (CastDrakeSpellAction(vehicleBase, SPELL_MARTYR, 10000))
+                return true;
         }
 
         if (!vehicleBase->HasSpellCooldown(SPELL_EVASIVE_MANEUVERS) &&
             evasiveCharges->GetStackAmount() >= 10)
         {
-            return CastDrakeSpellAction(vehicleBase, SPELL_EVASIVE_MANEUVERS, 5000);
+            if (CastDrakeSpellAction(vehicleBase, SPELL_EVASIVE_MANEUVERS, 5000))
+                return true;
         }
     }
 
-    return CastDrakeSpellAction(target, SPELL_SEARING_WRATH, 0);
+    if (CastDrakeSpellAction(target, SPELL_SEARING_WRATH, 0))
+            return true;
 }
 
 bool AvoidArcaneExplosionAction::Execute(Event /*event*/)
