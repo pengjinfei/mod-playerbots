@@ -157,39 +157,42 @@ bool ToCMountedAction::Execute(Event /*event*/)
     if (!target)
         return false;
 
-    if (target->GetDistance2d(bot) > 5.0f)
+    auto castOn = [&](char const* name) -> bool
     {
-        uint32 spellId = AI_VALUE2(uint32, "vehicle spell id", "Charge");
+        uint32 spellId = AI_VALUE2(uint32, "vehicle spell id", name);
         if (botAI->CanCastVehicleSpell(spellId, target) && botAI->CastVehicleSpell(spellId, target))
         {
             vehicleBase->AddSpellCooldown(spellId, 0, 1000);
             return true;
         }
-    }
+        return false;
+    };
 
-    Aura* defendTarget = botAI->GetAura("defend", target, false, false);
-    if (!defendTarget)
-    {}
-    else
+    // Jousting: Defend on the target soaks Thrust, and only Shield-Breaker (ranged, 8-30 yd) strips it. With a shield
+    // up, back off to throw; once it is gone, Charge from 8-25 yd and Thrust in melee.
+    constexpr float minRangedDistance = 8.0f;
+    constexpr float breakerDistance = 14.0f;
+    float const distance = vehicleBase->GetExactDist2d(target);
+    if (botAI->GetAura("defend", target, false, false))
     {
-        uint32 spellId = AI_VALUE2(uint32, "vehicle spell id", "Shield-Breaker");
-        if (botAI->CanCastVehicleSpell(spellId, target) && botAI->CastVehicleSpell(spellId, target))
-        {
-            vehicleBase->AddSpellCooldown(spellId, 0, 1000);
+        if (distance < minRangedDistance)
+            return MoveAway(target, breakerDistance - distance);
+        if (castOn("Shield-Breaker"))
             return true;
-        }
+        if (distance > 30.0f)
+            return MoveTo(target->GetMapId(), target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(),
+                          false, false, false, true, MovementPriority::MOVEMENT_COMBAT);
+        return false;
     }
 
-    uint32 spellId = AI_VALUE2(uint32, "vehicle spell id", "Thrust");
-    if (botAI->CanCastVehicleSpell(spellId, target) && botAI->CastVehicleSpell(spellId, target))
-    {
-        vehicleBase->AddSpellCooldown(spellId, 0, 1000);
+    if (distance > minRangedDistance && castOn("Charge"))
         return true;
-    }
 
-    // Nothing castable from here: the mount's own spells only cast, so ride into Thrust range. Most failures were
-    // out of range (Thrust, Shield-Breaker) or too close for Charge.
-    if (vehicleBase->GetExactDist2d(target) > 4.0f)
+    if (castOn("Thrust"))
+        return true;
+
+    // Nothing castable from here: the mount's own spells only cast, so ride into Thrust range.
+    if (distance > 4.0f)
         return MoveTo(target->GetMapId(), target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), false,
                       false, false, true, MovementPriority::MOVEMENT_COMBAT);
 
