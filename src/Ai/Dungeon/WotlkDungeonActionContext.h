@@ -18,6 +18,7 @@
 #include "NexActionContext.h"
 #include "OCActionContext.h"
 #include "PoSActionContext.h"
+#include "HoRActionContext.h"
 #include "TOCActionContext.h"
 #include "UKActionContext.h"
 #include "UPActionContext.h"

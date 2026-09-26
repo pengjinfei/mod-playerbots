@@ -16,9 +16,11 @@ public:
     WotlkDungeonHoRTriggerContext()
     {
         creators["hor wave boss boost"] = &WotlkDungeonHoRTriggerContext::hor_wave_boss_boost;
+        creators["hor escape keep up"] = &WotlkDungeonHoRTriggerContext::hor_escape_keep_up;
     }
 
 private:
+    static Trigger* hor_escape_keep_up(PlayerbotAI* ai) { return new HoREscapeKeepUpTrigger(ai); }
     static Trigger* hor_wave_boss_boost(PlayerbotAI* ai) { return new HoRWaveBossBoostTrigger(ai); }
 };
 

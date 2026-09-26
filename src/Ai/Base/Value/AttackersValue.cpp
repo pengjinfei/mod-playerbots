@@ -163,6 +163,11 @@ bool AttackersValue::IsPossibleTarget(Unit* attacker, Player* bot, float /*range
     if (attacker->IsFriendlyTo(bot))
         return false;
 
+    // Scripted pursuers that cannot be killed and must not be fought: the Halls of Reflection escape Lich King
+    // heals back to 75% below 70% and is only outrun; attacking him keeps bots next to him.
+    if (attacker->GetEntry() == 36954 && attacker->IsCreature())
+        return false;
+
     // Critter exception
     if (attacker->GetCreatureType() == CREATURE_TYPE_CRITTER && !attacker->IsInCombat())
         return false;

@@ -11,6 +11,8 @@ void WotlkDungeonHoRStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     triggers.push_back(new TriggerNode("hor wave boss boost",
         { NextAction("heroism", ACTION_RAID + 1), NextAction("bloodlust", ACTION_RAID + 1) }));
+    triggers.push_back(new TriggerNode("hor escape keep up",
+        { NextAction("hor escape keep up", ACTION_RAID + 4) }));
 }
 
 void WotlkDungeonHoRStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)

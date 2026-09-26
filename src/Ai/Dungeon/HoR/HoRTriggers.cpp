@@ -22,6 +22,44 @@ HoRWaveBossState GetHoRWaveBossState(Player* bot)
     return state;
 }
 
+HoREscape GetHoREscape(Player* bot)
+{
+    HoREscape escape;
+    Creature* lichKing = bot->FindNearestCreature(NPC_ESCAPE_LICH_KING, 200.0f);
+    if (!lichKing || !lichKing->IsAlive() || !lichKing->HasAura(SPELL_REMORSELESS_WINTER))
+        return escape;
+
+    Creature* leader = bot->FindNearestCreature(NPC_ESCAPE_LEADER_JAINA, 250.0f);
+    if (!leader)
+        leader = bot->FindNearestCreature(NPC_ESCAPE_LEADER_SYLVANAS, 250.0f);
+    if (!leader || !leader->IsAlive())
+        return escape;
+
+    escape.lichKing = lichKing;
+    escape.leader = leader;
+    return escape;
+}
+
+bool HoREscapeKeepUpTrigger::IsActive()
+{
+    HoREscape const escape = GetHoREscape(bot);
+    if (!escape.lichKing)
+        return false;
+
+    float const behind = (bot->GetPositionX() - escape.lichKing->GetPositionX()) +
+                         (bot->GetPositionY() - escape.lichKing->GetPositionY());
+    if (behind > HOR_ESCAPE_ZAP_BEHIND - 8.0f)
+        return true;
+
+    // Summons of the current wall still up nearby: fight them here.
+    for (uint32 entry : { NPC_RISEN_WITCH_DOCTOR, NPC_LUMBERING_ABOMINATION, NPC_RAGING_GHOUL })
+        if (Creature* add = bot->FindNearestCreature(entry, 30.0f, true))
+            if (add->IsInCombat())
+                return false;
+
+    return bot->GetExactDist2d(escape.leader) > 15.0f;
+}
+
 bool HoRWaveBossBoostTrigger::IsActive()
 {
     if (bot->getClass() != CLASS_SHAMAN || !bot->IsInCombat())
