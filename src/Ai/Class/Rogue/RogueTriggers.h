@@ -9,6 +9,7 @@
 
 #include "GenericTriggers.h"
 
+class Player;
 class PlayerbotAI;
 
 class KickInterruptSpellTrigger : public InterruptSpellTrigger
@@ -23,10 +24,23 @@ public:
     SliceAndDiceTrigger(PlayerbotAI* botAI) : BuffTrigger(botAI, "slice and dice") {}
 };
 
-class HungerForBloodTrigger : public BuffTrigger
+// The Hunger for Blood buff on the rogue (63848) is missing or about to run out, and the rogue knows the spell.
+bool RogueHungerForBloodNeedsRefresh(Player* bot);
+
+// Hunger for Blood needs a bleed on the target. Anyone's bleed will do (a warrior's Deep Wounds or Rend, a feral
+// druid, another rogue); only without one does the rogue open with a short Rupture of his own.
+class HungerForBloodTrigger : public Trigger
 {
 public:
-    HungerForBloodTrigger(PlayerbotAI* botAI) : BuffTrigger(botAI, "hunger for blood") {}
+    HungerForBloodTrigger(PlayerbotAI* botAI) : Trigger(botAI, "hunger for blood") {}
+    bool IsActive() override;
+};
+
+class HungerForBloodNeedsBleedTrigger : public Trigger
+{
+public:
+    HungerForBloodNeedsBleedTrigger(PlayerbotAI* botAI) : Trigger(botAI, "hunger for blood needs bleed") {}
+    bool IsActive() override;
 };
 
 class AdrenalineRushTrigger : public BoostTrigger

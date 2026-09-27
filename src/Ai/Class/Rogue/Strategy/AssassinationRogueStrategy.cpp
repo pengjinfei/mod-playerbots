@@ -102,11 +102,23 @@ void AssassinationRogueStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
         )
     );
 
+    // No bleed on the target for Hunger for Blood: a Rupture of any length opens it.
+    triggers.push_back(
+        new TriggerNode(
+            "hunger for blood needs bleed",
+            {
+                NextAction("rupture", ACTION_HIGH + 7),
+            }
+        )
+    );
+
+    // Slice and Dice first whenever it is down; with Cut to the Chase every Envenom then refreshes it, but it tied
+    // with Envenom here and lost every time (0 casts in a 180 s dummy fight, run1489).
     triggers.push_back(
         new TriggerNode(
             "slice and dice",
             {
-                NextAction("slice and dice", ACTION_HIGH + 5),
+                NextAction("slice and dice", ACTION_HIGH + 7),
             }
         )
     );

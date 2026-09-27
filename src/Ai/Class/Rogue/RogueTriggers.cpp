@@ -6,6 +6,7 @@
 
 #include "RogueTriggers.h"
 #include "GenericTriggers.h"
+#include "Group.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
 
@@ -112,11 +113,64 @@ bool SprintTrigger::IsActive()
             ServerFacade::instance().IsDistanceGreaterThan(AI_VALUE2(float, "distance", "enemy player target"), distance));
 }
 
+namespace
+{
+constexpr uint32 SPELL_HUNGER_FOR_BLOOD = 51662;
+constexpr uint32 SPELL_HUNGER_FOR_BLOOD_BUFF = 63848;
+constexpr int32 HUNGER_FOR_BLOOD_REFRESH_MS = 5000;
+}
+
+bool RogueHungerForBloodNeedsRefresh(Player* bot)
+{
+    if (!bot->HasSpell(SPELL_HUNGER_FOR_BLOOD))
+        return false;
+
+    Aura* buff = bot->GetAura(SPELL_HUNGER_FOR_BLOOD_BUFF);
+    return !buff || (buff->GetDuration() >= 0 && buff->GetDuration() < HUNGER_FOR_BLOOD_REFRESH_MS);
+}
+
+bool HungerForBloodTrigger::IsActive()
+{
+    Unit* target = AI_VALUE(Unit*, "current target");
+    return target && target->IsAlive() && RogueHungerForBloodNeedsRefresh(bot) &&
+           target->HasAuraState(AURA_STATE_BLEEDING);
+}
+
+bool HungerForBloodNeedsBleedTrigger::IsActive()
+{
+    Unit* target = AI_VALUE(Unit*, "current target");
+    return target && target->IsAlive() && RogueHungerForBloodNeedsRefresh(bot) &&
+           !target->HasAuraState(AURA_STATE_BLEEDING) && AI_VALUE2(uint8, "combo", "current target") >= 1;
+}
+
+namespace
+{
+// Expose Armor only pays for its finisher when someone besides this rogue and the tanks deals physical damage.
+bool GroupHasOtherPhysicalDamageDealer(Player* bot)
+{
+    Group* group = bot->GetGroup();
+    if (!group)
+        return false;
+
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+    {
+        Player* member = ref->GetSource();
+        if (!member || member == bot || !member->IsInMap(bot))
+            continue;
+        if (PlayerbotAI::IsTank(member) || PlayerbotAI::IsHeal(member))
+            continue;
+        if (PlayerbotAI::IsMelee(member) || member->getClass() == CLASS_HUNTER)
+            return true;
+    }
+    return false;
+}
+}
+
 bool ExposeArmorTrigger::IsActive()
 {
     Unit* target = AI_VALUE(Unit*, "current target");
     return DebuffTrigger::IsActive() && !botAI->HasAura("sunder armor", target, false, false, -1, true) &&
-           AI_VALUE2(uint8, "combo", "current target") <= 3;
+           AI_VALUE2(uint8, "combo", "current target") <= 3 && GroupHasOtherPhysicalDamageDealer(bot);
 }
 
 bool MainHandWeaponNoEnchantTrigger::IsActive()

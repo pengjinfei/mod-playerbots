@@ -5,6 +5,7 @@
  */
 
 #include "RogueActions.h"
+#include "RogueTriggers.h"
 #include "Event.h"
 #include "ObjectGuid.h"
 #include "Player.h"
@@ -129,4 +130,13 @@ bool UseInstantPoisonOffHandAction::Execute(Event /*event*/)
     }
 
     return false;
+}
+
+bool CastHungerForBloodAction::isUseful()
+{
+    Unit* target = GetTarget();
+    if (!target || !CastSpellAction::isUseful())
+        return false;
+
+    return RogueHungerForBloodNeedsRefresh(bot) && target->HasAuraState(AURA_STATE_BLEEDING);
 }

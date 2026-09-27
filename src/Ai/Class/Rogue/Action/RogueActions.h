@@ -24,12 +24,15 @@ public:
     CastCloakOfShadowsAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "cloak of shadows") {}
 };
 
+// Hunger for Blood is cast on a bleeding enemy (target aura state BLEEDING) and puts its buff (63848) on the rogue,
+// so "already up" has to be checked on the rogue, not on the target the spell is cast at.
 class CastHungerForBloodAction : public CastBuffSpellAction
 {
 public:
     CastHungerForBloodAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "hunger for blood") {}
 
     std::string const GetTargetName() override { return "current target"; }
+    bool isUseful() override;
 };
 
 class CastSprintAction : public CastBuffSpellAction
