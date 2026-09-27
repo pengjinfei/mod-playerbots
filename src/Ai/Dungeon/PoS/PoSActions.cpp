@@ -343,7 +343,7 @@ bool GarfrostHideBehindRockAction::Execute(Event /*event*/)
         if (!rock || !rock->isSpawned() || rock->IsInvisibleDueToDespawn())
             continue;
 
-        if (rock->IsInBetween(boss, bot, 3.5f) && !boss->IsWithinMeleeRange(bot))
+        if (rock->IsInBetween(boss, bot, 3.5f) && (botAI->IsTank(bot) || !boss->IsWithinMeleeRange(bot)))
             return false;
 
         float angle = boss->GetAngle(rock);

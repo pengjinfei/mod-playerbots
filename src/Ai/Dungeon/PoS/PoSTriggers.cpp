@@ -19,16 +19,18 @@ bool IckAndKrickTrigger::IsActive()
 
 bool GarfrostPermafrostTrigger::IsActive()
 {
-    // Permafrost skips any target out of melee range with a Saronite Rock between it and Garfrost.
-    // Only ranged damage dealers use that: the tank is always in melee range, a healer behind a rock loses line of
-    // sight to the tank beside him, and melee damage dealers stepping out cost more damage than the stacks they
-    // save (heroic run1288-1291 with melee hiding: 0/4, boss at 39-69%, against 1/3 ranged-only).
-    if (botAI->IsTank(bot) || botAI->IsHeal(bot) || !botAI->IsRanged(bot))
+    // Permafrost skips any target with a Saronite Rock between it and Garfrost. A healer behind a rock loses line of
+    // sight to the tank, and melee damage dealers stepping out cost more damage than the stacks they save (heroic
+    // run1288-1291 with melee hiding: 0/4, boss at 39-69%, against 1/3 ranged-only), so ranged and the tank use it.
+    // The tank goes later and takes Garfrost with him: the boss has to walk around the rock, and each stack lasts
+    // only 3 s without a refresh (70336), so a few seconds out of his line of sight clear them all.
+    bool const tank = botAI->IsTank(bot);
+    if (!tank && (botAI->IsHeal(bot) || !botAI->IsRanged(bot)))
         return false;
 
     // Hide once the stacks start to hurt; behind the rock they are no longer refreshed, the aura runs out
     // and the trigger releases the bot back to its rotation.
-    constexpr uint8 hideAtStacks = 6;
+    uint8 const hideAtStacks = tank ? 8 : 6;
     Aura* permafrost = bot->GetAura(SPELL_PERMAFROST_AURA_HC);
     if (!permafrost)
         permafrost = bot->GetAura(SPELL_PERMAFROST_AURA);
