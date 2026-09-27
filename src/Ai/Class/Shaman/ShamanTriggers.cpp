@@ -93,9 +93,11 @@ bool WaterBreathingOnPartyTrigger::IsActive()
 // Checks if Chain Lightning is on Cooldown, and prevents activation if it is.
 // This is to ensure that Elemental Mastery is used on Lava Burst (2.0 second cast),
 // and not on Chain Lightning (1.5 second cast with talents).
+// Elemental Mastery on cooldown in combat. It used to wait for Chain Lightning rank 1 (421) to be on cooldown, but
+// cooldowns are kept per rank cast, so with the top rank in use it never fired (0 casts on a 180 s dummy).
 bool ElementalMasteryTrigger::IsActive()
 {
-    return bot->HasSpellCooldown(421);
+    return bot->IsInCombat() && AI_VALUE(Unit*, "current target") && BuffTrigger::IsActive();
 }
 
 // Checks if Sprit Wolves are out/if Spirit Walk buff is not on the bot/if the cooldown for Spirit Walk is ready.
