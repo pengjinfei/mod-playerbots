@@ -24,6 +24,27 @@
 #include "SpellInfo.h"
 #include "SpellMgr.h"
 #include "WarlockAiObjectContext.h"
+
+namespace
+{
+// Anyone else in the group who is not a tank or healer and fights in melee.
+bool GroupHasNonTankMelee(Player* player)
+{
+    Group* group = player->GetGroup();
+    if (!group)
+        return false;
+
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+    {
+        Player* member = ref->GetSource();
+        if (!member || member == player)
+            continue;
+        if (!PlayerbotAI::IsTank(member) && !PlayerbotAI::IsHeal(member) && PlayerbotAI::IsMelee(member))
+            return true;
+    }
+    return false;
+}
+}
 #include "WarriorAiObjectContext.h"
 
 namespace
@@ -328,15 +349,23 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
                 engine->addStrategiesNoInit("fury", "aoe", "dps assist", nullptr);
             break;
         case CLASS_SHAMAN:
+        {
+            // Earth totem for the group this shaman is in: Strength of Earth when someone other than a tank fights in
+            // melee (a rogue gains ~155 agility from it), Stoneskin's armour for the tank otherwise.
+            bool const meleeInGroup = GroupHasNonTankMelee(player);
+            char const* earthTotem = meleeInGroup ? "strength of earth" : "stoneskin";
+            // Earth totem strategies share one totem slot; drop the other one if an earlier (ungrouped) init added it.
+            engine->removeStrategy(meleeInGroup ? "stoneskin" : "strength of earth", false);
             if (tab == SHAMAN_TAB_ELEMENTAL)
-                engine->addStrategiesNoInit("ele", "stoneskin", "wrath", "mana spring", "wrath of air", nullptr);
+                engine->addStrategiesNoInit("ele", earthTotem, "wrath", "mana spring", "wrath of air", nullptr);
             else if (tab == SHAMAN_TAB_RESTORATION)
-                engine->addStrategiesNoInit("resto", "stoneskin", "flametongue", "mana spring", "wrath of air", nullptr);
+                engine->addStrategiesNoInit("resto", earthTotem, "flametongue", "mana spring", "wrath of air", nullptr);
             else // if (tab == SHAMAN_TAB_ENHANCEMENT)
                 engine->addStrategiesNoInit("enh", "strength of earth", "magma", "healing stream", "windfury", nullptr);
 
             engine->addStrategiesNoInit("dps assist", "cure", "aoe", nullptr);
             break;
+        }
         case CLASS_PALADIN:
             if (tab == PALADIN_TAB_PROTECTION)
                 engine->addStrategiesNoInit("tank", "tank assist", "pull", "pull back", "bthreat", "barmor", "cure", nullptr);
