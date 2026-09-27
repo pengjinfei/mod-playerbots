@@ -250,6 +250,14 @@ public:
     ChainLightningNoCdTrigger(PlayerbotAI* botAI) : SpellNoCooldownTrigger(botAI, "chain lightning") {}
 };
 
+// Lava Burst is off cooldown and the target carries this shaman's Flame Shock (the burst is then a guaranteed crit).
+class LavaBurstReadyTrigger : public SpellNoCooldownTrigger
+{
+public:
+    LavaBurstReadyTrigger(PlayerbotAI* botAI) : SpellNoCooldownTrigger(botAI, "lava burst") {}
+    bool IsActive() override;
+};
+
 // Healing Triggers
 
 class EarthShieldOnMainTankTrigger : public BuffOnMainTankTrigger

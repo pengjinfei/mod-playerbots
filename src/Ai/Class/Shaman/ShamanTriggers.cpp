@@ -471,3 +471,9 @@ bool SetTotemTrigger::IsActive()
 
    return false;
 }
+
+bool LavaBurstReadyTrigger::IsActive()
+{
+    Unit* target = AI_VALUE(Unit*, "current target");
+    return target && SpellNoCooldownTrigger::IsActive() && botAI->HasAura("flame shock", target, false, true);
+}

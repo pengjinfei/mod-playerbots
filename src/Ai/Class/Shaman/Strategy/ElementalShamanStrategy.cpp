@@ -76,6 +76,15 @@ void ElementalShamanStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
             }
         )
     );
+    // Lava Burst on cooldown once Flame Shock is up, ahead of Lightning Bolt and Chain Lightning.
+    triggers.push_back(
+        new TriggerNode(
+            "lava burst ready",
+            {
+                NextAction("lava burst", 5.7f)
+            }
+        )
+    );
 
     // Mana Triggers
     triggers.push_back(
