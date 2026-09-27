@@ -15,6 +15,8 @@ void WotlkDungeonUPStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     // Gortok Palehoof
 
     // Skadi the Ruthless
+    triggers.push_back(new TriggerNode("skadi tank pull next",
+        { NextAction("skadi tank pull next", ACTION_RAID + 1) }));
     triggers.push_back(new TriggerNode("skadi harpoon pickup",
         { NextAction("skadi harpoon pickup", ACTION_RAID + 2) }));
     triggers.push_back(new TriggerNode("skadi harpoon launch",

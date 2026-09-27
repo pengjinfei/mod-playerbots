@@ -7,6 +7,7 @@
 #ifndef PLAYERBOTS_UPACTIONS_H
 #define PLAYERBOTS_UPACTIONS_H
 
+#include "AttackAction.h"
 #include "MovementActions.h"
 
 class AvoidFreezingCloudAction : public MovementAction
@@ -37,6 +38,13 @@ class SkadiHarpoonLaunchAction : public MovementAction
 {
 public:
     SkadiHarpoonLaunchAction(PlayerbotAI* ai) : MovementAction(ai, "skadi harpoon launch") {}
+    bool Execute(Event event) override;
+};
+
+class SkadiTankPullNextAction : public AttackAction
+{
+public:
+    SkadiTankPullNextAction(PlayerbotAI* ai) : AttackAction(ai, "skadi tank pull next") {}
     bool Execute(Event event) override;
 };
 

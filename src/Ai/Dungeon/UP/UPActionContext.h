@@ -17,10 +17,12 @@ class WotlkDungeonUPActionContext : public NamedObjectContext<Action>
             creators["avoid freezing cloud"] = &WotlkDungeonUPActionContext::avoid_freezing_cloud;
             creators["avoid skadi whirlwind"] = &WotlkDungeonUPActionContext::avoid_whirlwind;
             creators["ymiron bane stop attack"] = &WotlkDungeonUPActionContext::ymiron_bane_stop_attack;
+            creators["skadi tank pull next"] = &WotlkDungeonUPActionContext::skadi_tank_pull_next;
             creators["skadi harpoon pickup"] = &WotlkDungeonUPActionContext::skadi_harpoon_pickup;
             creators["skadi harpoon launch"] = &WotlkDungeonUPActionContext::skadi_harpoon_launch;
         }
     private:
+        static Action* skadi_tank_pull_next(PlayerbotAI* ai) { return new SkadiTankPullNextAction(ai); }
         static Action* skadi_harpoon_pickup(PlayerbotAI* ai) { return new SkadiHarpoonPickupAction(ai); }
         static Action* skadi_harpoon_launch(PlayerbotAI* ai) { return new SkadiHarpoonLaunchAction(ai); }
         static Action* avoid_freezing_cloud(PlayerbotAI* ai) { return new AvoidFreezingCloudAction(ai); }

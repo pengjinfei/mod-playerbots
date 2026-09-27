@@ -103,6 +103,18 @@ bool AvoidSkadiWhirlwindAction::Execute(Event /*event*/)
     return false;
 }
 
+bool SkadiTankPullNextAction::Execute(Event /*event*/)
+{
+    Unit* add = SkadiNextGauntletAdd(bot);
+    if (!add || AI_VALUE(Unit*, "current target") == add)
+        return false;
+
+    if (!sPlayerbotAIConfig.logInGroupOnly)
+        LOG_DEBUG("playerbots", "skadi-pull bot={} add={} dist={:.1f} x={:.1f}", bot->GetName(), add->GetEntry(),
+                  bot->GetExactDist2d(add), add->GetPositionX());
+    return Attack(add);
+}
+
 bool SkadiHarpoonPickupAction::Execute(Event /*event*/)
 {
     GameObject* harpoon = bot->FindNearestGameObject(GO_HARPOON, 60.0f);

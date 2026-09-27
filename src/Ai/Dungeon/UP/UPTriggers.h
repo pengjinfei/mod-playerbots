@@ -20,6 +20,9 @@ enum UtgardePinnacleIDs
     SPELL_FREEZING_CLOUD_BREATH     = 47592,
     NPC_BREATH_TRIGGER              = 28351,
     NPC_GRAUF                       = 26893,
+    NPC_YMIRJAR_WARRIOR             = 26690,
+    NPC_YMIRJAR_WITCH_DOCTOR        = 26691,
+    NPC_YMIRJAR_HARPOONER           = 26692,
     // Harpoon chain: a dead Ymirjar Harpooner leaves GO_HARPOON; using it gives ITEM_HARPOON, which opens a
     // Harpoon Launcher (lock 1777 needs the item). Three launches while Grauf hovers at the east end bring him down.
     GO_HARPOON                      = 192539,
@@ -57,6 +60,18 @@ public:
 
 // Grauf's hover point at the east end of the gauntlet, inside all three launchers' 60 yd cone.
 const Position GRAUF_HOVER_POSITION = Position(521.9f, -545.3f, 117.4f);
+
+// Gauntlet: the first wave stands spread along the whole corridor and walking through it pulls several packs onto
+// whoever is behind the tank (baseline run1401-1405: someone dies to 4-5 warriors at once ~10 s in). While nothing
+// attacks the group, the tank pulls the nearest gauntlet add and the others follow its target.
+Unit* SkadiNextGauntletAdd(Player* bot);
+
+class SkadiTankPullNextTrigger : public Trigger
+{
+public:
+    SkadiTankPullNextTrigger(PlayerbotAI* ai) : Trigger(ai, "skadi tank pull next") {}
+    bool IsActive() override;
+};
 
 class SkadiHarpoonPickupTrigger : public Trigger
 {

@@ -60,6 +60,36 @@ bool YmironBaneTrigger::IsActive()
     return boss->FindCurrentSpellBySpellId(SPELL_BANE) || boss->HasAura(SPELL_BANE);
 }
 
+Unit* SkadiNextGauntletAdd(Player* bot)
+{
+    Unit* nearest = nullptr;
+    for (uint32 entry : { NPC_YMIRJAR_WARRIOR, NPC_YMIRJAR_WITCH_DOCTOR, NPC_YMIRJAR_HARPOONER })
+    {
+        std::list<Creature*> adds;
+        bot->GetCreatureListWithEntryInGrid(adds, entry, 150.0f);
+        for (Creature* add : adds)
+        {
+            if (!add->IsAlive() || !add->IsHostileTo(bot) || !add->isTargetableForAttack(true, bot))
+                continue;
+            if (!nearest || bot->GetExactDist2d(add) < bot->GetExactDist2d(nearest))
+                nearest = add;
+        }
+    }
+    return nearest;
+}
+
+bool SkadiTankPullNextTrigger::IsActive()
+{
+    if (!botAI->IsTank(bot) || !bot->FindNearestCreature(NPC_GRAUF, 250.0f, true))
+        return false;
+
+    // Busy with a pack already: finish it first.
+    if (!AI_VALUE(GuidVector, "attackers").empty())
+        return false;
+
+    return SkadiNextGauntletAdd(bot) != nullptr;
+}
+
 bool SkadiHarpoonPickupTrigger::IsActive()
 {
     // Damage dealers fetch harpoons; the tank holds the gauntlet adds and the healer stays on the group.
