@@ -115,6 +115,18 @@ bool SkadiTankPullNextAction::Execute(Event /*event*/)
     return Attack(add);
 }
 
+bool SkadiBreathSideAction::Execute(Event /*event*/)
+{
+    float const safeY = SkadiBreathSafeY(bot);
+    if (!safeY)
+        return false;
+
+    if (!sPlayerbotAIConfig.logInGroupOnly)
+        LOG_DEBUG("playerbots", "skadi-breath bot={} y={:.1f} -> {:.1f}", bot->GetName(), bot->GetPositionY(), safeY);
+    return MoveTo(bot->GetMapId(), bot->GetPositionX(), safeY, bot->GetPositionZ(), false, false, false, true,
+                  MovementPriority::MOVEMENT_COMBAT);
+}
+
 bool SkadiHarpoonPickupAction::Execute(Event /*event*/)
 {
     GameObject* harpoon = bot->FindNearestGameObject(GO_HARPOON, 60.0f);

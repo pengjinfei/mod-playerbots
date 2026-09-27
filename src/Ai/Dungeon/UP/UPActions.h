@@ -26,6 +26,14 @@ public:
 
 // Bane reflects every hit on King Ymiron as shadow damage to the whole group. The generic "drop target" only clears
 // the target value, leaves melee auto-attack swinging and is itself an AttackAction that the Bane multiplier blocks.
+// Cross to the half of the corridor Grauf's breath pass does not cover.
+class SkadiBreathSideAction : public MovementAction
+{
+public:
+    SkadiBreathSideAction(PlayerbotAI* ai) : MovementAction(ai, "skadi breath side") {}
+    bool Execute(Event event) override;
+};
+
 class SkadiHarpoonPickupAction : public MovementAction
 {
 public:

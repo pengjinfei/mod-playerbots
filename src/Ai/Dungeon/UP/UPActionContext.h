@@ -14,6 +14,7 @@ class WotlkDungeonUPActionContext : public NamedObjectContext<Action>
 {
     public:
         WotlkDungeonUPActionContext() {
+            creators["skadi breath side"] = &WotlkDungeonUPActionContext::skadi_breath_side;
             creators["avoid freezing cloud"] = &WotlkDungeonUPActionContext::avoid_freezing_cloud;
             creators["avoid skadi whirlwind"] = &WotlkDungeonUPActionContext::avoid_whirlwind;
             creators["ymiron bane stop attack"] = &WotlkDungeonUPActionContext::ymiron_bane_stop_attack;
@@ -25,6 +26,7 @@ class WotlkDungeonUPActionContext : public NamedObjectContext<Action>
         static Action* skadi_tank_pull_next(PlayerbotAI* ai) { return new SkadiTankPullNextAction(ai); }
         static Action* skadi_harpoon_pickup(PlayerbotAI* ai) { return new SkadiHarpoonPickupAction(ai); }
         static Action* skadi_harpoon_launch(PlayerbotAI* ai) { return new SkadiHarpoonLaunchAction(ai); }
+        static Action* skadi_breath_side(PlayerbotAI* ai) { return new SkadiBreathSideAction(ai); }
         static Action* avoid_freezing_cloud(PlayerbotAI* ai) { return new AvoidFreezingCloudAction(ai); }
         static Action* avoid_whirlwind(PlayerbotAI* ai) { return new AvoidSkadiWhirlwindAction(ai); }
         static Action* ymiron_bane_stop_attack(PlayerbotAI* ai) { return new YmironBaneStopAttackAction(ai); }

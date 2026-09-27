@@ -17,7 +17,10 @@ enum UtgardePinnacleIDs
     // Skadi the Ruthless
     SPELL_FREEZING_CLOUD_N          = 47579,
     SPELL_FREEZING_CLOUD_H          = 60020,
-    SPELL_FREEZING_CLOUD_BREATH     = 47592,
+    // Grauf's breath pass: the periodic aura on him names the side. The left pass freezes the half with y >= -511,
+    // the right pass the half with y <= -511 (spell_freezing_cloud_area_left/right).
+    SPELL_FREEZING_CLOUD_BREATH_RIGHT = 47592,
+    SPELL_FREEZING_CLOUD_BREATH_LEFT  = 47590,
     NPC_BREATH_TRIGGER              = 28351,
     NPC_GRAUF                       = 26893,
     NPC_YMIRJAR_WARRIOR             = 26690,
@@ -48,6 +51,17 @@ class SkadiFreezingCloudTrigger : public Trigger
 {
 public:
     SkadiFreezingCloudTrigger(PlayerbotAI* ai) : Trigger(ai, "skadi freezing cloud") {}
+    bool IsActive() override;
+};
+
+constexpr float SKADI_BREATH_SPLIT_Y = -511.0f;
+// 0 = no breath, otherwise the y to stand on (the other half of the corridor, a few yards past the split).
+float SkadiBreathSafeY(Player* bot);
+
+class SkadiBreathSideTrigger : public Trigger
+{
+public:
+    SkadiBreathSideTrigger(PlayerbotAI* ai) : Trigger(ai, "skadi breath side") {}
     bool IsActive() override;
 };
 

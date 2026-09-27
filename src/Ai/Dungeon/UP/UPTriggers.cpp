@@ -20,7 +20,7 @@ bool SkadiFreezingCloudTrigger::IsActive()
     // Therefore check both conditions and trigger on either.
 
     // Check this one first, if true then we don't need to iterate over any objects
-    if (bossMount->HasAura(SPELL_FREEZING_CLOUD_BREATH))
+    if (bossMount->HasAura(SPELL_FREEZING_CLOUD_BREATH_RIGHT) || bossMount->HasAura(SPELL_FREEZING_CLOUD_BREATH_LEFT))
     {
         return true;
     }
@@ -44,6 +44,30 @@ bool SkadiFreezingCloudTrigger::IsActive()
         }
     }
     return false;
+}
+
+float SkadiBreathSafeY(Player* bot)
+{
+    Creature* grauf = bot->FindNearestCreature(NPC_GRAUF, 250.0f, true);
+    if (!grauf)
+        return 0.0f;
+
+    if (grauf->HasAura(SPELL_FREEZING_CLOUD_BREATH_LEFT))
+        return SKADI_BREATH_SPLIT_Y - 5.0f;
+    if (grauf->HasAura(SPELL_FREEZING_CLOUD_BREATH_RIGHT))
+        return SKADI_BREATH_SPLIT_Y + 5.0f;
+    return 0.0f;
+}
+
+bool SkadiBreathSideTrigger::IsActive()
+{
+    float const safeY = SkadiBreathSafeY(bot);
+    if (!safeY)
+        return false;
+
+    // Already on the safe half, with a yard of margin past the split.
+    return safeY < SKADI_BREATH_SPLIT_Y ? bot->GetPositionY() > SKADI_BREATH_SPLIT_Y - 1.0f
+                                        : bot->GetPositionY() < SKADI_BREATH_SPLIT_Y + 1.0f;
 }
 
 bool SkadiWhirlwindTrigger::IsActive()

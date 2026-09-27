@@ -17,6 +17,7 @@ float SkadiMultiplier::GetValue(Action* action)
     // A bot carrying a harpoon stays at the launcher until it fires; only the freezing cloud may move it.
     if (bot->HasItemCount(ITEM_HARPOON, 1) && dynamic_cast<MovementAction*>(action) &&
         !dynamic_cast<SkadiHarpoonLaunchAction*>(action) && !dynamic_cast<AvoidFreezingCloudAction*>(action) &&
+        !dynamic_cast<SkadiBreathSideAction*>(action) &&
         bot->FindNearestCreature(NPC_GRAUF, 250.0f, true))
         return 0.0f;
 
@@ -58,7 +59,7 @@ float SkadiMultiplier::GetValue(Action* action)
         // // Therefore check both conditions and trigger on either.
 
         // // Check this one early, if true then we don't need to iterate over any objects
-        // if (bossMount->HasAura(SPELL_FREEZING_CLOUD_BREATH))
+        // if (bossMount->HasAura(SPELL_FREEZING_CLOUD_BREATH_RIGHT))
         // {
         //     cloudActive = true;
         // }
