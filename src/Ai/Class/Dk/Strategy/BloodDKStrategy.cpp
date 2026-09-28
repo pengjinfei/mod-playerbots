@@ -92,7 +92,7 @@ std::vector<NextAction> BloodDKStrategy::getDefaultActions()
 {
     return {
         NextAction("rune strike", ACTION_DEFAULT + 0.6f),
-        NextAction("icy touch", ACTION_DEFAULT + 0.5f),
+        NextAction("death strike", ACTION_DEFAULT + 0.5f),
         NextAction("heart strike", ACTION_DEFAULT + 0.4f),
         NextAction("dancing rune weapon", ACTION_DEFAULT + 0.3f),
         NextAction("death coil", ACTION_DEFAULT + 0.2f),
