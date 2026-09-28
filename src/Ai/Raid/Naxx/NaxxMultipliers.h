@@ -10,6 +10,16 @@
 #include "Multiplier.h"
 #include "NaxxBossHelper.h"
 
+// Patchwerk's Hateful Strike (10-man) hits the highest-threat player in melee range other than his victim. Until an
+// off-tank stands there to take it, a non-tank melee that reaches him first is that player and dies to one strike.
+class PatchwerkMeleeWaitMultiplier : public Multiplier
+{
+public:
+    PatchwerkMeleeWaitMultiplier(PlayerbotAI* ai) : Multiplier(ai, "patchwerk melee wait") {}
+
+    float GetValue(Action* action) override;
+};
+
 class GrobbulusMultiplier : public Multiplier
 {
 public:

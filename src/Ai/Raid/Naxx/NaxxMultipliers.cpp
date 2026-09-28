@@ -28,6 +28,38 @@
 #include "WarriorActions.h"
 #include "WipeAction.h"
 
+float PatchwerkMeleeWaitMultiplier::GetValue(Action* action)
+{
+    // Only what closes the distance: movement (melee/attack chase included) and charge-like spells.
+    if (!dynamic_cast<MovementAction*>(action) && !dynamic_cast<CastReachTargetSpellAction*>(action))
+        return 1.0f;
+    if (botAI->IsTank(bot) || botAI->IsHeal(bot) || !botAI->IsMelee(bot))
+        return 1.0f;
+
+    Unit* boss = AI_VALUE2(Unit*, "find target", "patchwerk");
+    if (!boss || !boss->IsInCombat() || boss->IsWithinMeleeRange(bot))
+        return 1.0f;
+
+    Group* group = bot->GetGroup();
+    if (!group)
+        return 1.0f;
+
+    // Wait while a living off-tank exists and none of them is in melee range yet; without one there is nobody to
+    // wait for.
+    bool offTankAlive = false;
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+    {
+        Player* member = ref->GetSource();
+        if (!member || member == bot || !member->IsAlive() || member == boss->GetVictim() ||
+            !PlayerbotAI::IsTank(member))
+            continue;
+        if (boss->IsWithinMeleeRange(member))
+            return 1.0f;
+        offTankAlive = true;
+    }
+    return offTankAlive ? 0.0f : 1.0f;
+}
+
 float GrobbulusMultiplier::GetValue(Action* action)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "grobbulus");

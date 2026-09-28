@@ -106,7 +106,21 @@ bool TargetWithComboPointsLowerHealTrigger::IsActive()
            (target->GetHealth() / AI_VALUE(float, "estimated group dps")) <= lifeTime;
 }
 
-bool LoseAggroTrigger::IsActive() { return !AI_VALUE2(bool, "has aggro", "current target"); }
+bool LoseAggroTrigger::IsActive()
+{
+    if (AI_VALUE2(bool, "has aggro", "current target"))
+        return false;
+
+    // An off-tank leaves a target that another tank of the group is holding. Taunting it away from the main tank is
+    // how a raid 10 blood DK took Patchwerk's melee on top of every Hateful Strike and died 27 seconds in.
+    if (!PlayerbotAI::IsMainTank(bot))
+        if (Unit* target = AI_VALUE(Unit*, "current target"))
+            if (Player* holder = target->GetVictim() ? target->GetVictim()->ToPlayer() : nullptr)
+                if (holder != bot && holder->IsInSameRaidWith(bot) && PlayerbotAI::IsTank(holder))
+                    return false;
+
+    return true;
+}
 
 bool HasAggroTrigger::IsActive() { return AI_VALUE2(bool, "has aggro", "current target"); }
 
