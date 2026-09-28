@@ -63,6 +63,14 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         })
     );
 
+    triggers.push_back(new TriggerNode("maexxna necrotic poison",
+        { NextAction("maexxna cure necrotic poison", ACTION_RAID + 2) }
+    ));
+
+    triggers.push_back(new TriggerNode("maexxna web wrap",
+        { NextAction("maexxna attack web wrap", ACTION_RAID + 1) }
+    ));
+
     // Patchwerk
     //triggers.push_back(new TriggerNode("patchwerk tank",
     //    { NextAction("tank face", ACTION_RAID + 2) }

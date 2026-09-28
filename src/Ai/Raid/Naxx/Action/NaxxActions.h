@@ -240,6 +240,23 @@ public:
     bool Execute(Event event) override;
 };
 
+// Cures Necrotic Poison on the main tank with this class's poison cure; ordinary dispels sit below the heals the
+// poisoned tank needs, so the poison stayed on (1574: the tank died 36 s in with 44 applications).
+class MaexxnaCureNecroticPoisonAction : public Action
+{
+public:
+    MaexxnaCureNecroticPoisonAction(PlayerbotAI* ai) : Action(ai, "maexxna cure necrotic poison") {}
+    bool Execute(Event event) override;
+};
+
+// Ranged damage breaks the nearest Web Wrap cocoon; the player inside takes damage until it breaks.
+class MaexxnaAttackWebWrapAction : public AttackAction
+{
+public:
+    MaexxnaAttackWebWrapAction(PlayerbotAI* ai) : AttackAction(ai, "maexxna attack web wrap") {}
+    bool Execute(Event event) override;
+};
+
 class GluthChooseTargetAction : public AttackAction
 {
 public:
