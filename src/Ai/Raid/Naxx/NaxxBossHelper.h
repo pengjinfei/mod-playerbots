@@ -266,12 +266,38 @@ public:
         _was_flying = now_flying;
         return true;
     }
+    Unit* GetBoss() const { return _unit; }
+    // The spot 3 yd behind the nearest ice-blocked raid member, seen from the dragon.
+    bool FindHideSpot(float& x, float& y)
+    {
+        Group* group = bot->GetGroup();
+        if (!group || !_unit)
+            return false;
+        Player* nearest = nullptr;
+        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        {
+            Player* member = ref->GetSource();
+            if (!member || !(NaxxSpellIds::HasAnyAura(member, {NaxxSpellIds::Icebolt10, NaxxSpellIds::Icebolt25}) ||
+                             botAI->HasAura("icebolt", member, false, false, -1, true)))
+                continue;
+            if (!nearest || bot->GetDistance(member) < bot->GetDistance(nearest))
+                nearest = member;
+        }
+        if (!nearest)
+            return false;
+        float const angle = _unit->GetAngle(nearest);
+        x = nearest->GetPositionX() + cos(angle) * 3.0f;
+        y = nearest->GetPositionY() + sin(angle) * 3.0f;
+        return true;
+    }
     bool IsPhaseGround() { return _unit && !_unit->IsFlying(); }
     bool IsPhaseFlight() { return _unit && _unit->IsFlying(); }
+    // Before the first air phase too: the raid comes in on the tank's side, in front of him, and Cleave killed the
+    // warlock and the disc priest 8 s in (raid 10 run 1674).
     bool JustLanded()
     {
         if (!_last_land_ms)
-            return false;
+            return !_was_flying;
 
         return getMSTime() - _last_land_ms <= POSITION_TIME_AFTER_LANDED;
     }

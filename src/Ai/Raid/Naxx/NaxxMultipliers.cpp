@@ -266,6 +266,13 @@ float SapphironGenericMultiplier::GetValue(Action* action)
     if (dynamic_cast<CastDeathGripAction*>(action) || dynamic_cast<CombatFormationMoveAction*>(action))
         return 0.0f;
 
+    // Get behind an ice block before casting anything: a bot mid-cast does not move, and the holy paladin kept
+    // healing through the breath warning and died to Frost Breath in most air phases (raid 10 runs 1681-1684).
+    float hideX = 0.0f, hideY = 0.0f;
+    if (helper.IsPhaseFlight() && dynamic_cast<CastSpellAction*>(action) && helper.FindHideSpot(hideX, hideY) &&
+        bot->GetExactDist2d(hideX, hideY) > 1.5f)
+        return 0.0f;
+
     return 1.0f;
 }
 
