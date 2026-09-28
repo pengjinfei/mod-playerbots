@@ -602,6 +602,9 @@ protected:
 };
 class ThaddiusBossHelper : public AiObject
 {
+    static constexpr uint32 NPC_STALAGG = 15929;
+    static constexpr uint32 NPC_FEUGEN = 15930;
+
 public:
     const std::pair<float, float> tankPosFeugen = {3522.94f, -3002.60f};
     const std::pair<float, float> tankPosStalagg = {3436.14f, -2919.98f};
@@ -623,8 +626,12 @@ public:
             if (!_unit)
                 return false;
         }
-        feugen = AI_VALUE2(Unit*, "find target", "feugen");
-        stalagg = AI_VALUE2(Unit*, "find target", "stalagg");
+        // By entry, not "find target": that only sees units with this bot on their threat list, so a bot the pet
+        // had no threat on (a healer, a tank right after Magnetic Pull reset its threat) saw the pet phase as over
+        // and jumped for the centre platform (raid 10 run 1642: the disc priest ended up below, Feugen chased him
+        // 57 yd from home and the coil shocked the raid).
+        feugen = bot->FindNearestCreature(NPC_FEUGEN, 200.0f, true);
+        stalagg = bot->FindNearestCreature(NPC_STALAGG, 200.0f, true);
         return true;
     }
     // Stalagg and Feugen only feign death: they stay alive at 1 HP, flagged NOT_SELECTABLE, until

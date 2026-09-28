@@ -5,6 +5,7 @@
  */
 
 #include "NaxxMultipliers.h"
+#include "AttackAction.h"
 #include "ChooseTargetActions.h"
 #include "DKActions.h"
 #include "DruidActions.h"
@@ -161,6 +162,36 @@ float ThaddiusGenericMultiplier::GetValue(Action* action)
 
     if (dynamic_cast<CombatFormationMoveAction*>(action))
         return 0.0f;
+    // A tank thrown across by Magnetic Pull still has the other platform's pet as target, and generic movement
+    // (reach melee) walked it down the ramp towards that pet, dragging its new pet 28+ yd from home: the tesla coil
+    // then shocks the raid (raid 10 runs 1634-1637, 32-48 shocks each, the one clean run had none). Until the
+    // Thaddius action has switched it to the nearest pet, a tank does not move on its own.
+    if (helper.IsPhasePet() && botAI->IsTank(bot) && dynamic_cast<MovementAction*>(action) &&
+        !dynamic_cast<ThaddiusAttackNearestPetAction*>(action) && !dynamic_cast<ThaddiusMoveToPlatformAction*>(action))
+    {
+        // Nor while in the air: at the moment of the throw the old pet is still the nearest, and a taunt spent in
+        // flight is on cooldown when the tank lands (1662: both taunts 1 s after the pull, the pets then kept the
+        // old tanks, which a pet out of melee reach only drops at 130% threat).
+        if (AI_VALUE(Unit*, "current target") != helper.GetNearestPet() ||
+            bot->GetPositionZ() > helper.tankPosZ + 5.0f)
+            return 0.0f;
+    }
+    // Magnetic Pull swaps the pets' threat onto the tank each one pulls in, but the tank thrown across still has its
+    // old pet as current target and taunted it straight back (raid 10 run 1660: Stalagg's threat on the main tank
+    // went 0 -> equal to the DK a second after the pull; the pets then chased the old tanks off their platforms and
+    // the coils shocked the raid). A tank only taunts the pet nearest to it.
+    if (helper.IsPhasePet() && botAI->IsTank(bot) &&
+        (dynamic_cast<CastTauntAction*>(action) || dynamic_cast<CastDarkCommandAction*>(action) ||
+         dynamic_cast<CastHandOfReckoningAction*>(action) || dynamic_cast<CastGrowlAction*>(action) ||
+         dynamic_cast<CastRighteousDefenseAction*>(action)))
+    {
+        // Nor while in the air: at the moment of the throw the old pet is still the nearest, and a taunt spent in
+        // flight is on cooldown when the tank lands (1662: both taunts 1 s after the pull, the pets then kept the
+        // old tanks, which a pet out of melee reach only drops at 130% threat).
+        if (AI_VALUE(Unit*, "current target") != helper.GetNearestPet() ||
+            bot->GetPositionZ() > helper.tankPosZ + 5.0f)
+            return 0.0f;
+    }
     // pet phase
     if (helper.IsPhasePet() &&
         (dynamic_cast<DpsAssistAction*>(action) || dynamic_cast<TankAssistAction*>(action) ||
@@ -173,8 +204,37 @@ float ThaddiusGenericMultiplier::GetValue(Action* action)
     Unit* target = AI_VALUE(Unit*, "current target");
     Unit* feugen = AI_VALUE2(Unit*, "find target", "feugen");
     Unit* stalagg = AI_VALUE2(Unit*, "find target", "stalagg");
-    if (helper.IsPhasePet() && target && feugen && stalagg && target->GetHealthPct() <= 40 &&
-        (feugen->GetHealthPct() >= target->GetHealthPct() + 3 || stalagg->GetHealthPct() >= target->GetHealthPct() + 3))
+    // Hold damage on a pet until a tank has it: ranged opened on Feugen before the DK had threat and he killed the
+    // balance druid 7 s in (raid 10 run 1558). Healing is unaffected; with no tank left there is nobody to wait for.
+    if (helper.IsPhasePet() && !botAI->IsTank(bot) && target && (target == feugen || target == stalagg) &&
+        target->GetHealthPct() > 20.0f &&
+        ((dynamic_cast<CastSpellAction*>(action) && !dynamic_cast<CastHealingSpellAction*>(action)) ||
+         dynamic_cast<AttackAction*>(action)))
+    {
+        Unit* victim = target->GetVictim();
+        Player* holder = victim ? victim->ToPlayer() : nullptr;
+        if (!holder || !PlayerbotAI::IsTank(holder))
+        {
+            bool tankAlive = false;
+            if (Group* group = bot->GetGroup())
+                for (GroupReference* ref = group->GetFirstMember(); ref && !tankAlive; ref = ref->next())
+                    if (Player* member = ref->GetSource())
+                        tankAlive = member->IsAlive() && PlayerbotAI::IsTank(member);
+            if (tankAlive)
+                return 0.0f;
+        }
+    }
+    // Both have to die within 5 s of each other or they revive (raid 10 run 1641: Stalagg 0% / Feugen 2%, both back
+    // to full). Hold the lower one from 40% while the other is 3+ points higher, and from 15% while it is 2+ higher;
+    // once both are at 5% or below, finish them.
+    Unit* otherPet = target == feugen ? stalagg : (target == stalagg ? feugen : nullptr);
+    bool const petsTrailing = target && otherPet && helper.IsPetActive(otherPet) &&
+                              !(target->GetHealthPct() <= 5.0f && otherPet->GetHealthPct() <= 5.0f) &&
+                              ((target->GetHealthPct() <= 40.0f &&
+                                otherPet->GetHealthPct() >= target->GetHealthPct() + 3.0f) ||
+                               (target->GetHealthPct() <= 15.0f &&
+                                otherPet->GetHealthPct() >= target->GetHealthPct() + 2.0f));
+    if (helper.IsPhasePet() && petsTrailing)
     {
         if (dynamic_cast<CastSpellAction*>(action) && !dynamic_cast<CastHealingSpellAction*>(action))
             return 0.0f;
