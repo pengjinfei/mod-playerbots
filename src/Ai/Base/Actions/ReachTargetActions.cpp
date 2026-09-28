@@ -72,6 +72,12 @@ bool ReachTargetAction::IsChaseLeashed(Unit* target) const
     if (!target || !bot->GetGroup() || !bot->IsInCombat())
         return false;
 
+    // Nobody holds the target yet: fetching it is the pull, and the healer waits for the tank at the pull point
+    // (Anub'Rekhan, prep 38.6 yd: the tank stopped at 27 yd, the boss sat in combat without a threat list). The
+    // runaway cases this guard exists for (AN guards 100 yd out) were already attacking the group.
+    if (PlayerbotAI::IsTank(bot) && !target->GetVictim())
+        return false;
+
     Unit* anchor = ChaseAnchor();
     if (!anchor || anchor == bot || !anchor->IsAlive() || anchor->GetMapId() != bot->GetMapId())
         return false;
