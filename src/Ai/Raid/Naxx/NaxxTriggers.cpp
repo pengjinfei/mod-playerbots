@@ -148,23 +148,14 @@ bool GluthMainTankMortalWoundTrigger::IsActive()
     if (!helper.UpdateBossAI())
         return false;
 
+    if (helper.TwoTankRotation())
+        return helper.SwapPending(bot);
+
     if (!botAI->IsAssistTankOfIndex(bot, 0))
         return false;
 
     Unit* mt = AI_VALUE(Unit*, "main tank");
-    if (!mt)
-        return false;
-
-    Aura* aura = NaxxSpellIds::GetAnyAura(mt, {NaxxSpellIds::MortalWound10, NaxxSpellIds::MortalWound25});
-    if (!aura)
-    {
-        // Fallback to name for custom spell data.
-        aura = botAI->GetAura("mortal wound", mt, false, true);
-    }
-    if (!aura || aura->GetStackAmount() < 5)
-        return false;
-
-    return true;
+    return GluthBossHelper::MortalWoundStacks(mt) >= 5;
 }
 
 bool KelthuzadTrigger::IsActive() { return helper.UpdateBossAI(); }

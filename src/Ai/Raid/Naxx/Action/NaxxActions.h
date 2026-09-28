@@ -254,7 +254,9 @@ class GluthPositionAction : public RotateAroundTheCenterPointAction
 {
 public:
     GluthPositionAction(PlayerbotAI* ai)
-        : RotateAroundTheCenterPointAction(ai, "gluth position", 3293.61f, -3149.01f, 12.0f, 12), helper(ai) {}
+        // Zombie kite loop around the room centre. 22 yd rather than 12: on the small loop the zombies cut across and
+        // five of them caught the raid 10 zombie tank (1626/1627: the DK died first to ~7.4k/s of zombie melee).
+        : RotateAroundTheCenterPointAction(ai, "gluth position", 3293.61f, -3149.01f, 22.0f, 16), helper(ai) {}
     bool Execute(Event event) override;
 
 private:

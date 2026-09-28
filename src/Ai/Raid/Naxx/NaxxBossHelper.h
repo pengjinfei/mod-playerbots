@@ -422,6 +422,55 @@ public:
     bool JustStartCombat() const { return _combat_start_ms != 0 && getMSTime() - _combat_start_ms < 10000; }
     bool IsZombieChow(Unit* unit) const { return unit && botAI->EqualLowercaseName(unit->GetName(), "zombie chow"); }
 
+    // Two-tank rotation: without a second assist tank to kite the zombies (a raid 10 with two tanks), the tank Gluth
+    // is not on takes the zombies and the two trade places at Mortal Wound swaps. Otherwise the 25-man split holds:
+    // main tank and first assist tank on Gluth, second assist tank on the zombies.
+    bool TwoTankRotation() const
+    {
+        Group* group = bot->GetGroup();
+        if (!group)
+            return false;
+        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+            if (Player* member = ref->GetSource())
+                if (PlayerbotAI::IsAssistTankOfIndex(member, 1))
+                    return false;
+        return true;
+    }
+    bool IsBossTankCandidate(Player* player) const
+    {
+        return PlayerbotAI::IsMainTank(player) || PlayerbotAI::IsAssistTankOfIndex(player, 0);
+    }
+    bool IsZombieTank(Player* player) const
+    {
+        if (!TwoTankRotation())
+            return PlayerbotAI::IsAssistTankOfIndex(player, 1);
+        if (!IsBossTankCandidate(player) || !_unit)
+            return false;
+        // Until Gluth is on one of the two tanks (the pull, a tank death) the main tank is his.
+        Unit* victim = _unit->GetVictim();
+        Player* holder = victim ? victim->ToPlayer() : nullptr;
+        if (!holder || !IsBossTankCandidate(holder))
+            return !PlayerbotAI::IsMainTank(player);
+        return holder != player;
+    }
+    bool IsGluthTank(Player* player) const { return IsBossTankCandidate(player) && !IsZombieTank(player); }
+    static uint8 MortalWoundStacks(Unit* unit)
+    {
+        if (!unit)
+            return 0;
+        Aura* aura = NaxxSpellIds::GetAnyAura(unit, {NaxxSpellIds::MortalWound10, NaxxSpellIds::MortalWound25});
+        return aura ? aura->GetStackAmount() : 0;
+    }
+    // Two-tank rotation: the zombie tank should come and take Gluth - the tank on him has 5+ Mortal Wound stacks and
+    // the zombie tank's own stacks have run out.
+    bool SwapPending(Player* player) const
+    {
+        if (!TwoTankRotation() || !IsZombieTank(player) || !_unit)
+            return false;
+        Unit* victim = _unit->GetVictim();
+        return victim && victim->IsPlayer() && MortalWoundStacks(victim) >= 5 && MortalWoundStacks(player) == 0;
+    }
+
 private:
     void Reset()
     {

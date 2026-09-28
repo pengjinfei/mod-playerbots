@@ -320,21 +320,14 @@ float GluthGenericMultiplier::GetValue(Action* action)
         return 0.0f;
     }
 
-    if (botAI->IsMainTank(bot))
+    // A tank carrying 5+ Mortal Wound stacks does not take Gluth back (Righteous Defense is a taunt too).
+    if (botAI->IsTank(bot) && GluthBossHelper::MortalWoundStacks(bot) >= 5)
     {
-        Aura* aura = NaxxSpellIds::GetAnyAura(bot, {NaxxSpellIds::MortalWound10, NaxxSpellIds::MortalWound25});
-        if (!aura)
+        if (dynamic_cast<CastTauntAction*>(action) || dynamic_cast<CastDarkCommandAction*>(action) ||
+            dynamic_cast<CastHandOfReckoningAction*>(action) || dynamic_cast<CastGrowlAction*>(action) ||
+            dynamic_cast<CastRighteousDefenseAction*>(action))
         {
-            // Fallback to name for custom spell data.
-            aura = botAI->GetAura("mortal wound", bot, false, true);
-        }
-        if (aura && aura->GetStackAmount() >= 5)
-        {
-            if (dynamic_cast<CastTauntAction*>(action) || dynamic_cast<CastDarkCommandAction*>(action) ||
-                dynamic_cast<CastHandOfReckoningAction*>(action) || dynamic_cast<CastGrowlAction*>(action))
-            {
-                return 0.0f;
-            }
+            return 0.0f;
         }
     }
     if (dynamic_cast<PetAttackAction*>(action))

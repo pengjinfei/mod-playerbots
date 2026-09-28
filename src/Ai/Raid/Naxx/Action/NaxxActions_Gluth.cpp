@@ -33,13 +33,16 @@ bool GluthChooseTargetAction::Execute(Event /*event*/)
         if (botAI->EqualLowercaseName(unit->GetName(), "gluth"))
             target_boss = unit;
     }
-    if (botAI->IsMainTank(bot) || botAI->IsAssistTankOfIndex(bot, 0))
+    if (helper.IsGluthTank(bot) || helper.SwapPending(bot))
         target = target_boss;
-    else if (botAI->IsAssistTankOfIndex(bot, 1))
+    else if (helper.IsZombieTank(bot))
     {
+        // In the two-tank rotation the zombie tank also has to reach the fresh ones walking to Gluth.
+        float const pickupRange = helper.TwoTankRotation() ? 30.0f : 10.0f;
         for (Unit* t : target_zombies)
         {
-            if (t->GetHealthPct() > helper.decimatedZombiePct && t->GetVictim() != bot && t->GetDistance2d(bot) <= 10.0f)
+            if (t->GetHealthPct() > helper.decimatedZombiePct && t->GetVictim() != bot &&
+                t->GetDistance2d(bot) <= pickupRange)
             {
                 if (!target || t->GetDistance2d(bot) < target->GetDistance2d(bot))
                     target = t;
@@ -92,11 +95,22 @@ bool GluthPositionAction::Execute(Event /*event*/)
         return false;
 
     bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
-    if (botAI->IsMainTank(bot) || botAI->IsAssistTankOfIndex(bot, 0))
+    bool const twoTanks = helper.TwoTankRotation();
+    if (helper.SwapPending(bot))
+    {
+        // Come within taunt range of Gluth.
+        Unit* boss = AI_VALUE(Unit*, "boss target");
+        if (boss && bot->GetDistance(boss) > 20.0f)
+            return MoveNear(boss, 15.0f, MovementPriority::MOVEMENT_COMBAT);
+        return false;
+    }
+    if (helper.IsGluthTank(bot))
     {
         if (AI_VALUE2(bool, "has aggro", "boss target"))
         {
-            if (raid25)
+            // Two tanks: hold Gluth at the far (25-man) spot; the raid 10 spot is 14 yd from the zombie spawn and
+            // fresh zombies reach him before the zombie tank picks them up (1624/1625: 37 eaten, 9-10 at the far spot).
+            if (raid25 || twoTanks)
             {
                 if (MoveTo(NAXX_MAP_ID, helper.mainTankPos25.first, helper.mainTankPos25.second, bot->GetPositionZ(), false, false, false,
                            false, MovementPriority::MOVEMENT_COMBAT))
@@ -116,7 +130,7 @@ bool GluthPositionAction::Execute(Event /*event*/)
             }
         }
     }
-    else if (botAI->IsAssistTankOfIndex(bot, 1))
+    else if (helper.IsZombieTank(bot))
     {
         if (helper.BeforeDecimate())
         {
