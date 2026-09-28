@@ -44,6 +44,20 @@ bool GroupHasNonTankMelee(Player* player)
     }
     return false;
 }
+
+// A death knight anywhere in the group: Horn of Winter is the same raid-wide buff as Strength of Earth.
+bool GroupHasDeathKnight(Player* player)
+{
+    Group* group = player->GetGroup();
+    if (!group)
+        return false;
+
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        if (Player* member = ref->GetSource())
+            if (member != player && member->getClass() == CLASS_DEATH_KNIGHT)
+                return true;
+    return false;
+}
 }
 #include "WarriorAiObjectContext.h"
 
@@ -350,12 +364,13 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
             break;
         case CLASS_SHAMAN:
         {
-            // Earth totem for the group this shaman is in: Strength of Earth when someone other than a tank fights in
-            // melee (a rogue gains ~155 agility from it), Stoneskin's armour for the tank otherwise.
-            bool const meleeInGroup = GroupHasNonTankMelee(player);
-            char const* earthTotem = meleeInGroup ? "strength of earth" : "stoneskin";
+            // Earth totem for the group this shaman is in (totem auras reach the whole raid in range): Strength of Earth
+            // when someone other than a tank fights in melee (a rogue gains ~155 agility from it) and no death knight's
+            // Horn of Winter already gives the same bonus, Stoneskin's armour for the tank otherwise.
+            bool const strengthOfEarth = GroupHasNonTankMelee(player) && !GroupHasDeathKnight(player);
+            char const* earthTotem = strengthOfEarth ? "strength of earth" : "stoneskin";
             // Earth totem strategies share one totem slot; drop the other one if an earlier (ungrouped) init added it.
-            engine->removeStrategy(meleeInGroup ? "stoneskin" : "strength of earth", false);
+            engine->removeStrategy(strengthOfEarth ? "stoneskin" : "strength of earth", false);
             if (tab == SHAMAN_TAB_ELEMENTAL)
                 engine->addStrategiesNoInit("ele", earthTotem, "wrath", "mana spring", "wrath of air", nullptr);
             else if (tab == SHAMAN_TAB_RESTORATION)
