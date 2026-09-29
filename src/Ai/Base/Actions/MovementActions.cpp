@@ -86,6 +86,19 @@ bool MovementAction::IsSameFloorDestination(float x, float y, float z)
     float const dz = std::fabs(z - bot->GetPositionZ());
     if (dz <= std::max(6.0f, 0.8f * dist2d))
         return true;
+    // A real way up or down - stairs, a ramp - is a complete navmesh path that ends at the destination and is longer
+    // than the climb. Utgarde Keep's ramp to Ingvar: the leader stood 40 yd above a follower 15 yd away and the
+    // follow was refused 136 times. A point snapped to a pit below a ledge has no such path.
+    PathGenerator path(bot);
+    if (path.CalculatePath(x, y, z, false) && path.GetPathType() == PATHFIND_NORMAL && !path.GetPath().empty())
+    {
+        G3D::Vector3 const& end = path.GetPath().back();
+        float length = 0.0f;
+        for (size_t i = 1; i < path.GetPath().size(); ++i)
+            length += (path.GetPath()[i] - path.GetPath()[i - 1]).length();
+        if ((end - G3D::Vector3(x, y, z)).length() <= 3.0f && length >= 1.2f * dz)
+            return true;
+    }
     if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
         LOG_DEBUG("playerbots", "floor-guard bot={} action={} refused dest=({:.1f},{:.1f},{:.1f}) from=({:.1f},{:.1f},{:.1f}) dist2d={:.1f} dz={:.1f}",
                   bot->GetName(), getName(), x, y, z, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), dist2d, dz);
