@@ -5,6 +5,7 @@
  */
 
 #include "PlayerbotAI.h"
+#include "BotAreaTriggerIndex.h"
 #include "AiFactory.h"
 #include "BudgetValues.h"
 #include "ChannelMgr.h"
@@ -246,6 +247,42 @@ PlayerbotAI::~PlayerbotAI()
         PlayerbotsMgr::instance().RemovePlayerBotData(bot->GetGUID(), true);
 }
 
+void PlayerbotAI::UpdateAreaTriggers(uint32 elapsed)
+{
+    static constexpr uint32 AREA_TRIGGER_CHECK_MS = 1000;
+    _areaTriggerCheckMs += elapsed;
+    if (_areaTriggerCheckMs < AREA_TRIGGER_CHECK_MS)
+        return;
+    _areaTriggerCheckMs = 0;
+
+    if (bot->IsInFlight() || !bot->GetSession())
+        return;
+    std::vector<uint32> const* triggers = BotAreaTriggerIndex::instance().ForMap(bot->GetMapId());
+    if (!triggers)
+        return;
+
+    // Report a trigger once on entering its box, like a client; standing inside does not repeat it.
+    uint32 inside = 0;
+    for (uint32 id : *triggers)
+    {
+        AreaTrigger const* trigger = sObjectMgr->GetAreaTrigger(id);
+        if (trigger && bot->IsInAreaTriggerRadius(trigger))
+        {
+            inside = id;
+            break;
+        }
+    }
+    if (inside && inside != _lastAreaTrigger)
+    {
+        WorldPacket packet(CMSG_AREATRIGGER, 4);
+        packet << inside;
+        bot->GetSession()->HandleAreaTriggerOpcode(packet);
+        LOG_DEBUG("playerbots", "area-trigger bot={} entered trigger {} map={}", bot->GetName(), inside,
+                  bot->GetMapId());
+    }
+    _lastAreaTrigger = inside;
+}
+
 void PlayerbotAI::UpdateAI(uint32 elapsed, bool minimal)
 {
     // Handle the AI check delay
@@ -263,6 +300,11 @@ void PlayerbotAI::UpdateAI(uint32 elapsed, bool minimal)
     // against it) blocks LFG teleports. Unit::IsFalling() is the flag test, so real falls keep theirs.
     if (!bot->Unit::IsFalling())
         bot->SetFallInformation(0, bot->GetPositionZ());
+
+    // Likewise bots send no CMSG_AREATRIGGER: scripted dungeon events that start when a player walks into a trigger
+    // box never start for them (Utgarde Keep's proto-drake on its perch near Ingvar waits for trigger 4838).
+    if (sPlayerbotAIConfig.emulateAreaTriggers)
+        UpdateAreaTriggers(elapsed);
 
     // Handle cheat options (set bot health and power if cheats are enabled)
     if (bot->IsAlive() &&

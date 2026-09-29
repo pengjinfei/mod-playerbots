@@ -638,6 +638,10 @@ private:
         return player && player->GetSession() && player->IsInWorld() && !player->IsDuringRemoveFromWorld() &&
                !player->IsBeingTeleported();
     }
+    // AiPlayerbot.EmulateAreaTriggers: send CMSG_AREATRIGGER on entering a dungeon's scripted trigger, as a client does.
+    void UpdateAreaTriggers(uint32 elapsed);
+    uint32 _areaTriggerCheckMs = 0;
+    uint32 _lastAreaTrigger = 0;  // the trigger the bot stands in, reported once on entry
 protected:
     Player* bot;
     Player* master;

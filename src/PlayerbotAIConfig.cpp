@@ -7,6 +7,7 @@
 #include "PlayerbotAIConfig.h"
 #include "BisListMgr.h"
 #include "Config.h"
+#include "BotAreaTriggerIndex.h"
 #include "DungeonRouteMgr.h"
 #include "NewRpgInfo.h"
 #include "PlayerbotDungeonRepository.h"
@@ -786,6 +787,9 @@ bool PlayerbotAIConfig::Initialize()
     dungeonRouteDir =
         sConfigMgr->GetOption<std::string>("AiPlayerbot.DungeonRouteDir", "modules/mod-playerbots/data/dungeon-routes");
     DungeonRouteMgr::instance().Load(dungeonRouteDir);
+    emulateAreaTriggers = sConfigMgr->GetOption<bool>("AiPlayerbot.EmulateAreaTriggers", false);
+    if (emulateAreaTriggers)
+        BotAreaTriggerIndex::instance().Build();
 
     excludedHunterPetFamilies.clear();
     LoadList<std::vector<uint32>>(sConfigMgr->GetOption<std::string>("AiPlayerbot.ExcludedHunterPetFamilies", ""), excludedHunterPetFamilies);

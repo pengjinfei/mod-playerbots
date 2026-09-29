@@ -136,6 +136,7 @@ public:
     bool botAutologin;
     std::string randomBotMapsAsString;
     std::string dungeonRouteDir;
+    bool emulateAreaTriggers;
     float probTeleToBankers;
     bool enableWeightTeleToCityBankers;
     int weightTeleToStormwind;

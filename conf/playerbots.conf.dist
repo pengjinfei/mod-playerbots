@@ -1578,6 +1578,12 @@ AiPlayerbot.RandomBotMaps = 0,1,530,571
 # Default: modules/mod-playerbots/data/dungeon-routes
 AiPlayerbot.DungeonRouteDir = modules/mod-playerbots/data/dungeon-routes
 
+# Bots send CMSG_AREATRIGGER when they walk into a scripted or quest area trigger on a dungeon or raid map, as a
+# game client does (teleport and tavern triggers excluded). Without it, scripted events that start on a trigger
+# never start for an all-bot group (e.g. Utgarde Keep's proto-drake near Ingvar).
+# Default: 0 (disabled)
+AiPlayerbot.EmulateAreaTriggers = 0
+
 # Probability bots teleport to banker (city)
 # Default: 0.25
 AiPlayerbot.ProbTeleToBankers = 0.25
