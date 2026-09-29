@@ -36,6 +36,7 @@ public:
 
         creators["four horsemen attract alternatively"] = &RaidNaxxActionContext::four_horsemen_attract_alternatively;
         creators["four horsemen attack in order"] = &RaidNaxxActionContext::four_horsemen_attack_in_order;
+        creators["four horsemen front"] = &RaidNaxxActionContext::four_horsemen_front;
 
         creators["sapphiron ground position"] = &RaidNaxxActionContext::sapphiron_ground_position;
         creators["sapphiron flight position"] = &RaidNaxxActionContext::sapphiron_flight_position;
@@ -77,6 +78,7 @@ private:
     }
     static Action* four_horsemen_attract_alternatively(PlayerbotAI* ai) { return new FourHorsemenAttractAlternativelyAction(ai); }
     static Action* four_horsemen_attack_in_order(PlayerbotAI* ai) { return new FourHorsemenAttackInOrderAction(ai); }
+    static Action* four_horsemen_front(PlayerbotAI* ai) { return new FourHorsemenFrontAction(ai); }
     // static Action* sapphiron_ground_main_tank_position(PlayerbotAI* ai) { return new
     // SapphironGroundMainTankPositionAction(ai); }
     static Action* sapphiron_ground_position(PlayerbotAI* ai) { return new SapphironGroundPositionAction(ai); }

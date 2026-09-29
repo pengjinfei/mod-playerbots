@@ -363,6 +363,13 @@ float FourHorsemenGenericMultiplier::GetValue(Action* action)
     if ((dynamic_cast<DpsAssistAction*>(action) || dynamic_cast<TankAssistAction*>(action)))
         return 0.0f;
 
+    // An attractor off its post leaves Zeliek or the Lady with nobody inside 45 yd and they punish the whole raid:
+    // run 1734 the Zeliek attractor (holy paladin) ran to the dying main tank from 21 to 30 s and Condemnation hit
+    // all ten twice. Attractors only move for their post or to step out of a void zone; they heal from where they stand.
+    if (dynamic_cast<MovementAction*>(action) && !dynamic_cast<FourHorsemenAttractAlternativelyAction*>(action) &&
+        !dynamic_cast<AvoidAoeAction*>(action) && FourHorsemenBossHelper(botAI).IsAttracter(bot))
+        return 0.0f;
+
     return 1.0f;
 }
 

@@ -32,6 +32,7 @@ public:
 
         creators["four horsemen attractors"] = &RaidNaxxTriggerContext::four_horsemen_attractors;
         creators["four horsemen except attractors"] = &RaidNaxxTriggerContext::four_horsemen_except_attractors;
+        creators["four horsemen front"] = &RaidNaxxTriggerContext::four_horsemen_front;
 
         creators["sapphiron ground"] = &RaidNaxxTriggerContext::sapphiron_ground;
         creators["sapphiron flight"] = &RaidNaxxTriggerContext::sapphiron_flight;
@@ -70,6 +71,7 @@ private:
 
     static Trigger* four_horsemen_attractors(PlayerbotAI* ai) { return new FourHorsemenAttractorsTrigger(ai); }
     static Trigger* four_horsemen_except_attractors(PlayerbotAI* ai) { return new FourHorsemenExceptAttractorsTrigger(ai); }
+    static Trigger* four_horsemen_front(PlayerbotAI* ai) { return new FourHorsemenFrontTrigger(ai); }
 
     static Trigger* sapphiron_ground(PlayerbotAI* ai) { return new SapphironGroundTrigger(ai); }
     static Trigger* sapphiron_flight(PlayerbotAI* ai) { return new SapphironFlightTrigger(ai); }

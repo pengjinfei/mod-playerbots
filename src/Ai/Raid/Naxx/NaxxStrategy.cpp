@@ -115,6 +115,10 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         { NextAction("four horsemen attract alternatively", ACTION_RAID + 1) }
     ));
 
+    triggers.push_back(new TriggerNode("four horsemen front",
+        { NextAction("four horsemen front", ACTION_RAID + 2) }
+    ));
+
     triggers.push_back(new TriggerNode("four horsemen except attractors",
         { NextAction("four horsemen attack in order", ACTION_RAID + 1) }
     ));

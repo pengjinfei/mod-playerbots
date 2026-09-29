@@ -540,6 +540,10 @@ public:
     const float posZ = 241.27f;
     const std::pair<float, float> attractPos[2] = {{2502.03f, -2910.90f},
                                                    {2484.61f, -2947.07f}};  // left (sir zeliek), right (lady blaumeux)
+    // 10-man: both posts on the Zeliek-Lady line, 21 yd from Zeliek and 24 yd from the Lady, so neither sits in the
+    // other's 45 yd mark and the two are 25 yd apart: the healer attractor keeps the other one up. With the 40 yd
+    // posts the hunter held Zeliek unhealed and died 13 s after the swap; Condemnation wiped the raid (run 1749).
+    const std::pair<float, float> attractPos10[2] = {{2503.34f, -2911.83f}, {2485.92f, -2930.19f}};
     FourHorsemenBossHelper(PlayerbotAI* botAI) : AiObject(botAI) {}
     static constexpr uint32 NPC_SIR_ZELIEK = 16063;
     static constexpr uint32 NPC_LADY_BLAUMEUX = 16065;
@@ -603,7 +607,8 @@ public:
     std::pair<float, float> CurrentAttractPos()
     {
         bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
-        float posX = attractPos[posToGo].first, posY = attractPos[posToGo].second;
+        float posX = raid25 ? attractPos[posToGo].first : attractPos10[posToGo].first;
+        float posY = raid25 ? attractPos[posToGo].second : attractPos10[posToGo].second;
         if (posToGo == 1)
         {
             float offset_x = 0.0f;
@@ -626,6 +631,8 @@ public:
 
         return _lady;
     }
+    Unit* Zeliek() const { return _sir; }
+    Unit* Lady() const { return _lady; }
 
 protected:
     Unit* _sir = nullptr;

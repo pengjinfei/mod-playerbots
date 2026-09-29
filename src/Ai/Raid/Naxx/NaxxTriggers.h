@@ -233,6 +233,16 @@ private:
     FourHorsemenBossHelper helper;
 };
 
+class FourHorsemenFrontTrigger : public Trigger
+{
+public:
+    FourHorsemenFrontTrigger(PlayerbotAI* ai) : Trigger(ai, "four horsemen front"), helper(ai) {}
+    bool IsActive() override;
+
+private:
+    FourHorsemenBossHelper helper;
+};
+
 class SapphironGroundTrigger : public Trigger
 {
 public:

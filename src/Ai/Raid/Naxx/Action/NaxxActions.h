@@ -160,6 +160,16 @@ protected:
     FourHorsemenBossHelper helper;
 };
 
+class FourHorsemenFrontAction : public AttackAction
+{
+public:
+    FourHorsemenFrontAction(PlayerbotAI* ai) : AttackAction(ai, "four horsemen front"), helper(ai) {}
+    bool Execute(Event event) override;
+
+protected:
+    FourHorsemenBossHelper helper;
+};
+
 class FourHorsemenAttackInOrderAction : public AttackAction
 {
 public:

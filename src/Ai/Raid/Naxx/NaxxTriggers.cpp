@@ -125,6 +125,15 @@ bool FourHorsemenExceptAttractorsTrigger::IsActive()
     return !helper.IsAttracter(bot);
 }
 
+bool FourHorsemenFrontTrigger::IsActive()
+{
+    if (bot->GetRaidDifficulty() != RAID_DIFFICULTY_10MAN_NORMAL || !bot->IsInCombat() || helper.IsAttracter(bot))
+        return false;
+
+    return bot->FindNearestCreature(30549, 200.0f, true) || bot->FindNearestCreature(16065, 200.0f, true) ||
+           bot->FindNearestCreature(16063, 200.0f, true);
+}
+
 bool SapphironGroundTrigger::IsActive()
 {
     if (!helper.UpdateBossAI())
