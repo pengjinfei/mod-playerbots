@@ -7,6 +7,7 @@
 #include "DungeonRunActions.h"
 
 #include "DungeonRouteMgr.h"
+#include "LastMovementValue.h"
 #include "PositionValue.h"
 #include "PullStrategy.h"
 #include "RtiTargetValue.h"
@@ -45,8 +46,19 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             WorldLocation const body = dead->HasPlayerFlag(PLAYER_FLAGS_GHOST) ? dead->GetCorpseLocation()
                                                                                  : dead->GetWorldLocation();
             if (body.GetMapId() == bot->GetMapId() && bot->GetDistance(body) > 10.0f)
-                MoveTo(bot->GetMapId(), body.GetPositionX(), body.GetPositionY(), body.GetPositionZ(), false, false,
-                       false, false, MovementPriority::MOVEMENT_NORMAL);
+            {
+                bool const moved = MoveTo(bot->GetMapId(), body.GetPositionX(), body.GetPositionY(),
+                                          body.GetPositionZ(), false, false, false, false,
+                                          MovementPriority::MOVEMENT_NORMAL);
+                if (TraceDue())
+                {
+                    LastMovement& lastMove = *context->GetValue<LastMovement&>("last movement");
+                    LOG_DEBUG("playerbots", "dungeon-run bot={} to body of {} dist={:.1f} moved={} can_move={} "
+                              "last_priority={} last_age_ms={}", bot->GetName(), dead->GetName(),
+                              bot->GetDistance(body), moved, botAI->CanMove(), uint32(lastMove.priority),
+                              getMSTimeDiff(lastMove.msTime, getMSTime()));
+                }
+            }
         }
         uint32 const now = getMSTime();
         if (getMSTimeDiff(_lastWaitLogMs, now) >= WAIT_LOG_INTERVAL_MS)
