@@ -38,6 +38,8 @@ private:
     static constexpr uint32 APPROACH_TIMEOUT_MS = 45000;
 
     void UpdateProgress(DungeonRoute const& route);
+    bool ApproachTimedOut(uint32 index, float distance);
+    bool TraceDue();  // throttles the debug trace to one line per WAIT_LOG_INTERVAL_MS
     bool GroupReady(std::string& reason) const;
     // First item on the path (not a side pack, not skipped) with a living, attackable member; sets the member
     // nearest to the bot.
@@ -49,6 +51,7 @@ private:
     float _approachBest = 0.0f;
     uint32 _approachSinceMs = 0;
     uint32 _lastApproachTickMs = 0;
+    uint32 _lastTraceMs = 0;
 };
 
 #endif
