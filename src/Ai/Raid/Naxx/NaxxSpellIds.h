@@ -123,6 +123,10 @@ namespace NaxxSpellIds
 */
     // Loatheb
     static constexpr uint32 NecroticAura10 = 55593;
+    // Maexxna
+    static constexpr uint32 NecroticPoison10 = 54121;
+    static constexpr uint32 NecroticPoison25 = 28776;
+    static constexpr uint32 NpcWebWrap = 16486;
 /*
     SPELL_NECROTIC_AURA                         = 55593,
     SPELL_SUMMON_SPORE                          = 29234,

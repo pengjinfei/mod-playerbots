@@ -17,6 +17,8 @@ public:
     RaidNaxxActionContext()
     {
         creators["grobbulus go behind the boss"] = &RaidNaxxActionContext::go_behind_the_boss;
+        creators["maexxna cure necrotic poison"] = &RaidNaxxActionContext::maexxna_cure_necrotic_poison;
+        creators["maexxna attack web wrap"] = &RaidNaxxActionContext::maexxna_attack_web_wrap;
         creators["rotate grobbulus"] = &RaidNaxxActionContext::rotate_grobbulus;
         creators["grobbulus move center"] = &RaidNaxxActionContext::grobbulus_move_center;
         creators["grobbulus move away"] = &RaidNaxxActionContext::grobbulus_move_away;
@@ -56,6 +58,8 @@ public:
 
 private:
     static Action* go_behind_the_boss(PlayerbotAI* ai) { return new GrobbulusGoBehindAction(ai); }
+    static Action* maexxna_cure_necrotic_poison(PlayerbotAI* ai) { return new MaexxnaCureNecroticPoisonAction(ai); }
+    static Action* maexxna_attack_web_wrap(PlayerbotAI* ai) { return new MaexxnaAttackWebWrapAction(ai); }
     static Action* rotate_grobbulus(PlayerbotAI* ai) { return new GrobbulusRotateAction(ai); }
     static Action* grobbulus_move_center(PlayerbotAI* ai) { return new GrobbulusMoveCenterAction(ai); }
     static Action* grobbulus_move_away(PlayerbotAI* ai) { return new GrobbulusMoveAwayAction(ai); }

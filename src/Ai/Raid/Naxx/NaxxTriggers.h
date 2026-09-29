@@ -135,6 +135,22 @@ public:
     bool IsActive() override;
 };
 
+// Necrotic Poison (-90% healing taken) is on the main tank and this bot can cure poison.
+class MaexxnaNecroticPoisonTrigger : public Trigger
+{
+public:
+    MaexxnaNecroticPoisonTrigger(PlayerbotAI* ai) : Trigger(ai, "maexxna necrotic poison") {}
+    bool IsActive() override;
+};
+
+// A Web Wrap cocoon holds a raid member and this bot is ranged damage.
+class MaexxnaWebWrapTrigger : public Trigger
+{
+public:
+    MaexxnaWebWrapTrigger(PlayerbotAI* ai) : Trigger(ai, "maexxna web wrap") {}
+    bool IsActive() override;
+};
+
 //class PatchwerkTankTrigger : public Trigger
 //{
 //public:

@@ -186,6 +186,29 @@ bool MaexxnaTrigger::IsActive()
     return !botAI->IsTank(bot);
 }
 
+bool MaexxnaNecroticPoisonTrigger::IsActive()
+{
+    uint8 const cls = bot->getClass();
+    if (cls != CLASS_PALADIN && cls != CLASS_SHAMAN && cls != CLASS_DRUID)
+        return false;
+    if (!AI_VALUE2(Unit*, "find target", "maexxna"))
+        return false;
+
+    Unit* mt = AI_VALUE(Unit*, "main tank");
+    return mt && mt->IsAlive() && bot->IsWithinDistInMap(mt, 40.0f) &&
+           NaxxSpellIds::HasAnyAura(mt, {NaxxSpellIds::NecroticPoison10, NaxxSpellIds::NecroticPoison25});
+}
+
+bool MaexxnaWebWrapTrigger::IsActive()
+{
+    if (!botAI->IsRangedDps(bot))
+        return false;
+    if (!AI_VALUE2(Unit*, "find target", "maexxna"))
+        return false;
+
+    return bot->FindNearestCreature(NaxxSpellIds::NpcWebWrap, 50.0f, true) != nullptr;
+}
+
 //bool PatchwerkTankTrigger::IsActive()
 //{
 //    Unit* boss = AI_VALUE2(Unit*, "find target", "patchwerk");

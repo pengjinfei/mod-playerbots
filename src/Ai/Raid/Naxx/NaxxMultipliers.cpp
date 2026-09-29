@@ -337,6 +337,21 @@ float AnubrekhanGenericMultiplier::GetValue(Action* action)
     return 1.0f;
 }
 
+// "maexxna attack web wrap" switches the target to a cocoon, then has nothing to do while the target already is the
+// cocoon, and the next action down the queue is "dps assist", which picks Maexxna again. The cocoon only took damage
+// between two switches; a bot stayed wrapped for 58 s. Hold dps assist while the current target is a live cocoon.
+float MaexxnaGenericMultiplier::GetValue(Action* action)
+{
+    if (!dynamic_cast<DpsAssistAction*>(action))
+        return 1.0f;
+
+    Unit* target = AI_VALUE(Unit*, "current target");
+    if (target && target->IsAlive() && target->GetEntry() == NaxxSpellIds::NpcWebWrap)
+        return 0.0f;
+
+    return 1.0f;
+}
+
 float FourHorsemenGenericMultiplier::GetValue(Action* action)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "sir zeliek");

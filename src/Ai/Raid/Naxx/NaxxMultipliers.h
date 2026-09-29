@@ -93,6 +93,15 @@ private:
     KelthuzadBossHelper helper;
 };
 
+class MaexxnaGenericMultiplier : public Multiplier
+{
+public:
+    MaexxnaGenericMultiplier(PlayerbotAI* ai) : Multiplier(ai, "maexxna generic") {}
+
+public:
+    float GetValue(Action* action) override;
+};
+
 class AnubrekhanGenericMultiplier : public Multiplier
 {
 public:
