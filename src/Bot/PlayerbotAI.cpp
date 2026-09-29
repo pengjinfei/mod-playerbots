@@ -305,6 +305,15 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
     if (ground <= INVALID_HEIGHT || bot->GetPositionZ() - ground < AIRBORNE_HEIGHT)
     {
         _airborneChecks = 0;
+        // Landed. A client clears the falling flags with its landing packet; MoveFall sets them on a player and
+        // nothing clears them for a bot, so it counted as moving for good and every spell with a cast time was
+        // refused - the priest, shaman and paladin could not resurrect anyone after Telestra (run 1825).
+        if (bot->HasUnitMovementFlag(MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR))
+        {
+            bot->RemoveUnitMovementFlag(MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR);
+            bot->m_movementInfo.SetFallTime(0);
+            LOG_DEBUG("playerbots", "gravity bot={} landed, falling flags cleared", bot->GetName());
+        }
         return;
     }
     // Two checks in a row, so a move that just ended and is about to be followed by the next one is not cut short.
