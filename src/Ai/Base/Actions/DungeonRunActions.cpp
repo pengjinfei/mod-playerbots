@@ -66,6 +66,11 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             _lastWaitLogMs = now;
             LOG_DEBUG("playerbots", "dungeon-run bot={} waiting: {} progress={:.0f}", bot->GetName(), waitReason,
                       AI_VALUE(float, "dungeon run progress"));
+            if (dead)
+                LOG_DEBUG("playerbots", "dungeon-run bot={} dead member {} death_state={} ghost={} rez_requested={} "
+                          "dist={:.1f}", bot->GetName(), dead->GetName(), uint32(dead->getDeathState()),
+                          dead->HasPlayerFlag(PLAYER_FLAGS_GHOST), dead->isResurrectRequested(),
+                          bot->GetDistance(dead));
         }
         return false;
     }
