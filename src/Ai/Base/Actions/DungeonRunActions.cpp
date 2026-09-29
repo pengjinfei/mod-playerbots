@@ -7,6 +7,8 @@
 #include "DungeonRunActions.h"
 
 #include "DungeonRouteMgr.h"
+#include "PositionValue.h"
+#include "PullStrategy.h"
 #include "Playerbots.h"
 
 bool DungeonRunAdvanceAction::isUseful()
@@ -55,7 +57,7 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         ++attempts;
         LOG_DEBUG("playerbots", "dungeon-run bot={} pull item={} along={:.0f} target={} attempt={} progress={:.0f}",
                   bot->GetName(), index, item->along, target->GetName(), attempts, progress);
-        return Attack(target);
+        return Pull(*route, target, progress);
     }
 
     // Walk the skeleton up to the pack: the next node about STEP yd ahead, never past the pack itself.
@@ -96,6 +98,37 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
                   "progress={:.0f}", bot->GetName(), index, target->GetName(), distance, bot->IsWithinLOSInMap(target),
                   toTarget ? "target" : "node", moved, progress);
     return moved;
+}
+
+// Pull the way the "pull" strategy does it on a chat command: a ranged pull, then back to the pull position so the
+// pack comes to the group. The pull position is the route node PULL_BACK yd behind, away from the packs ahead: a
+// melee pull where the leader stood brought the neighbouring forge packs along (run 1787, six elites, wipe).
+bool DungeonRunAdvanceAction::Pull(DungeonRoute const& route, Unit* target, float progress)
+{
+    PullStrategy* strategy = PullStrategy::Get(botAI);
+    if (!strategy || strategy->HasPullStarted() || !strategy->CanDoPullAction(target))
+        return Attack(target);
+
+    DungeonRouteNode const* back = nullptr;
+    for (DungeonRouteNode const& node : route.nodes)
+    {
+        if (node.along > progress - PULL_BACK)
+            break;
+        back = &node;
+    }
+    PositionMap& positions = AI_VALUE(PositionMap&, "position");
+    PositionInfo pullPosition = positions["pull"];
+    if (back)
+        pullPosition.Set(back->x, back->y, back->z, bot->GetMapId());
+    else
+        pullPosition.Set(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), bot->GetMapId());
+    positions["pull"] = pullPosition;
+
+    strategy->RequestPull(target);
+    context->GetValue<Unit*>("current target")->Set(target);
+    botAI->ChangeEngine(BOT_STATE_COMBAT);
+    botAI->SetNextCheckDelay(sPlayerbotAIConfig.reactDelay);
+    return true;
 }
 
 bool DungeonRunAdvanceAction::ApproachTimedOut(uint32 index, float distance)

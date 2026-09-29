@@ -36,8 +36,10 @@ private:
     static constexpr uint32 MAX_PULL_ATTEMPTS = 20;     // pulls issued on one pack before it is skipped
     static constexpr uint32 WAIT_LOG_INTERVAL_MS = 10000;
     static constexpr uint32 APPROACH_TIMEOUT_MS = 45000;
+    static constexpr float PULL_BACK = 20.0f;             // pull position: the node this far behind
 
     void UpdateProgress(DungeonRoute const& route);
+    bool Pull(DungeonRoute const& route, Unit* target, float progress);
     bool ApproachTimedOut(uint32 index, float distance);
     bool TraceDue();  // throttles the debug trace to one line per WAIT_LOG_INTERVAL_MS
     bool GroupReady(std::string& reason) const;
