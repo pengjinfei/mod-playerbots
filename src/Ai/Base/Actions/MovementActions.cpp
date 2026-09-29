@@ -124,7 +124,9 @@ void MovementAction::LiftSunkenDestination(float x, float y, float& z)
         return;
     float const botFloor =
         bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, std::max(z, bot->GetPositionZ()) + 5.0f, true, 50.0f);
-    if (botFloor <= INVALID_HEIGHT || botFloor <= z || std::fabs(botFloor - bot->GetPositionZ()) > 6.0f)
+    // 10 yd, not 6: a bot already half sunk into the web (an earlier move walked it part way down) stood more than
+    // 6 yd under the surface it should be lifted to and fell through anyway (run 1792).
+    if (botFloor <= INVALID_HEIGHT || botFloor <= z || std::fabs(botFloor - bot->GetPositionZ()) > 10.0f)
         return;
     if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
         LOG_DEBUG("playerbots", "floor-guard bot={} action={} lifted dest=({:.1f},{:.1f}) z {:.1f}->{:.1f} (ground from z {:.1f})",
