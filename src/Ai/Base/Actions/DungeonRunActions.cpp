@@ -34,8 +34,20 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     }
     // Waiting yields the tick: eating, drinking, resurrecting and rebuffing are other actions.
     std::string waitReason;
-    if (!GroupReady(waitReason))
+    Player* dead = nullptr;
+    if (!GroupReady(waitReason, dead))
     {
+        // Take the group to a dead member so the healers are in range and in sight of the body: a rogue who died
+        // on the ledge above the ramp lay 34 yd away and 11 yd up and was never resurrected (run 1810).
+        // A member who released its spirit stands wherever its ghost is; the body is what gets resurrected.
+        if (dead)
+        {
+            WorldLocation const body = dead->HasPlayerFlag(PLAYER_FLAGS_GHOST) ? dead->GetCorpseLocation()
+                                                                                 : dead->GetWorldLocation();
+            if (body.GetMapId() == bot->GetMapId() && bot->GetDistance(body) > 10.0f)
+                MoveTo(bot->GetMapId(), body.GetPositionX(), body.GetPositionY(), body.GetPositionZ(), false, false,
+                       false, false, MovementPriority::MOVEMENT_NORMAL);
+        }
         uint32 const now = getMSTime();
         if (getMSTimeDiff(_lastWaitLogMs, now) >= WAIT_LOG_INTERVAL_MS)
         {
@@ -269,7 +281,7 @@ void DungeonRunAdvanceAction::UpdateProgress(DungeonRoute const& route)
         SET_AI_VALUE(float, "dungeon run progress", best->along);
 }
 
-bool DungeonRunAdvanceAction::GroupReady(std::string& reason) const
+bool DungeonRunAdvanceAction::GroupReady(std::string& reason, Player*& dead) const
 {
     Group* group = bot->GetGroup();
     if (!group)
@@ -283,7 +295,11 @@ bool DungeonRunAdvanceAction::GroupReady(std::string& reason) const
         // "In combat" only counts while something actually attacks the member: a combat flag that lingers with no
         // attacker kept the leader waiting for five minutes on Utgarde Keep's stairs (run 1806).
         if (!member->IsAlive() || (member->IsInCombat() && !member->getAttackers().empty()))
+        {
             reason = Acore::StringFormat("{} {}", member->GetName(), member->IsAlive() ? "in combat" : "dead");
+            if (!member->IsAlive())
+                dead = member;
+        }
         else if (member != bot && bot->GetDistance(member) > GROUP_RANGE)
             reason = Acore::StringFormat("{} {:.0f} yd away", member->GetName(), bot->GetDistance(member));
         else if (member->GetHealthPct() < READY_HEALTH_PCT)

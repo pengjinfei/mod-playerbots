@@ -48,7 +48,7 @@ private:
     bool CcGateOpen(DungeonRouteItem const& item, Unit* nearest);
     bool ApproachTimedOut(uint32 index, float distance);
     bool TraceDue();  // throttles the debug trace to one line per WAIT_LOG_INTERVAL_MS
-    bool GroupReady(std::string& reason) const;
+    bool GroupReady(std::string& reason, Player*& dead) const;
     // First item on the path (not a side pack, not skipped) with a living, attackable member; sets the member
     // nearest to the bot.
     DungeonRouteItem const* NextItem(DungeonRoute const& route, Unit*& target, uint32& index) const;
