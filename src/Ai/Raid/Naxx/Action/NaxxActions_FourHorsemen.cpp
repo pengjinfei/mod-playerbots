@@ -29,13 +29,15 @@ bool FourHorsemenAttackInOrderAction::Execute(Event /*event*/)
     if (!helper.UpdateBossAI())
         return false;
 
+    // By entry: "find target" only sees units already on the bot's threat list, so the next horseman in the order
+    // was invisible until someone else pulled it onto this bot.
     Unit* target = nullptr;
-    Unit* thane = AI_VALUE2(Unit*, "find target", "thane korth'azz");
-    Unit* lady = AI_VALUE2(Unit*, "find target", "lady blaumeux");
-    Unit* sir = AI_VALUE2(Unit*, "find target", "sir zeliek");
-    Unit* fourth = AI_VALUE2(Unit*, "find target", "baron rivendare");
+    Unit* thane = bot->FindNearestCreature(16064, 200.0f, true);
+    Unit* lady = bot->FindNearestCreature(16065, 200.0f, true);
+    Unit* sir = bot->FindNearestCreature(16063, 200.0f, true);
+    Unit* fourth = bot->FindNearestCreature(30549, 200.0f, true);
     if (!fourth)
-        fourth = AI_VALUE2(Unit*, "find target", "highlord mograine");
+        fourth = bot->FindNearestCreature(16062, 200.0f, true);
 
     std::vector<Unit*> attack_order;
     if (botAI->IsAssistTank(bot))

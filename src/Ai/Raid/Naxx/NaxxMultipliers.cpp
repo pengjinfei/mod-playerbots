@@ -354,8 +354,9 @@ float MaexxnaGenericMultiplier::GetValue(Action* action)
 
 float FourHorsemenGenericMultiplier::GetValue(Action* action)
 {
-    Unit* boss = AI_VALUE2(Unit*, "find target", "sir zeliek");
-    if (!boss)
+    // By entry and only in combat: the threat-list lookup left dps/tank assist on for every bot without threat on
+    // Zeliek, and they wandered off the kill order.
+    if (!bot->IsInCombat() || !bot->FindNearestCreature(16063, 200.0f, true))
         return 1.0f;
 
     context->GetValue<bool>("neglect threat")->Set(true);

@@ -541,12 +541,19 @@ public:
     const std::pair<float, float> attractPos[2] = {{2502.03f, -2910.90f},
                                                    {2484.61f, -2947.07f}};  // left (sir zeliek), right (lady blaumeux)
     FourHorsemenBossHelper(PlayerbotAI* botAI) : AiObject(botAI) {}
+    static constexpr uint32 NPC_SIR_ZELIEK = 16063;
+    static constexpr uint32 NPC_LADY_BLAUMEUX = 16065;
+    // By entry, not "find target": that value only returns units on the bot's own threat list, and the attractors
+    // have no threat on the back two when the fight starts, so nobody went to Zeliek and Condemnation (no player
+    // within 45 yd) did 276k to the raid in 40 s (run 1726). Only in combat, so nobody walks over before the pull.
     bool UpdateBossAI()
     {
         if (!bot->IsInCombat())
+        {
             Reset();
-
-        else if (_combat_start_ms == 0)
+            return false;
+        }
+        if (_combat_start_ms == 0)
             _combat_start_ms = getMSTime();
 
         if (_sir && (!_sir->IsInWorld() || !_sir->IsAlive()))
@@ -554,11 +561,11 @@ public:
 
         if (!_sir)
         {
-            _sir = AI_VALUE2(Unit*, "find target", "sir zeliek");
+            _sir = bot->FindNearestCreature(NPC_SIR_ZELIEK, 200.0f, true);
             if (!_sir)
                 return false;
         }
-        _lady = AI_VALUE2(Unit*, "find target", "lady blaumeux");
+        _lady = bot->FindNearestCreature(NPC_LADY_BLAUMEUX, 200.0f, true);
         return true;
     }
     void Reset()
