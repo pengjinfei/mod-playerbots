@@ -137,6 +137,7 @@ public:
     std::string randomBotMapsAsString;
     std::string dungeonRouteDir;
     bool emulateAreaTriggers;
+    bool emulateGravity;
     float probTeleToBankers;
     bool enableWeightTeleToCityBankers;
     int weightTeleToStormwind;

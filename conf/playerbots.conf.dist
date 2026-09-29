@@ -1584,6 +1584,11 @@ AiPlayerbot.DungeonRouteDir = modules/mod-playerbots/data/dungeon-routes
 # Default: 0 (disabled)
 AiPlayerbot.EmulateAreaTriggers = 0
 
+# Bots fall to the ground when a server-driven jump or pull leaves them standing in mid-air, as a game client does
+# by itself. Without it a bot stays where the jump ended (e.g. Grand Magus Telestra's Gravity Well in the Nexus).
+# Default: 0 (disabled)
+AiPlayerbot.EmulateGravity = 0
+
 # Probability bots teleport to banker (city)
 # Default: 0.25
 AiPlayerbot.ProbTeleToBankers = 0.25

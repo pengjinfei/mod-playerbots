@@ -642,6 +642,10 @@ private:
     void UpdateAreaTriggers(uint32 elapsed);
     uint32 _areaTriggerCheckMs = 0;
     uint32 _lastAreaTrigger = 0;  // the trigger the bot stands in, reported once on entry
+    // AiPlayerbot.EmulateGravity: fall to the ground when a server-driven move (a jump or pull) ends in mid-air.
+    void UpdateGravity(uint32 elapsed);
+    uint32 _gravityCheckMs = 0;
+    uint8 _airborneChecks = 0;  // consecutive checks found standing in mid-air
 protected:
     Player* bot;
     Player* master;

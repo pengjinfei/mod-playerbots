@@ -788,6 +788,7 @@ bool PlayerbotAIConfig::Initialize()
         sConfigMgr->GetOption<std::string>("AiPlayerbot.DungeonRouteDir", "modules/mod-playerbots/data/dungeon-routes");
     DungeonRouteMgr::instance().Load(dungeonRouteDir);
     emulateAreaTriggers = sConfigMgr->GetOption<bool>("AiPlayerbot.EmulateAreaTriggers", false);
+    emulateGravity = sConfigMgr->GetOption<bool>("AiPlayerbot.EmulateGravity", false);
     if (emulateAreaTriggers)
         BotAreaTriggerIndex::instance().Build();
 

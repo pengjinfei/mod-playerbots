@@ -283,6 +283,39 @@ void PlayerbotAI::UpdateAreaTriggers(uint32 elapsed)
     _lastAreaTrigger = inside;
 }
 
+void PlayerbotAI::UpdateGravity(uint32 elapsed)
+{
+    static constexpr uint32 GRAVITY_CHECK_MS = 500;
+    static constexpr float AIRBORNE_HEIGHT = 2.0f;
+    _gravityCheckMs += elapsed;
+    if (_gravityCheckMs < GRAVITY_CHECK_MS)
+        return;
+    _gravityCheckMs = 0;
+
+    // Only a bot standing still in mid-air: a jump or a knockback still in flight is left alone.
+    if (bot->IsInFlight() || bot->IsFlying() || bot->CanFly() || bot->IsInWater() || bot->GetTransport() ||
+        bot->GetVehicle() || bot->HasUnitMovementFlag(MOVEMENTFLAG_HOVER) || !bot->movespline->Finalized() ||
+        bot->GetMotionMaster()->GetCurrentMovementGeneratorType() == EFFECT_MOTION_TYPE)
+    {
+        _airborneChecks = 0;
+        return;
+    }
+    float const ground = bot->GetMapHeight(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), true,
+                                           MAX_FALL_DISTANCE);
+    if (ground <= INVALID_HEIGHT || bot->GetPositionZ() - ground < AIRBORNE_HEIGHT)
+    {
+        _airborneChecks = 0;
+        return;
+    }
+    // Two checks in a row, so a move that just ended and is about to be followed by the next one is not cut short.
+    if (++_airborneChecks < 2)
+        return;
+    _airborneChecks = 0;
+    LOG_DEBUG("playerbots", "gravity bot={} falls from z={:.1f} to ground z={:.1f} at ({:.1f},{:.1f}) map={}",
+              bot->GetName(), bot->GetPositionZ(), ground, bot->GetPositionX(), bot->GetPositionY(), bot->GetMapId());
+    bot->GetMotionMaster()->MoveFall();
+}
+
 void PlayerbotAI::UpdateAI(uint32 elapsed, bool minimal)
 {
     // Handle the AI check delay
@@ -305,6 +338,12 @@ void PlayerbotAI::UpdateAI(uint32 elapsed, bool minimal)
     // box never start for them (Utgarde Keep's proto-drake on its perch near Ingvar waits for trigger 4838).
     if (sPlayerbotAIConfig.emulateAreaTriggers)
         UpdateAreaTriggers(elapsed);
+
+    // A client falls by itself when a server-driven jump ends in the air; a bot has no client and would stay there.
+    // Grand Magus Telestra's Gravity Well jumps its targets 5-15 yd above the floor, and the tank hung over her room
+    // until the run stalled (run 1815).
+    if (sPlayerbotAIConfig.emulateGravity)
+        UpdateGravity(elapsed);
 
     // Handle cheat options (set bot health and power if cheats are enabled)
     if (bot->IsAlive() &&
