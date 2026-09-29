@@ -1572,6 +1572,12 @@ AiPlayerbot.ZoneBracket.4197 = 79,80
 # Defaults: 0 = Eastern Kingdoms, 1 = Kalimdor, 530 = Outland, 571 = Northrend
 AiPlayerbot.RandomBotMaps = 0,1,530,571
 
+# Directory with dungeon route files ("<mapId>-<name>.route", drafted by the route-gen tool). A group leader
+# with the "dungeon run" strategy walks the route and pulls the packs on it. Relative paths start at the
+# worldserver working directory.
+# Default: modules/mod-playerbots/data/dungeon-routes
+AiPlayerbot.DungeonRouteDir = modules/mod-playerbots/data/dungeon-routes
+
 # Probability bots teleport to banker (city)
 # Default: 0.25
 AiPlayerbot.ProbTeleToBankers = 0.25

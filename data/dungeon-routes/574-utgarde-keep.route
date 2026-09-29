@@ -2,7 +2,7 @@
 # chain: Utgarde Keep entrance -> Prince Keleseth -> Utgarde Keep -> Dalronn the Controller -> Ingvar the Plunderer; skeleton 1933 yd, 111 hostile spawns, 54 packs
 # node <along_yd> <x> <y> <z>
 # pack <along_yd> <x> <y> <z> radius=<yd> side=<0|1> elite=<n> spawns=<guid,...> # names
-# boss <along_yd> <x> <y> <z> entry=<entry,...> # names
+# boss <along_yd> <x> <y> <z> radius=<yd> entry=<entry,...> spawns=<guid,...> # names
 node 0 153.8 -86.5 12.6
 node 20 171.0 -76.4 13.3
 node 37 184.8 -68.3 18.4
@@ -60,7 +60,7 @@ node 557 237.2 214.6 41.6
 node 573 222.0 209.8 42.9
 pack 585 209.6 213.2 40.9 radius=18.5 side=0 elite=4 spawns=126032,126041,126042,126046 # 1xDragonflayer Strategist, 2xDragonflayer Runecaster, 1xDragonflayer Ironhelm
 node 593 202.6 205.2 43.1
-boss 605 193.1 197.5 40.8 entry=23953 # 1xPrince Keleseth
+boss 605 193.1 197.5 40.8 radius=0.0 entry=23953 spawns=126025 # 1xPrince Keleseth
 node 609 189.2 206.2 41.8
 node 625 180.4 219.6 42.0
 node 641 171.7 233.0 43.7
@@ -117,7 +117,7 @@ node 1205 60.3 -14.5 120.5
 node 1225 78.2 -23.4 119.4
 node 1241 92.5 -30.6 119.4
 node 1257 106.8 -37.7 119.5
-boss 1263 110.8 -37.0 118.9 entry=24200,24201 # 1xSkarvald the Constructor, 1xDalronn the Controller
+boss 1263 110.8 -37.0 118.9 radius=3.5 entry=24200,24201 spawns=126023,126024 # 1xSkarvald the Constructor, 1xDalronn the Controller
 node 1275 123.3 -36.1 121.4
 node 1293 138.2 -30.4 128.7
 node 1311 153.2 -24.8 135.4
@@ -168,5 +168,5 @@ node 1882 219.1 -288.4 181.0
 node 1898 226.5 -302.6 181.0
 node 1914 233.9 -316.8 181.0
 node 1930 241.3 -331.0 181.0
-boss 1933 242.7 -333.6 180.6 entry=23954 # 1xIngvar the Plunderer
+boss 1933 242.7 -333.6 180.6 radius=0.0 entry=23954 spawns=126026 # 1xIngvar the Plunderer
 node 1933 242.7 -333.6 180.6

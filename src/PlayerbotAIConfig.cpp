@@ -7,6 +7,7 @@
 #include "PlayerbotAIConfig.h"
 #include "BisListMgr.h"
 #include "Config.h"
+#include "DungeonRouteMgr.h"
 #include "NewRpgInfo.h"
 #include "PlayerbotDungeonRepository.h"
 #include "PlayerbotFactory.h"
@@ -781,6 +782,10 @@ bool PlayerbotAIConfig::Initialize()
         PlayerbotDungeonRepository::instance().LoadDungeonSuggestions();
     }
     sTravelMgr.Init();
+
+    dungeonRouteDir =
+        sConfigMgr->GetOption<std::string>("AiPlayerbot.DungeonRouteDir", "modules/mod-playerbots/data/dungeon-routes");
+    DungeonRouteMgr::instance().Load(dungeonRouteDir);
 
     excludedHunterPetFamilies.clear();
     LoadList<std::vector<uint32>>(sConfigMgr->GetOption<std::string>("AiPlayerbot.ExcludedHunterPetFamilies", ""), excludedHunterPetFamilies);
