@@ -59,9 +59,10 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     }
 
     Unit* target = nullptr;
+    GameObject* object = nullptr;
     uint32 index = 0;
-    DungeonRouteItem const* item = NextItem(*route, target, index);
-    if (!item || !target)
+    DungeonRouteItem const* item = NextItem(*route, target, object, index);
+    if (!item || (!target && !item->object))
     {
         if (TraceDue())
             LOG_DEBUG("playerbots", "dungeon-run bot={} route cleared progress={:.0f}", bot->GetName(),
@@ -70,9 +71,10 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     }
 
     float const progress = AI_VALUE(float, "dungeon run progress");
-    float const distance = bot->GetDistance(target);
+    if (object && bot->IsWithinDistInMap(object, object->GetInteractionDistance() - 1.0f))
+        return UseObject(*item, index, object);
 
-    if (distance <= PULL_DISTANCE && bot->IsWithinLOSInMap(target))
+    if (target && bot->GetDistance(target) <= PULL_DISTANCE && bot->IsWithinLOSInMap(target))
     {
         // A pack of three or more gets the trash crowd-control chain first; the leader stands still until the
         // casters have it held (see CcGateOpen). One pull attempt is counted per gate, not per waiting tick.
@@ -87,6 +89,13 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
                   bot->GetName(), index, item->along, pullUnit->GetName(), attempts, progress);
         return Pull(*route, pullUnit, progress);
     }
+
+    // Where the item is: the pack member, the object, or - an object not loaded yet - the route's position for it.
+    Position const destination = target ? target->GetPosition()
+                                 : object ? object->GetPosition()
+                                          : Position(item->x, item->y, item->z);
+    std::string const name = target ? target->GetName() : object ? object->GetName() : "object";
+    float const distance = target ? bot->GetDistance(target) : bot->GetExactDist(destination);
 
     // Walk the skeleton up to the pack: the next node about STEP yd ahead, never past the pack itself.
     float const goal = std::min(progress + STEP, item->along);
@@ -113,19 +122,62 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     {
         _pullAttempts[index] = MAX_PULL_ATTEMPTS;
         LOG_DEBUG("playerbots", "dungeon-run bot={} skip item={} along={:.0f} target={} - no closer than {:.0f} yd",
-                  bot->GetName(), index, item->along, target->GetName(), _approachBest);
+                  bot->GetName(), index, item->along, name, _approachBest);
         return false;
     }
-    bool const moved = toTarget ? MoveTo(bot->GetMapId(), target->GetPositionX(), target->GetPositionY(),
-                                         target->GetPositionZ(), false, false, false, false,
+    bool const moved = toTarget ? MoveTo(bot->GetMapId(), destination.GetPositionX(), destination.GetPositionY(),
+                                         destination.GetPositionZ(), false, false, false, false,
                                          MovementPriority::MOVEMENT_NORMAL)
                                 : MoveTo(bot->GetMapId(), next->x, next->y, next->z, false, false, false, false,
                                          MovementPriority::MOVEMENT_NORMAL);
     if (TraceDue())
         LOG_DEBUG("playerbots", "dungeon-run bot={} approach item={} target={} dist={:.1f} los={} to={} moved={} "
-                  "progress={:.0f}", bot->GetName(), index, target->GetName(), distance, bot->IsWithinLOSInMap(target),
-                  toTarget ? "target" : "node", moved, progress);
+                  "progress={:.0f}", bot->GetName(), index, name, distance,
+                  target ? bot->IsWithinLOSInMap(target) : true, toTarget ? "target" : "node", moved, progress);
     return moved;
+}
+
+// Use an object on the route the way a client click does. The Nexus' containment spheres must be used after their
+// bosses die before Keristrasza leaves her prison; bots never click objects on their own.
+bool DungeonRunAdvanceAction::UseObject(DungeonRouteItem const& item, uint32 index, GameObject* object)
+{
+    uint32& attempts = _pullAttempts[index];
+    if (++attempts > MAX_USE_ATTEMPTS)
+    {
+        attempts = MAX_PULL_ATTEMPTS;
+        LOG_DEBUG("playerbots", "dungeon-run bot={} skip item={} along={:.0f} object={} - still usable after {} uses",
+                  bot->GetName(), index, item.along, object->GetName(), MAX_USE_ATTEMPTS);
+        return false;
+    }
+    LOG_DEBUG("playerbots", "dungeon-run bot={} use item={} along={:.0f} object={} attempt={}", bot->GetName(), index,
+              item.along, object->GetName(), attempts);
+    WorldPacket packet(CMSG_GAMEOBJ_USE);
+    packet << object->GetGUID();
+    bot->GetSession()->HandleGameObjectUseOpcode(packet);
+    return true;
+}
+
+bool DungeonRunAdvanceAction::PendingObject(DungeonRouteItem const& item, GameObject*& object) const
+{
+    object = nullptr;
+    // Beyond this the object's grid may not be loaded: walk there and judge it on arrival.
+    if (bot->GetExactDist(item.x, item.y, item.z) > OBJECT_SIGHT)
+        return true;
+    std::list<GameObject*> objects;
+    bot->GetGameObjectListWithEntryInGrid(objects, item.objectEntries, OBJECT_SIGHT + 20.0f);
+    for (GameObject* candidate : objects)
+    {
+        if (candidate->GetExactDist(item.x, item.y, item.z) > 10.0f || !candidate->isSpawned())
+            continue;
+        // Not selectable: its condition is unmet (a sphere whose boss lives, when that boss was skipped) - pass on.
+        // Activated: already used.
+        if (!candidate->HasGameObjectFlag(GO_FLAG_NOT_SELECTABLE) && candidate->GetGoState() == GO_STATE_READY)
+        {
+            object = candidate;
+            return true;
+        }
+    }
+    return false;
 }
 
 // Pull the way the "pull" strategy does it on a chat command: a ranged pull, then back to the pull position so the
@@ -314,7 +366,7 @@ bool DungeonRunAdvanceAction::GroupReady(std::string& reason, Player*& dead) con
 }
 
 DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& route, Unit*& target,
-                                                          uint32& index) const
+                                                          GameObject*& object, uint32& index) const
 {
     Map* map = bot->GetMap();
     if (!map)
@@ -328,6 +380,13 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
         auto const attempts = _pullAttempts.find(i);
         if (attempts != _pullAttempts.end() && attempts->second >= MAX_PULL_ATTEMPTS)
             continue;
+        if (item.object)
+        {
+            if (!PendingObject(item, object))
+                continue;
+            index = i;
+            return &item;
+        }
 
         Unit* nearest = nullptr;
         for (uint32 spawnId : item.spawnIds)

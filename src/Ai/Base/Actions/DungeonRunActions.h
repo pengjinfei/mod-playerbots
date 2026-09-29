@@ -40,18 +40,24 @@ private:
     static constexpr float PULL_BACK = 20.0f;             // pull position: the node this far behind
     static constexpr uint32 CC_WAIT_MS = 25000;           // longest wait for the crowd control to land
     static constexpr uint32 CC_NO_PLAN_MS = 10000;        // no crowd-control icon after this long: pull anyway
+    static constexpr float OBJECT_SIGHT = 80.0f;          // closer than this, an object item is judged by its state
+    static constexpr uint32 MAX_USE_ATTEMPTS = 5;         // uses of one object before it is skipped
     static constexpr uint8 TRASH_CC_SKULL_ICON = 7;
     static constexpr uint8 TRASH_CC_ICONS[] = { 3, 4, 5, 6 };  // triangle, moon, square, cross
 
     void UpdateProgress(DungeonRoute const& route);
     bool Pull(DungeonRoute const& route, Unit* target, float progress);
     bool CcGateOpen(DungeonRouteItem const& item, Unit* nearest);
+    bool UseObject(DungeonRouteItem const& item, uint32 index, GameObject* object);
+    // An object item still to be used: in sight and usable (selectable, not yet activated), or too far away to tell.
+    bool PendingObject(DungeonRouteItem const& item, GameObject*& object) const;
     bool ApproachTimedOut(uint32 index, float distance);
     bool TraceDue();  // throttles the debug trace to one line per WAIT_LOG_INTERVAL_MS
     bool GroupReady(std::string& reason, Player*& dead) const;
-    // First item on the path (not a side pack, not skipped) with a living, attackable member; sets the member
-    // nearest to the bot.
-    DungeonRouteItem const* NextItem(DungeonRoute const& route, Unit*& target, uint32& index) const;
+    // First item on the path (not a side pack, not skipped) with a living, attackable member, or an object still to
+    // be used; sets the member nearest to the bot, or the object when it is in sight.
+    DungeonRouteItem const* NextItem(DungeonRoute const& route, Unit*& target, GameObject*& object,
+                                     uint32& index) const;
 
     std::unordered_map<uint32, uint32> _pullAttempts;  // route item index -> pulls issued
     uint32 _lastWaitLogMs = 0;

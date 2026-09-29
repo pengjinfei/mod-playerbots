@@ -103,7 +103,7 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
             route.nodes.push_back({*along, *x, *y, *z});
             continue;
         }
-        if (tokens[0] != "pack" && tokens[0] != "boss")
+        if (tokens[0] != "pack" && tokens[0] != "boss" && tokens[0] != "object")
         {
             LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: unknown kind '{}'", path, lineNumber, tokens[0]);
             return false;
@@ -117,11 +117,12 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
         item.radius = Acore::StringTo<float>(Field(tokens, "radius")).value_or(0.0f);
         item.side = Field(tokens, "side") == "1";
         item.spawnIds = ParseIdList(Field(tokens, "spawns"));
-        item.bossEntries = ParseIdList(Field(tokens, "entry"));
-        if (item.spawnIds.empty() && item.bossEntries.empty())
+        item.object = tokens[0] == "object";
+        (item.object ? item.objectEntries : item.bossEntries) = ParseIdList(Field(tokens, "entry"));
+        if (item.spawnIds.empty() && item.bossEntries.empty() && item.objectEntries.empty())
         {
-            LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: pack without spawns= / boss without entry=",
-                      path, lineNumber);
+            LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: pack without spawns= / boss or object without "
+                      "entry=", path, lineNumber);
             return false;
         }
         route.items.push_back(std::move(item));

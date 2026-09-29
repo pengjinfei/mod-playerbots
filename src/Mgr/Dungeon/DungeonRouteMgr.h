@@ -30,8 +30,10 @@ struct DungeonRouteItem
     float radius;
     bool side;  // off the path; not cleared unless it joins a fight on its own
     bool boss;
-    std::vector<uint32> spawnIds;     // creature spawn ids (packs)
-    std::vector<uint32> bossEntries;  // creature entries (boss encounters)
+    bool object = false;               // a game object the leader walks to and uses (a lever, a containment sphere)
+    std::vector<uint32> spawnIds;      // creature spawn ids (packs)
+    std::vector<uint32> bossEntries;   // creature entries (boss encounters)
+    std::vector<uint32> objectEntries; // game object entries (objects)
 };
 
 struct DungeonRoute
