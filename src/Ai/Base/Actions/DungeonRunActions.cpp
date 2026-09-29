@@ -9,6 +9,7 @@
 #include "DungeonRouteMgr.h"
 #include "PositionValue.h"
 #include "PullStrategy.h"
+#include "RtiTargetValue.h"
 #include "Playerbots.h"
 
 bool DungeonRunAdvanceAction::isUseful()
@@ -23,6 +24,14 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         return false;
 
     UpdateProgress(*route);
+    // The pack the crowd-control gate pinned is done: stop signalling a pending pull to the trash-cc strategy.
+    ObjectGuid const pinned = AI_VALUE(ObjectGuid, "pull target");
+    if (pinned)
+    {
+        Unit* unit = botAI->GetUnit(pinned);
+        if (!unit || !unit->IsAlive())
+            context->GetValue<ObjectGuid>("pull target")->Set(ObjectGuid::Empty);
+    }
     // Waiting yields the tick: eating, drinking, resurrecting and rebuffing are other actions.
     std::string waitReason;
     if (!GroupReady(waitReason))
@@ -53,11 +62,18 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
 
     if (distance <= PULL_DISTANCE && bot->IsWithinLOSInMap(target))
     {
+        // A pack of three or more gets the trash crowd-control chain first; the leader stands still until the
+        // casters have it held (see CcGateOpen). One pull attempt is counted per gate, not per waiting tick.
+        if (!CcGateOpen(target))
+            return true;
+        Unit* pullUnit = TrashCcIconUnit(botAI, TRASH_CC_SKULL_ICON);
+        if (!pullUnit || !pullUnit->IsAlive())
+            pullUnit = target;
         uint32& attempts = _pullAttempts[index];
         ++attempts;
         LOG_DEBUG("playerbots", "dungeon-run bot={} pull item={} along={:.0f} target={} attempt={} progress={:.0f}",
-                  bot->GetName(), index, item->along, target->GetName(), attempts, progress);
-        return Pull(*route, target, progress);
+                  bot->GetName(), index, item->along, pullUnit->GetName(), attempts, progress);
+        return Pull(*route, pullUnit, progress);
     }
 
     // Walk the skeleton up to the pack: the next node about STEP yd ahead, never past the pack itself.
@@ -128,6 +144,57 @@ bool DungeonRunAdvanceAction::Pull(DungeonRoute const& route, Unit* target, floa
     context->GetValue<Unit*>("current target")->Set(target);
     botAI->ChangeEngine(BOT_STATE_COMBAT);
     botAI->SetNextCheckDelay(sPlayerbotAIConfig.reactDelay);
+    return true;
+}
+
+// Crowd control before the pull, the leader's side of the chain the test harness used to run (AttemptRunner
+// CcPullGateReady): pin "pull target" on the pack - the trash-cc strategy of the dungeon marks it and the mage,
+// shaman and rogue cast on their icons - then open when every crowd-control icon is held, when something loose in
+// the pack is already fighting, or when the wait runs out. Two elite packs pulled together wiped the group on
+// Utgarde Keep's upper floor (run 1798).
+bool DungeonRunAdvanceAction::CcGateOpen(Unit* target)
+{
+    std::vector<Creature*> const pack = TrashCcCollectPack(botAI, bot, target);
+    if (pack.empty())
+        return true;  // fewer than three: nothing to control
+
+    uint32 const now = getMSTime();
+    if (_ccGateTarget != target->GetGUID())
+    {
+        _ccGateTarget = target->GetGUID();
+        _ccGateSinceMs = now;
+        context->GetValue<ObjectGuid>("pull target")->Set(target->GetGUID());
+        return false;
+    }
+
+    uint32 icons = 0;
+    uint32 held = 0;
+    for (uint8 icon : TRASH_CC_ICONS)
+        if (Unit* unit = TrashCcIconUnit(botAI, icon))
+        {
+            ++icons;
+            if (TrashCcIncapacitated(unit, bot))
+                ++held;
+        }
+    bool engaged = false;
+    for (Creature* creature : pack)
+        if (creature->IsAlive() && creature->IsInCombat() && !TrashCcIncapacitated(creature, bot))
+            engaged = true;
+
+    uint32 const waited = getMSTimeDiff(_ccGateSinceMs, now);
+    char const* reason = nullptr;
+    if (icons && held == icons)
+        reason = "cc_ready";
+    else if (engaged)
+        reason = "pack_engaged";
+    else if (!icons && waited >= CC_NO_PLAN_MS)
+        reason = "no_plan";
+    else if (waited >= CC_WAIT_MS)
+        reason = "timeout";
+    if (!reason)
+        return false;
+    LOG_DEBUG("playerbots", "dungeon-run bot={} cc gate open: {} icons={} held={} waited={}ms", bot->GetName(),
+              reason, icons, held, waited);
     return true;
 }
 

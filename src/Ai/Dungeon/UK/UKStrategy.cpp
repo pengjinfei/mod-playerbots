@@ -5,10 +5,31 @@
  */
 
 #include "UKStrategy.h"
+
+#include "RtiTargetValue.h"
 #include "UKMultipliers.h"
+
+namespace
+{
+enum UKTrashNpcs : uint32
+{
+    NPC_DRAGONFLAYER_SPIRITUALIST   = 28410,
+    NPC_DRAGONFLAYER_SPIRITUALIST_H = 31665,
+    NPC_DRAGONFLAYER_RUNECASTER     = 23960,
+    NPC_DRAGONFLAYER_RUNECASTER_H   = 31663,
+};
+}
+
+WotlkDungeonUKStrategy::WotlkDungeonUKStrategy(PlayerbotAI* ai) : TrashCcPullStrategy(ai)
+{
+    // Casters that heal or shield the pack get the crowd control first (normal and heroic entries).
+    TrashCcRegisterHealerEntries({ NPC_DRAGONFLAYER_SPIRITUALIST, NPC_DRAGONFLAYER_SPIRITUALIST_H,
+                                   NPC_DRAGONFLAYER_RUNECASTER, NPC_DRAGONFLAYER_RUNECASTER_H });
+}
 
 void WotlkDungeonUKStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
+    TrashCcPullStrategy::InitTriggers(triggers);
     // Prince Keleseth
     triggers.push_back(new TriggerNode("keleseth frost tomb",
              { NextAction("attack frost tomb", ACTION_RAID + 1) }));

@@ -7,12 +7,14 @@
 #ifndef PLAYERBOTS_UKSTRATEGY_H
 #define PLAYERBOTS_UKSTRATEGY_H
 
-#include "Strategy.h"
+#include "MarkRtiStrategy.h"
 
-class WotlkDungeonUKStrategy : public Strategy
+// Inherits TrashCcPullStrategy: the trash crowd-control chain (assign / cast before the pull / no AoE / kill in order)
+// is shared; a leader pulling the next pack (dungeon run) gets it by pinning "pull target" before the pull.
+class WotlkDungeonUKStrategy : public TrashCcPullStrategy
 {
 public:
-    WotlkDungeonUKStrategy(PlayerbotAI* ai) : Strategy(ai) {}
+    WotlkDungeonUKStrategy(PlayerbotAI* ai);
     std::string const getName() override { return "wotlk-uk"; }
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
     void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
