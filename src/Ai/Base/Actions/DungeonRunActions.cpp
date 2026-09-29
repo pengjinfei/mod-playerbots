@@ -392,10 +392,7 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
     for (uint32 i = 0; i < route.items.size(); ++i)
     {
         DungeonRouteItem const& item = route.items[i];
-        if (item.side)
-            continue;
-        auto const attempts = _pullAttempts.find(i);
-        if (attempts != _pullAttempts.end() && attempts->second >= MAX_PULL_ATTEMPTS)
+        if (!ItemOpen(route, i))
             continue;
         if (item.object)
         {
@@ -405,25 +402,59 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
             return &item;
         }
 
-        Unit* nearest = nullptr;
-        for (uint32 spawnId : item.spawnIds)
-        {
-            auto const bounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
-            for (auto itr = bounds.first; itr != bounds.second; ++itr)
+        Unit* nearest = NearestLivingMember(item);
+        if (!nearest)
+            continue;
+        // Clear what stands around a boss before pulling it, even when the route reaches it only after the boss: a
+        // boss fight spreads over its room, and a pack 60 yd past Telestra joined her split phase and wiped the
+        // group (run 1819).
+        if (item.boss)
+            for (uint32 j = i + 1; j < route.items.size(); ++j)
             {
-                Creature* creature = itr->second;
-                if (!creature || !creature->IsAlive() || !bot->IsValidAttackTarget(creature))
+                DungeonRouteItem const& after = route.items[j];
+                if (after.along > item.along + BOSS_AREA_AHEAD)
+                    break;
+                if (after.boss || after.object || !ItemOpen(route, j) ||
+                    std::hypot(after.x - item.x, after.y - item.y) > BOSS_AREA_RADIUS ||
+                    std::fabs(after.z - item.z) > 10.0f)
                     continue;
-                if (!nearest || bot->GetDistance(creature) < bot->GetDistance(nearest))
-                    nearest = creature;
+                if (Unit* member = NearestLivingMember(after))
+                {
+                    target = member;
+                    index = j;
+                    return &after;
+                }
             }
-        }
-        if (nearest)
-        {
-            target = nearest;
-            index = i;
-            return &item;
-        }
+        target = nearest;
+        index = i;
+        return &item;
     }
     return nullptr;
+}
+
+bool DungeonRunAdvanceAction::ItemOpen(DungeonRoute const& route, uint32 index) const
+{
+    if (route.items[index].side)
+        return false;
+    auto const attempts = _pullAttempts.find(index);
+    return attempts == _pullAttempts.end() || attempts->second < MAX_PULL_ATTEMPTS;
+}
+
+Unit* DungeonRunAdvanceAction::NearestLivingMember(DungeonRouteItem const& item) const
+{
+    Map* map = bot->GetMap();
+    Unit* nearest = nullptr;
+    for (uint32 spawnId : item.spawnIds)
+    {
+        auto const bounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
+        for (auto itr = bounds.first; itr != bounds.second; ++itr)
+        {
+            Creature* creature = itr->second;
+            if (!creature || !creature->IsAlive() || !bot->IsValidAttackTarget(creature))
+                continue;
+            if (!nearest || bot->GetDistance(creature) < bot->GetDistance(nearest))
+                nearest = creature;
+        }
+    }
+    return nearest;
 }
