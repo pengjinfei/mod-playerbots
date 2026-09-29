@@ -92,6 +92,33 @@ bool MovementAction::IsSameFloorDestination(float x, float y, float z)
     return false;
 }
 
+// A destination z borrowed from a unit that stands inside the floor (Maexxna sits 3 yd under her web) sends the
+// core's ground search below the surface: GetMapHeight starts only a collision height above z, misses the web
+// at 302 and returns the pit floor 140 yd down, and the spline walks through the floor at run speed. When the
+// search from the requested z lands far below it, search again from the bot's own level and keep that floor if it
+// is the bot's floor. Start that search 5 yd up: a bot that already walked to her z stands inside the web too, and
+// a search from its own z plus a collision height misses the surface the same way.
+void MovementAction::LiftSunkenDestination(float x, float y, float& z)
+{
+    if (bot->IsFlying() || bot->isSwimming() || bot->GetTransport() || bot->GetVehicle())
+        return;
+    if (bot->GetExactDist2d(x, y) >= 30.0f)
+        return;
+    // Same probe the core runs on a player's spline end (UpdateAllowedPositionZ -> GetWaterOrGroundLevel starts a
+    // fixed Z_OFFSET_FIND_HEIGHT up, not a collision height up).
+    float const ground = bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, z + Z_OFFSET_FIND_HEIGHT, true, 50.0f);
+    if (ground > INVALID_HEIGHT && z - ground <= 6.0f)
+        return;
+    float const botFloor =
+        bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, std::max(z, bot->GetPositionZ()) + 5.0f, true, 50.0f);
+    if (botFloor <= INVALID_HEIGHT || botFloor <= z || std::fabs(botFloor - bot->GetPositionZ()) > 6.0f)
+        return;
+    if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
+        LOG_DEBUG("playerbots", "floor-guard bot={} action={} lifted dest=({:.1f},{:.1f}) z {:.1f}->{:.1f} (ground from z {:.1f})",
+                  bot->GetName(), getName(), x, y, z, botFloor, ground);
+    z = botFloor;
+}
+
 void MovementAction::CreateWp(Player* wpOwner, float x, float y, float z, float o, uint32 entry, bool important)
 {
     float dist = wpOwner->GetDistance(x, y, z);
@@ -235,6 +262,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
     // navmesh/vmap snapping the point to another floor (a pit under a ledge, a ramp overhead): on heroic
     // Anub'arak six bots walked backwards off the platform at MOVE_RUN_BACK speed because "flee" asked for a point
     // 5 yd away whose z came back 100+ yd lower. Real stairs within 30 yd rarely climb more than 0.8 yd per yd.
+    LiftSunkenDestination(x, y, z);
     if (!IsSameFloorDestination(x, y, z))
         return false;
 

@@ -91,6 +91,7 @@ private:
                                                   bool normal_only = false, float step = 8.0f);
     bool wasMovementRestricted = false;
     void DoMovePoint(Unit* unit, float x, float y, float z, bool generatePath, bool backwards);
+    void LiftSunkenDestination(float x, float y, float& z);
 };
 
 class FleeAction : public MovementAction
