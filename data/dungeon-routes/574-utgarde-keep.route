@@ -22,13 +22,13 @@ pack 178 344.5 -55.3 23.0 radius=0.0 side=1 elite=1 spawns=125909 # 1xDragonflay
 pack 178 353.5 -63.8 22.8 radius=0.0 side=1 elite=1 spawns=125910 # 1xDragonflayer Weaponsmith
 node 178 311.8 -17.5 23.6
 pack 186 362.3 -52.6 22.8 radius=0.0 side=1 elite=1 spawns=125898 # 1xDragonflayer Metalworker
-pack 186 349.6 -39.3 24.8 radius=0.0 side=1 elite=1 spawns=125904 # 1xDragonflayer Forge Master
 node 194 323.0 -6.0 23.4
+pack 196 349.6 -39.3 24.8 radius=0.0 side=0 elite=1 spawns=125904 # 1xDragonflayer Forge Master
+pack 205 385.8 -16.2 24.8 radius=0.0 side=0 elite=1 spawns=125905 # 1xDragonflayer Forge Master
 pack 206 331.6 0.8 22.8 radius=0.0 side=0 elite=1 spawns=125897 # 1xDragonflayer Metalworker
 pack 214 347.6 4.6 24.7 radius=0.0 side=0 elite=1 spawns=125903 # 1xDragonflayer Forge Master
 node 214 336.3 8.9 23.3
 pack 222 334.3 18.6 22.8 radius=0.0 side=0 elite=1 spawns=125896 # 1xDragonflayer Metalworker
-pack 222 385.8 -16.2 24.8 radius=0.0 side=1 elite=1 spawns=125905 # 1xDragonflayer Forge Master
 node 230 346.1 21.5 23.3
 pack 238 393.1 -1.8 22.8 radius=5.5 side=1 elite=2 spawns=125901,125902 # 2xDragonflayer Metalworker
 node 246 356.0 34.1 24.9
