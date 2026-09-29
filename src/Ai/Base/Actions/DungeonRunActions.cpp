@@ -42,7 +42,27 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         return false;  // route cleared
 
     float const progress = AI_VALUE(float, "dungeon run progress");
-    if (bot->GetDistance(target) <= PULL_DISTANCE && bot->IsWithinLOSInMap(target))
+    // Give up on a pack the leader cannot get closer to (unreachable ledge, no path): 45 s without gaining 2 yd.
+    // Only continuous walking counts: a fight or a rest in between starts the clock again.
+    uint32 const now = getMSTime();
+    float const distance = bot->GetDistance(target);
+    bool const resumed = getMSTimeDiff(_lastApproachTickMs, now) > 5000;
+    _lastApproachTickMs = now;
+    if (resumed || index != _approachItem || distance < _approachBest - 2.0f)
+    {
+        _approachItem = index;
+        _approachBest = distance;
+        _approachSinceMs = now;
+    }
+    else if (getMSTimeDiff(_approachSinceMs, now) >= APPROACH_TIMEOUT_MS)
+    {
+        _pullAttempts[index] = MAX_PULL_ATTEMPTS;
+        LOG_DEBUG("playerbots", "dungeon-run bot={} skip item={} along={:.0f} target={} - no closer than {:.0f} yd",
+                  bot->GetName(), index, item->along, target->GetName(), _approachBest);
+        return false;
+    }
+
+    if (distance <= PULL_DISTANCE && bot->IsWithinLOSInMap(target))
     {
         uint32& attempts = _pullAttempts[index];
         ++attempts;

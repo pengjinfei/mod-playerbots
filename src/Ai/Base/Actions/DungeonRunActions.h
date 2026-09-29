@@ -35,6 +35,7 @@ private:
     static constexpr float NODE_REACHED = 12.0f;        // counts as standing on a node
     static constexpr uint32 MAX_PULL_ATTEMPTS = 20;     // pulls issued on one pack before it is skipped
     static constexpr uint32 WAIT_LOG_INTERVAL_MS = 10000;
+    static constexpr uint32 APPROACH_TIMEOUT_MS = 45000;
 
     void UpdateProgress(DungeonRoute const& route);
     bool GroupReady(std::string& reason) const;
@@ -44,6 +45,10 @@ private:
 
     std::unordered_map<uint32, uint32> _pullAttempts;  // route item index -> pulls issued
     uint32 _lastWaitLogMs = 0;
+    uint32 _approachItem = UINT32_MAX;  // item being walked to, best distance reached, since when
+    float _approachBest = 0.0f;
+    uint32 _approachSinceMs = 0;
+    uint32 _lastApproachTickMs = 0;
 };
 
 #endif
