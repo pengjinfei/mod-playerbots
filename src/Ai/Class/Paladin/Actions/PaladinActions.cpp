@@ -627,6 +627,11 @@ Unit* ai::paladin::SelectMeleeAggroedPartyMember(PlayerbotAI* botAI)
         if (!member || !group->IsMember(member->GetGUID()))
             continue;
 
+        // 另一个坦克挨打是分工，不是需要救的队友：天启四骑士副坦每 8 秒嘲讽里文戴尔，主坦防骑约 1 秒后
+        // 就对副坦放正义防御把他拽回来（run 1730 连续 5 次），全团因此一起吃两个前排的印记。
+        if (PlayerbotAI::IsTank(member))
+            continue;
+
         // 只认贴身打人的近战怪，远程施法者接不走
         if (!attacker->IsWithinMeleeRange(victim))
             continue;
