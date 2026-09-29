@@ -45,7 +45,7 @@ private:
 
     void UpdateProgress(DungeonRoute const& route);
     bool Pull(DungeonRoute const& route, Unit* target, float progress);
-    bool CcGateOpen(Unit* target);
+    bool CcGateOpen(DungeonRouteItem const& item, Unit* nearest);
     bool ApproachTimedOut(uint32 index, float distance);
     bool TraceDue();  // throttles the debug trace to one line per WAIT_LOG_INTERVAL_MS
     bool GroupReady(std::string& reason) const;

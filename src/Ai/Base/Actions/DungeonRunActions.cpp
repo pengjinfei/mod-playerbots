@@ -64,7 +64,7 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     {
         // A pack of three or more gets the trash crowd-control chain first; the leader stands still until the
         // casters have it held (see CcGateOpen). One pull attempt is counted per gate, not per waiting tick.
-        if (!CcGateOpen(target))
+        if (!CcGateOpen(*item, target))
             return true;
         Unit* pullUnit = TrashCcIconUnit(botAI, TRASH_CC_SKULL_ICON);
         if (!pullUnit || !pullUnit->IsAlive())
@@ -152,11 +152,36 @@ bool DungeonRunAdvanceAction::Pull(DungeonRoute const& route, Unit* target, floa
 // shaman and rogue cast on their icons - then open when every crowd-control icon is held, when something loose in
 // the pack is already fighting, or when the wait runs out. Two elite packs pulled together wiped the group on
 // Utgarde Keep's upper floor (run 1798).
-bool DungeonRunAdvanceAction::CcGateOpen(Unit* target)
+bool DungeonRunAdvanceAction::CcGateOpen(DungeonRouteItem const& item, Unit* nearest)
 {
+    // The trash-cc chain sees the pack as what stands within 15 yd of the pinned unit; pin the member nearest the
+    // pack's centre, not the one nearest the leader, or a spread pack (four elites over 18 yd) never counts as one.
+    Unit* target = nearest;
+    float best = nearest->GetExactDist(item.x, item.y, item.z);
+    if (Map* map = bot->GetMap())
+        for (uint32 spawnId : item.spawnIds)
+        {
+            auto const bounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
+            for (auto itr = bounds.first; itr != bounds.second; ++itr)
+            {
+                Creature* creature = itr->second;
+                if (!creature || !creature->IsAlive() || !bot->IsValidAttackTarget(creature))
+                    continue;
+                float const distance = creature->GetExactDist(item.x, item.y, item.z);
+                if (distance < best)
+                {
+                    best = distance;
+                    target = creature;
+                }
+            }
+        }
     std::vector<Creature*> const pack = TrashCcCollectPack(botAI, bot, target);
     if (pack.empty())
+    {
+        LOG_DEBUG("playerbots", "dungeon-run bot={} cc gate skipped: fewer than three around {}", bot->GetName(),
+                  target->GetName());
         return true;  // fewer than three: nothing to control
+    }
 
     uint32 const now = getMSTime();
     if (_ccGateTarget != target->GetGUID())
