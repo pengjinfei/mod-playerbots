@@ -22,8 +22,18 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
 
     UpdateProgress(*route);
     // Waiting yields the tick: eating, drinking, resurrecting and rebuffing are other actions.
-    if (!GroupReady())
+    std::string waitReason;
+    if (!GroupReady(waitReason))
+    {
+        uint32 const now = getMSTime();
+        if (getMSTimeDiff(_lastWaitLogMs, now) >= WAIT_LOG_INTERVAL_MS)
+        {
+            _lastWaitLogMs = now;
+            LOG_DEBUG("playerbots", "dungeon-run bot={} waiting: {} progress={:.0f}", bot->GetName(), waitReason,
+                      AI_VALUE(float, "dungeon run progress"));
+        }
         return false;
+    }
 
     Unit* target = nullptr;
     uint32 index = 0;
@@ -51,8 +61,11 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         next = &node;
         break;
     }
+    // Past the last node before the pack, or the pack sits off the skeleton (a forge around a corner): walk to the
+    // pack itself on the navmesh. MoveNear only picks points in sight and fails for a target behind a wall.
     if (!next || next->along > item->along || bot->GetDistance(next->x, next->y, next->z) < 3.0f)
-        return MoveNear(target, PULL_DISTANCE - 5.0f, MovementPriority::MOVEMENT_NORMAL);
+        return MoveTo(bot->GetMapId(), target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), false,
+                      false, false, false, MovementPriority::MOVEMENT_NORMAL);
 
     return MoveTo(bot->GetMapId(), next->x, next->y, next->z, false, false, false, false,
                   MovementPriority::MOVEMENT_NORMAL);
@@ -79,7 +92,7 @@ void DungeonRunAdvanceAction::UpdateProgress(DungeonRoute const& route)
         SET_AI_VALUE(float, "dungeon run progress", best->along);
 }
 
-bool DungeonRunAdvanceAction::GroupReady() const
+bool DungeonRunAdvanceAction::GroupReady(std::string& reason) const
 {
     Group* group = bot->GetGroup();
     if (!group)
@@ -91,13 +104,15 @@ bool DungeonRunAdvanceAction::GroupReady() const
         if (!member || !member->IsInWorld() || member->GetMapId() != bot->GetMapId())
             continue;
         if (!member->IsAlive() || member->IsInCombat())
-            return false;
-        if (member != bot && bot->GetDistance(member) > GROUP_RANGE)
-            return false;
-        if (member->GetHealthPct() < READY_HEALTH_PCT)
-            return false;
-        if (member->getPowerType() == POWER_MANA && member->GetMaxPower(POWER_MANA) > 0 &&
-            100.0f * member->GetPower(POWER_MANA) / member->GetMaxPower(POWER_MANA) < READY_MANA_PCT)
+            reason = Acore::StringFormat("{} {}", member->GetName(), member->IsAlive() ? "in combat" : "dead");
+        else if (member != bot && bot->GetDistance(member) > GROUP_RANGE)
+            reason = Acore::StringFormat("{} {:.0f} yd away", member->GetName(), bot->GetDistance(member));
+        else if (member->GetHealthPct() < READY_HEALTH_PCT)
+            reason = Acore::StringFormat("{} health {:.0f}%", member->GetName(), member->GetHealthPct());
+        else if (member->getPowerType() == POWER_MANA && member->GetMaxPower(POWER_MANA) > 0 &&
+                 100.0f * member->GetPower(POWER_MANA) / member->GetMaxPower(POWER_MANA) < READY_MANA_PCT)
+            reason = Acore::StringFormat("{} mana low", member->GetName());
+        if (!reason.empty())
             return false;
     }
     return true;
