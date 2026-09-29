@@ -280,7 +280,9 @@ bool DungeonRunAdvanceAction::GroupReady(std::string& reason) const
         Player* member = ref->GetSource();
         if (!member || !member->IsInWorld() || member->GetMapId() != bot->GetMapId())
             continue;
-        if (!member->IsAlive() || member->IsInCombat())
+        // "In combat" only counts while something actually attacks the member: a combat flag that lingers with no
+        // attacker kept the leader waiting for five minutes on Utgarde Keep's stairs (run 1806).
+        if (!member->IsAlive() || (member->IsInCombat() && !member->getAttackers().empty()))
             reason = Acore::StringFormat("{} {}", member->GetName(), member->IsAlive() ? "in combat" : "dead");
         else if (member != bot && bot->GetDistance(member) > GROUP_RANGE)
             reason = Acore::StringFormat("{} {:.0f} yd away", member->GetName(), bot->GetDistance(member));
