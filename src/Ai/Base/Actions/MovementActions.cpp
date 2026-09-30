@@ -343,7 +343,8 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
         // The path ends well below a floor that exists where the move was asked for: the navmesh lacks that floor
         // (the Nexus' bridge to Telestra is walkable in the collision model but not in the navmesh) and the path
         // takes the pit under it. The tank followed such paths down to 34 yd below the bridge and the group wiped
-        // on the pack above (run 1817). Walk straight along the floor when it is near and in sight; else stay.
+        // on the pack above (run 1817). Walk straight along the floor when it is near and in sight; otherwise
+        // keep the path - refusing it stalled Utgarde Keep's leader at a portcullis before Ingvar (run 1850).
         // Only a path that also goes down from where the bot stands: a partial path that stays on the bot's floor
         // on the way up a staircase is progress (Utgarde Keep's stairs to the upper floor, run 1846).
         if (modifiedZ < z - 6.0f && modifiedZ < bot->GetPositionZ() - 2.0f)
@@ -360,19 +361,20 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
                 if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
                     LOG_DEBUG("playerbots", "floor-guard bot={} action={} path ends below floor dest=({:.1f},{:.1f}) "
                               "z {:.1f} path z {:.1f} -> {}", bot->GetName(), getName(), x, y, z, modifiedZ,
-                              direct ? "direct" : "refused");
-                if (!direct)
-                    return false;
-                if (bot->IsSitState())
-                    bot->SetStandState(UNIT_STAND_STATE_STAND);
-                DoMovePoint(bot, x, y, floor, false, backwards);
-                float const distance = bot->GetExactDist(x, y, floor);
-                float delay = 1000.0f * MoveDelay(distance, backwards);
-                if (lessDelay)
-                    delay -= botAI->GetReactDelay();
-                delay = std::min((float)sPlayerbotAIConfig.maxWaitForMove, std::max(.0f, delay));
-                RecordLastMovement(mapId, x, y, floor, delay, priority);
-                return true;
+                              direct ? "direct" : "path kept");
+                if (direct)
+                {
+                    if (bot->IsSitState())
+                        bot->SetStandState(UNIT_STAND_STATE_STAND);
+                    DoMovePoint(bot, x, y, floor, false, backwards);
+                    float const distance = bot->GetExactDist(x, y, floor);
+                    float delay = 1000.0f * MoveDelay(distance, backwards);
+                    if (lessDelay)
+                        delay -= botAI->GetReactDelay();
+                    delay = std::min((float)sPlayerbotAIConfig.maxWaitForMove, std::max(.0f, delay));
+                    RecordLastMovement(mapId, x, y, floor, delay, priority);
+                    return true;
+                }
             }
         }
         if (!IsSameFloorDestination(x, y, modifiedZ))
