@@ -344,7 +344,9 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
         // (the Nexus' bridge to Telestra is walkable in the collision model but not in the navmesh) and the path
         // takes the pit under it. The tank followed such paths down to 34 yd below the bridge and the group wiped
         // on the pack above (run 1817). Walk straight along the floor when it is near and in sight; else stay.
-        if (modifiedZ < z - 6.0f)
+        // Only a path that also goes down from where the bot stands: a partial path that stays on the bot's floor
+        // on the way up a staircase is progress (Utgarde Keep's stairs to the upper floor, run 1846).
+        if (modifiedZ < z - 6.0f && modifiedZ < bot->GetPositionZ() - 2.0f)
         {
             float const floor =
                 bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, z + Z_OFFSET_FIND_HEIGHT, true, 10.0f);
