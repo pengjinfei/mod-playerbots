@@ -350,7 +350,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
                 bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, z + Z_OFFSET_FIND_HEIGHT, true, 10.0f);
             if (floor > INVALID_HEIGHT && std::fabs(floor - z) < 3.0f)
             {
-                bool const direct = bot->GetExactDist(x, y, floor) < 40.0f &&
+                bool const direct = bot->GetExactDist(x, y, floor) < 60.0f &&
                                     std::fabs(bot->GetPositionZ() - floor) < 6.0f &&
                                     bot->IsWithinLOS(x, y, floor + 2.0f);
                 if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
