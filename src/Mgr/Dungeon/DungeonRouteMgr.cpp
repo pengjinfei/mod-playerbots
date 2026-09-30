@@ -121,6 +121,23 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
         item.spawnIds = ParseIdList(Field(tokens, "spawns"));
         item.object = tokens[0] == "object";
         item.drop = tokens[0] == "drop";
+        if (item.drop)
+        {
+            // rim=<x>,<y>,<z>: the navmesh has no floor over the hole itself, so the approach aims at its edge.
+            std::vector<std::string_view> rim = Acore::Tokenize(Field(tokens, "rim"), ',', false);
+            Optional<float> rx = rim.size() == 3 ? Acore::StringTo<float>(rim[0]) : std::nullopt;
+            Optional<float> ry = rim.size() == 3 ? Acore::StringTo<float>(rim[1]) : std::nullopt;
+            Optional<float> rz = rim.size() == 3 ? Acore::StringTo<float>(rim[2]) : std::nullopt;
+            if (!rx || !ry || !rz)
+            {
+                LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: drop without rim=<x>,<y>,<z>", path,
+                          lineNumber);
+                return false;
+            }
+            item.rimX = *rx;
+            item.rimY = *ry;
+            item.rimZ = *rz;
+        }
         bool const summoned = tokens[0] == "summoned";
         (item.object ? item.objectEntries : summoned ? item.summonEntries : item.bossEntries) =
             ParseIdList(Field(tokens, "entry"));

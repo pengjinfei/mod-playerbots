@@ -33,6 +33,7 @@ struct DungeonRouteItem
     bool object = false;               // a game object the leader walks to and uses (a lever, a containment sphere)
     bool sent = false;                 // the encounter sends this pack to the group: wait for it, do not pull it
     bool drop = false;                 // a hole to jump down: the group walks to its rim and steps over (x, y, z)
+    float rimX = 0.0f, rimY = 0.0f, rimZ = 0.0f;  // drop: a point on the floor at the hole's edge, walked to first
     std::vector<uint32> spawnIds;      // creature spawn ids (packs)
     std::vector<uint32> bossEntries;   // creature entries (boss encounters)
     std::vector<uint32> objectEntries; // game object entries (objects)

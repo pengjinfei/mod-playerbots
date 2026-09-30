@@ -45,7 +45,7 @@ private:
     static constexpr uint32 MAX_USE_ATTEMPTS = 5;         // uses of one object before it is skipped
     static constexpr uint32 SENT_WAIT_MS = 240000;        // longest wait for a pack the encounter sends; then pull it
     static constexpr float DROP_DEPTH = 50.0f;            // this far under a hole's rim counts as having dropped
-    static constexpr float DROP_RIM = 12.0f;              // this close to the hole, step over instead of walking
+    static constexpr float DROP_AT_RIM = 4.0f;            // this close to a drop's rim point, step over the edge
     static constexpr float BOSS_AREA_MIN_RADIUS = 35.0f;  // packs between this far from a boss...
     static constexpr float BOSS_AREA_RADIUS = 70.0f;      // ...and this far are cleared before it...
     static constexpr float BOSS_AREA_AHEAD = 150.0f;      // ...when the route reaches them at most this far after it

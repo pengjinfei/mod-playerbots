@@ -114,8 +114,10 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // water takes the fall as it does for a player). Walk to the rim, then everyone steps over; gravity does the rest.
     if (item->drop)
     {
-        if (bot->GetExactDist2d(item->x, item->y) > DROP_RIM)
-            return MoveTo(bot->GetMapId(), item->x, item->y, item->z, false, false, false, false,
+        // Walk to the rim on the navmesh; a path aimed at the hole itself ends wherever the navmesh has a floor
+        // under it - z 0 here - and took the tank straight down through the level (run 1867).
+        if (bot->GetExactDist(item->rimX, item->rimY, item->rimZ) > DROP_AT_RIM)
+            return MoveTo(bot->GetMapId(), item->rimX, item->rimY, item->rimZ, false, false, false, false,
                           MovementPriority::MOVEMENT_NORMAL);
         _dropItem = index;
         PushOverDrop(*item, GROUP_RANGE);
@@ -230,8 +232,12 @@ bool DungeonRunAdvanceAction::UseObject(DungeonRouteItem const& item, uint32 ind
 
 void DungeonRunAdvanceAction::StepOverDrop(DungeonRouteItem const& item)
 {
-    bot->GetMotionMaster()->MovePoint(0, item.x, item.y, item.z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
-                                      bot->GetExactDist2d(item.x, item.y) > DROP_RIM, true, MOTION_SLOT_CONTROLLED);
+    if (bot->GetExactDist(item.rimX, item.rimY, item.rimZ) > DROP_AT_RIM)
+        MoveTo(bot->GetMapId(), item.rimX, item.rimY, item.rimZ, false, false, false, false,
+               MovementPriority::MOVEMENT_NORMAL);
+    else
+        bot->GetMotionMaster()->MovePoint(0, item.x, item.y, item.z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true,
+                                          MOTION_SLOT_CONTROLLED);
 }
 
 bool DungeonRunAdvanceAction::PushOverDrop(DungeonRouteItem const& item, float range)
@@ -249,11 +255,14 @@ bool DungeonRunAdvanceAction::PushOverDrop(DungeonRouteItem const& item, float r
         above = true;
         if (member->GetExactDist2d(item.x, item.y) > range)
             continue;
-        // At the rim: straight over it, no path (there is none). Farther: walk to it first. In the controlled slot,
-        // so the member's own follow movement does not replace it (only one of five went over in run 1865).
-        member->GetMotionMaster()->MovePoint(0, item.x, item.y, item.z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
-                                             member->GetExactDist2d(item.x, item.y) > DROP_RIM, true,
-                                             MOTION_SLOT_CONTROLLED);
+        // At the rim: straight over it, no path (there is none). Farther: walk to the rim first. In the controlled
+        // slot, so the member's own follow movement does not replace it (only one of five went over in run 1865).
+        if (member->GetExactDist(item.rimX, item.rimY, item.rimZ) > DROP_AT_RIM)
+            member->GetMotionMaster()->MovePoint(0, item.rimX, item.rimY, item.rimZ, FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
+                                                 true, true, MOTION_SLOT_CONTROLLED);
+        else
+            member->GetMotionMaster()->MovePoint(0, item.x, item.y, item.z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false,
+                                                 true, MOTION_SLOT_CONTROLLED);
     }
     if (above && TraceDue())
         LOG_DEBUG("playerbots", "dungeon-run bot={} bringing the group down the hole at ({:.1f},{:.1f})",
