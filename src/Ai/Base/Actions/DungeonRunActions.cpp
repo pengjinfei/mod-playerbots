@@ -152,7 +152,10 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         }
     }
 
-    if (target && bot->GetDistance(target) <= PULL_DISTANCE && bot->IsWithinLOSInMap(target))
+    // A pack whose aggro reaches past the default pull distance is engaged from farther, before anyone walks into
+    // it: Krik'thir's first watcher group aggroed while the leader was still closing in, before any crowd control.
+    float const pullDistance = item->pullDistance > 0.0f ? item->pullDistance : PULL_DISTANCE;
+    if (target && bot->GetDistance(target) <= pullDistance && bot->IsWithinLOSInMap(target))
     {
         // A pack of three or more gets the trash crowd-control chain first; the leader stands still until the
         // casters have it held (see CcGateOpen). One pull attempt is counted per gate, not per waiting tick.

@@ -34,6 +34,7 @@ struct DungeonRouteItem
     bool sent = false;                 // the encounter sends this pack to the group: wait for it, do not pull it
     bool drop = false;                 // a hole to jump down: the group walks to its rim and steps over (x, y, z)
     float rimX = 0.0f, rimY = 0.0f, rimZ = 0.0f;  // drop: a point on the floor at the hole's edge, walked to first
+    float pullDistance = 0.0f;         // pull=<yd>: engage from this far instead of the default
     bool hold = false;                 // sent: where to wait for the pack (hold=<x>,<y>,<z>); else where the leader is
     float holdX = 0.0f, holdY = 0.0f, holdZ = 0.0f;
     std::vector<uint32> spawnIds;      // creature spawn ids (packs)
