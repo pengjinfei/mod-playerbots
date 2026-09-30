@@ -9,6 +9,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "AttackAction.h"
 #include "ObjectGuid.h"
@@ -72,6 +73,7 @@ private:
                                      uint32& index) const;
 
     std::unordered_map<uint32, uint32> _pullAttempts;  // route item index -> pulls issued
+    mutable std::unordered_set<uint32> _summonedDone;  // summoned packs seen cleared
     uint32 _lastWaitLogMs = 0;
     uint32 _approachItem = UINT32_MAX;  // item being walked to, best distance reached, since when
     float _approachBest = 0.0f;

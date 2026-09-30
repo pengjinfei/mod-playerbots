@@ -511,7 +511,11 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
             return &item;
         }
 
-        // A pack a script summons has no spawn ids; beyond grid-search range it cannot be seen yet: walk there.
+        // A pack a script summons has no spawn ids; beyond grid-search range it cannot be seen yet: walk there. Once
+        // seen cleared it stays done - out of sight again it read as not yet seen and the leader walked back up
+        // from Hadronox's pit to the crusher pack it had killed (run 1873).
+        if (!item.summonEntries.empty() && _summonedDone.count(i))
+            continue;
         if (!item.summonEntries.empty() && bot->GetExactDist(item.x, item.y, item.z) > SUMMON_SIGHT)
         {
             target = nullptr;
@@ -520,7 +524,11 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
         }
         Unit* nearest = NearestLivingMember(item);
         if (!nearest)
+        {
+            if (!item.summonEntries.empty())
+                _summonedDone.insert(i);
             continue;
+        }
         // Clear what stands around a boss before pulling it, even when the route reaches it only after the boss: a
         // boss fight spreads over its room, and a pack 60 yd past Telestra joined her split phase and wiped the
         // group (run 1819).
