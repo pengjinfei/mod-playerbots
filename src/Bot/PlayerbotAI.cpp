@@ -320,6 +320,18 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
     if (++_airborneChecks < 2)
         return;
     _airborneChecks = 0;
+    // A floor just overhead means the bot sank into it, not that it stands in the air: put it back on top. The
+    // tank swam to a pack whose centre lay under the pool floor and gravity then dropped it to z 0 (run 1866).
+    float const overhead = bot->GetMap()->GetHeight(bot->GetPhaseMask(), bot->GetPositionX(), bot->GetPositionY(),
+                                                    bot->GetPositionZ() + 8.0f, true, 8.0f);
+    if (overhead > bot->GetPositionZ() + 0.5f)
+    {
+        LOG_DEBUG("playerbots", "gravity bot={} under the floor at z={:.1f}, back up to z={:.1f} at ({:.1f},{:.1f})",
+                  bot->GetName(), bot->GetPositionZ(), overhead, bot->GetPositionX(), bot->GetPositionY());
+        bot->GetMotionMaster()->MovePoint(0, bot->GetPositionX(), bot->GetPositionY(), overhead,
+                                          FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true, MOTION_SLOT_CONTROLLED);
+        return;
+    }
     LOG_DEBUG("playerbots", "gravity bot={} falls from z={:.1f} to ground z={:.1f} at ({:.1f},{:.1f}) map={}",
               bot->GetName(), bot->GetPositionZ(), ground, bot->GetPositionX(), bot->GetPositionY(), bot->GetMapId());
     bot->GetMotionMaster()->MoveFall();
