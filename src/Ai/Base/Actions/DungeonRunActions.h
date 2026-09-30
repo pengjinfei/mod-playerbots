@@ -41,6 +41,7 @@ private:
     static constexpr uint32 CC_WAIT_MS = 25000;           // longest wait for the crowd control to land
     static constexpr uint32 CC_NO_PLAN_MS = 10000;        // no crowd-control icon after this long: pull anyway
     static constexpr float OBJECT_SIGHT = 80.0f;          // closer than this, an object item is judged by its state
+    static constexpr float SUMMON_SIGHT = 80.0f;          // closer than this, a summoned pack is judged by what stands
     static constexpr uint32 MAX_USE_ATTEMPTS = 5;         // uses of one object before it is skipped
     static constexpr uint32 SENT_WAIT_MS = 240000;        // longest wait for a pack the encounter sends; then pull it
     static constexpr float BOSS_AREA_MIN_RADIUS = 35.0f;  // packs between this far from a boss...

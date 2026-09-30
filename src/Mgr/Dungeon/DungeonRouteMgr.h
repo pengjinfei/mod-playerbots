@@ -35,6 +35,7 @@ struct DungeonRouteItem
     std::vector<uint32> spawnIds;      // creature spawn ids (packs)
     std::vector<uint32> bossEntries;   // creature entries (boss encounters)
     std::vector<uint32> objectEntries; // game object entries (objects)
+    std::vector<uint32> summonEntries; // creature entries within radius of the position (script-summoned packs)
 };
 
 struct DungeonRoute

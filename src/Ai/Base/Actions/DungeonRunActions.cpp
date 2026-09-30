@@ -425,6 +425,13 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
             return &item;
         }
 
+        // A pack a script summons has no spawn ids; beyond grid-search range it cannot be seen yet: walk there.
+        if (!item.summonEntries.empty() && bot->GetExactDist(item.x, item.y, item.z) > SUMMON_SIGHT)
+        {
+            target = nullptr;
+            index = i;
+            return &item;
+        }
         Unit* nearest = NearestLivingMember(item);
         if (!nearest)
             continue;
@@ -469,6 +476,20 @@ Unit* DungeonRunAdvanceAction::NearestLivingMember(DungeonRouteItem const& item)
 {
     Map* map = bot->GetMap();
     Unit* nearest = nullptr;
+    if (!item.summonEntries.empty())
+    {
+        std::list<Creature*> creatures;
+        bot->GetCreatureListWithEntryInGrid(creatures, item.summonEntries, SUMMON_SIGHT + item.radius);
+        for (Creature* creature : creatures)
+        {
+            if (!creature->IsAlive() || !bot->IsValidAttackTarget(creature) ||
+                creature->GetExactDist(item.x, item.y, item.z) > item.radius)
+                continue;
+            if (!nearest || bot->GetDistance(creature) < bot->GetDistance(nearest))
+                nearest = creature;
+        }
+        return nearest;
+    }
     for (uint32 spawnId : item.spawnIds)
     {
         auto const bounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
