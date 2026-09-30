@@ -352,8 +352,10 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
                 bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, z + Z_OFFSET_FIND_HEIGHT, true, 10.0f);
             if (floor > INVALID_HEIGHT && std::fabs(floor - z) < 3.0f)
             {
+                // A climb no steeper than a staircase: Utgarde Keep's ramp rises 11 yd over 32 yd (run 1847).
                 bool const direct = bot->GetExactDist(x, y, floor) < 60.0f &&
-                                    std::fabs(bot->GetPositionZ() - floor) < 6.0f &&
+                                    std::fabs(bot->GetPositionZ() - floor) <=
+                                        0.8f * bot->GetExactDist2d(x, y) + 2.0f &&
                                     bot->IsWithinLOS(x, y, floor + 2.0f);
                 if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
                     LOG_DEBUG("playerbots", "floor-guard bot={} action={} path ends below floor dest=({:.1f},{:.1f}) "
