@@ -60,4 +60,4 @@ pack 780 558.3 340.8 240.9 radius=0.0 side=0 elite=1 spawns=132274 # 1xAnub'ar P
 pack 781 542.0 341.4 240.9 radius=0.0 side=0 elite=1 spawns=132275 # 1xAnub'ar Prime Guard
 boss 800 551.0 248.3 224.0 radius=0.0 entry=29120 spawns=132273 # 1xAnub'arak
 summoned 440 529.7 547.1 731.9 radius=15 entry=28922,29117,29118  # Hadronox crusher pack 1
-drop 700 517.0 565.0 648.0 rim=526.0,566.0,652.5  # hole in Hadronox's pit (open from x 514-522, y 560-572)
+drop 700 530.0 553.0 646.0 rim=538.0,553.0,645.4  # hole in the lower web floor of Hadronox's pit; the upper layer (z 666-674) covers the rest
