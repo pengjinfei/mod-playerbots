@@ -131,6 +131,11 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // the first is engaged; the leader pulling the next one as well brought two groups at once and wiped (run 1856).
     if (item->sent)
     {
+        // Wait where the route says: Hadronox has to be met on the upper platform, where she webs the tunnel doors
+        // shut; met halfway down the ramp she kept eating the crypt fiends that poured out and never died (run 1868).
+        if (item->hold && bot->GetExactDist(item->holdX, item->holdY, item->holdZ) > 5.0f)
+            return MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
+                          MovementPriority::MOVEMENT_NORMAL);
         uint32 const now = getMSTime();
         if (_sentItem != index)
         {

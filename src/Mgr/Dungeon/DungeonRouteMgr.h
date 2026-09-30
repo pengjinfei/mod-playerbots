@@ -34,6 +34,8 @@ struct DungeonRouteItem
     bool sent = false;                 // the encounter sends this pack to the group: wait for it, do not pull it
     bool drop = false;                 // a hole to jump down: the group walks to its rim and steps over (x, y, z)
     float rimX = 0.0f, rimY = 0.0f, rimZ = 0.0f;  // drop: a point on the floor at the hole's edge, walked to first
+    bool hold = false;                 // sent: where to wait for the pack (hold=<x>,<y>,<z>); else where the leader is
+    float holdX = 0.0f, holdY = 0.0f, holdZ = 0.0f;
     std::vector<uint32> spawnIds;      // creature spawn ids (packs)
     std::vector<uint32> bossEntries;   // creature entries (boss encounters)
     std::vector<uint32> objectEntries; // game object entries (objects)
@@ -65,6 +67,7 @@ private:
     DungeonRouteMgr() = default;
     bool LoadFile(std::string const& path, DungeonRoute& route);
     static std::vector<uint32> ParseIdList(std::string_view text);
+    static bool ParsePoint(std::string_view text, float& x, float& y, float& z);  // "<x>,<y>,<z>"
     // "key=value" field after the coordinates; empty when absent.
     static std::string_view Field(std::vector<std::string_view> const& tokens, std::string_view key);
 

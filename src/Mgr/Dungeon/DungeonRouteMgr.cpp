@@ -24,6 +24,22 @@ std::vector<uint32> DungeonRouteMgr::ParseIdList(std::string_view text)
     return ids;
 }
 
+bool DungeonRouteMgr::ParsePoint(std::string_view text, float& x, float& y, float& z)
+{
+    std::vector<std::string_view> parts = Acore::Tokenize(text, ',', false);
+    if (parts.size() != 3)
+        return false;
+    Optional<float> px = Acore::StringTo<float>(parts[0]);
+    Optional<float> py = Acore::StringTo<float>(parts[1]);
+    Optional<float> pz = Acore::StringTo<float>(parts[2]);
+    if (!px || !py || !pz)
+        return false;
+    x = *px;
+    y = *py;
+    z = *pz;
+    return true;
+}
+
 std::string_view DungeonRouteMgr::Field(std::vector<std::string_view> const& tokens, std::string_view key)
 {
     for (std::string_view token : tokens)
@@ -121,23 +137,14 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
         item.spawnIds = ParseIdList(Field(tokens, "spawns"));
         item.object = tokens[0] == "object";
         item.drop = tokens[0] == "drop";
-        if (item.drop)
+        // rim=<x>,<y>,<z>: the navmesh has no floor over a hole, so a drop's approach aims at its edge.
+        if (item.drop && !ParsePoint(Field(tokens, "rim"), item.rimX, item.rimY, item.rimZ))
         {
-            // rim=<x>,<y>,<z>: the navmesh has no floor over the hole itself, so the approach aims at its edge.
-            std::vector<std::string_view> rim = Acore::Tokenize(Field(tokens, "rim"), ',', false);
-            Optional<float> rx = rim.size() == 3 ? Acore::StringTo<float>(rim[0]) : std::nullopt;
-            Optional<float> ry = rim.size() == 3 ? Acore::StringTo<float>(rim[1]) : std::nullopt;
-            Optional<float> rz = rim.size() == 3 ? Acore::StringTo<float>(rim[2]) : std::nullopt;
-            if (!rx || !ry || !rz)
-            {
-                LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: drop without rim=<x>,<y>,<z>", path,
-                          lineNumber);
-                return false;
-            }
-            item.rimX = *rx;
-            item.rimY = *ry;
-            item.rimZ = *rz;
+            LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: drop without rim=<x>,<y>,<z>", path,
+                      lineNumber);
+            return false;
         }
+        item.hold = ParsePoint(Field(tokens, "hold"), item.holdX, item.holdY, item.holdZ);
         bool const summoned = tokens[0] == "summoned";
         (item.object ? item.objectEntries : summoned ? item.summonEntries : item.bossEntries) =
             ParseIdList(Field(tokens, "entry"));
