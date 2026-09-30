@@ -82,7 +82,7 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     GameObject* object = nullptr;
     uint32 index = 0;
     DungeonRouteItem const* item = NextItem(*route, target, object, index);
-    if (!item || (!target && !item->object))
+    if (!item || (!target && !item->object && item->summonEntries.empty()))
     {
         if (TraceDue())
             LOG_DEBUG("playerbots", "dungeon-run bot={} route cleared progress={:.0f}", bot->GetName(),
