@@ -332,6 +332,20 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
                                           FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true, MOTION_SLOT_CONTROLLED);
         return;
     }
+    // Water under the bot: come down on its surface, not on the bottom. Two bots that sank to the floor of the pool
+    // below Hadronox's pit stood there until they drowned (run 1866).
+    LiquidData const liquid = bot->GetMap()->GetLiquidData(bot->GetPhaseMask(), bot->GetPositionX(),
+                                                           bot->GetPositionY(), ground + 1.0f,
+                                                           bot->GetCollisionHeight(), {});
+    if (liquid.Status != LIQUID_MAP_NO_WATER && liquid.Level > ground && liquid.Level < bot->GetPositionZ())
+    {
+        LOG_DEBUG("playerbots", "gravity bot={} falls from z={:.1f} into water at z={:.1f} at ({:.1f},{:.1f}) map={}",
+                  bot->GetName(), bot->GetPositionZ(), liquid.Level, bot->GetPositionX(), bot->GetPositionY(),
+                  bot->GetMapId());
+        bot->GetMotionMaster()->MovePoint(0, bot->GetPositionX(), bot->GetPositionY(), liquid.Level,
+                                          FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true, MOTION_SLOT_CONTROLLED);
+        return;
+    }
     LOG_DEBUG("playerbots", "gravity bot={} falls from z={:.1f} to ground z={:.1f} at ({:.1f},{:.1f}) map={}",
               bot->GetName(), bot->GetPositionZ(), ground, bot->GetPositionX(), bot->GetPositionY(), bot->GetMapId());
     bot->GetMotionMaster()->MoveFall();
