@@ -91,6 +91,26 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     if (object && bot->IsWithinDistInMap(object, object->GetInteractionDistance() - 1.0f))
         return UseObject(*item, index, object);
 
+    // A pack the encounter sends by itself: stand and wait for it. Krik'thir sends his watchers one at a time once
+    // the first is engaged; the leader pulling the next one as well brought two groups at once and wiped (run 1856).
+    if (item->sent)
+    {
+        uint32 const now = getMSTime();
+        if (_sentItem != index)
+        {
+            _sentItem = index;
+            _sentSinceMs = now;
+        }
+        if (getMSTimeDiff(_sentSinceMs, now) < SENT_WAIT_MS)
+        {
+            if (TraceDue())
+                LOG_DEBUG("playerbots", "dungeon-run bot={} holding for sent item={} target={} waited={}ms",
+                          bot->GetName(), index, target ? target->GetName() : "-",
+                          getMSTimeDiff(_sentSinceMs, now));
+            return false;
+        }
+    }
+
     if (target && bot->GetDistance(target) <= PULL_DISTANCE && bot->IsWithinLOSInMap(target))
     {
         // A pack of three or more gets the trash crowd-control chain first; the leader stands still until the

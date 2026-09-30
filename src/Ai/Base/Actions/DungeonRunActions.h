@@ -42,6 +42,7 @@ private:
     static constexpr uint32 CC_NO_PLAN_MS = 10000;        // no crowd-control icon after this long: pull anyway
     static constexpr float OBJECT_SIGHT = 80.0f;          // closer than this, an object item is judged by its state
     static constexpr uint32 MAX_USE_ATTEMPTS = 5;         // uses of one object before it is skipped
+    static constexpr uint32 SENT_WAIT_MS = 240000;        // longest wait for a pack the encounter sends; then pull it
     static constexpr float BOSS_AREA_MIN_RADIUS = 35.0f;  // packs between this far from a boss...
     static constexpr float BOSS_AREA_RADIUS = 70.0f;      // ...and this far are cleared before it...
     static constexpr float BOSS_AREA_AHEAD = 150.0f;      // ...when the route reaches them at most this far after it
@@ -71,6 +72,8 @@ private:
     uint32 _approachSinceMs = 0;
     uint32 _lastApproachTickMs = 0;
     uint32 _lastTraceMs = 0;
+    uint32 _sentItem = UINT32_MAX;  // sent pack being waited for, and since when
+    uint32 _sentSinceMs = 0;
     ObjectGuid _ccGateTarget;
     uint32 _ccGateSinceMs = 0;
 };

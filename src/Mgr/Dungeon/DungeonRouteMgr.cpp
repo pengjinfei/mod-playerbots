@@ -116,6 +116,7 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
         item.boss = tokens[0] == "boss";
         item.radius = Acore::StringTo<float>(Field(tokens, "radius")).value_or(0.0f);
         item.side = Field(tokens, "side") == "1";
+        item.sent = Field(tokens, "sent") == "1";
         item.spawnIds = ParseIdList(Field(tokens, "spawns"));
         item.object = tokens[0] == "object";
         (item.object ? item.objectEntries : item.bossEntries) = ParseIdList(Field(tokens, "entry"));

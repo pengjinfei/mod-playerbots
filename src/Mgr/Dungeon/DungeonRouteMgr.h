@@ -31,6 +31,7 @@ struct DungeonRouteItem
     bool side;  // off the path; not cleared unless it joins a fight on its own
     bool boss;
     bool object = false;               // a game object the leader walks to and uses (a lever, a containment sphere)
+    bool sent = false;                 // the encounter sends this pack to the group: wait for it, do not pull it
     std::vector<uint32> spawnIds;      // creature spawn ids (packs)
     std::vector<uint32> bossEntries;   // creature entries (boss encounters)
     std::vector<uint32> objectEntries; // game object entries (objects)

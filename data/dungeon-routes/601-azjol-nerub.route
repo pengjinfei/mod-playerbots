@@ -19,11 +19,11 @@ node 188 547.3 714.3 777.8
 pack 204 540.3 698.7 776.4 radius=5.6 side=0 elite=3 spawns=127229,127235,127338 # 1xAnub'ar Warrior, 1xAnub'ar Skirmisher, 1xAnub'ar Webspinner
 node 204 545.9 698.3 777.0
 node 224 544.4 678.4 775.8
-boss 237 547.9 665.1 776.5 radius=4.0 entry=28731 spawns=12758,12761,12762 # 1xWatcher Silthik, 1xAnub'ar Shadowcaster, 1xAnub'ar Skirmisher
+pack 237 547.9 665.1 776.5 radius=4.0 side=0 elite=3 spawns=12758,12761,12762 # 1xWatcher Silthik, 1xAnub'ar Shadowcaster, 1xAnub'ar Skirmisher
 node 241 541.4 661.9 777.0
-pack 253 526.5 660.4 776.1 radius=5.1 side=0 elite=3 spawns=12759,12763,12764 # 1xWatcher Gashra, 1xAnub'ar Warrior, 1xAnub'ar Skirmisher
-pack 261 508.2 666.9 776.5 radius=3.7 side=0 elite=3 spawns=12760,12765,12766 # 1xWatcher Narjil, 1xAnub'ar Shadowcaster, 1xAnub'ar Warrior
-boss 261 529.6 646.2 777.4 radius=0.0 entry=28684 spawns=127214 # 1xKrik'thir the Gatewatcher
+pack 253 526.5 660.4 776.1 radius=5.1 side=0 elite=3 spawns=12759,12763,12764 sent=1 # 1xWatcher Gashra, 1xAnub'ar Warrior, 1xAnub'ar Skirmisher
+pack 261 508.2 666.9 776.5 radius=3.7 side=0 elite=3 spawns=12760,12765,12766 sent=1 # 1xWatcher Narjil, 1xAnub'ar Shadowcaster, 1xAnub'ar Warrior
+boss 261 529.6 646.2 777.4 radius=0.0 entry=28684 spawns=127214 sent=1 # 1xKrik'thir the Gatewatcher
 node 261 529.6 646.2 777.4
 node 281 529.3 626.2 778.8
 node 297 529.2 610.2 778.3
