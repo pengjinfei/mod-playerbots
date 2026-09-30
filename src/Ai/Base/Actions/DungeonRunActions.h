@@ -57,7 +57,7 @@ private:
     static constexpr uint8 TRASH_CC_ICONS[] = { 3, 4, 5, 6 };  // triangle, moon, square, cross
 
     void UpdateProgress(DungeonRoute const& route);
-    bool Pull(DungeonRoute const& route, Unit* target, float progress);
+    bool Pull(DungeonRoute const& route, DungeonRouteItem const& item, Unit* target, float progress);
     bool CcGateOpen(DungeonRouteItem const& item, Unit* nearest);
     bool UseObject(DungeonRouteItem const& item, uint32 index, GameObject* object);
     // Send the group's bots still above the hole to it, and over the rim once they stand at it; true if any is above.

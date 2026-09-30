@@ -162,8 +162,8 @@ bool KrikthirWatchersTrigger::IsActive()
         Unit* unit = botAI->GetUnit(*i);
         // 只在克里克希尔的门厅里生效：「possible targets no los」在哈多诺克斯平台上也能看到楼上活着的
         // 克里克希尔（z≈777 对平台 733），节点（64）每 tick 压过 dps assist(50) 又执行失败，
-        // 盗贼 30/31 场哈多诺克斯零输出。要求同层且 60 码内。
-        if (unit && unit->GetEntry() == NPC_KRIKTHIR && unit->IsAlive() && bot->GetExactDist2d(unit) <= 60.0f &&
+        // 盗贼 30/31 场哈多诺克斯零输出。要求同层且 110 码内（整本通关在入口斜坡拐角处打守望者，离他约 92 码）。
+        if (unit && unit->GetEntry() == NPC_KRIKTHIR && unit->IsAlive() && bot->GetExactDist2d(unit) <= 110.0f &&
             std::fabs(unit->GetPositionZ() - bot->GetPositionZ()) <= 15.0f)
         {
             return true;

@@ -33,7 +33,7 @@ float KrikthirMultiplier::GetValue(Action* action)
                 // 只在克里克希尔的门厅里生效（同层且 60 码内）。楼下哈多诺克斯平台也能在
                 // 「possible targets no los」里看到楼上活着的克里克希尔与守望者，原逻辑因此把
                 // 整场哈多诺克斯的 dps assist 与群攻归零（盗贼 30/31 场零输出）。
-                if (unit->IsAlive() && bot->GetExactDist2d(unit) <= 60.0f &&
+                if (unit->IsAlive() && bot->GetExactDist2d(unit) <= 110.0f &&
                     std::fabs(unit->GetPositionZ() - bot->GetPositionZ()) <= 15.0f)
                     boss = unit;
                 continue;

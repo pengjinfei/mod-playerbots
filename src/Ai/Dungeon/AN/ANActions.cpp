@@ -116,15 +116,12 @@ bool WatchersTargetAction::Execute(Event /*event*/)
         }
         switch (npc->GetEntry())
         {
-            // Focus skirmishers first
-            case NPC_WATCHER_SKIRMISHER:
+            // Shadowcasters first, as players kill them: shadow bolt and shadow nova do the group's damage, and
+            // they stand back casting. Then the skirmishers that charge and backstab the casters.
+            case NPC_WATCHER_SHADOWCASTER:
                 priorityTargets[0] = npc;
                 break;
-            // Then shadowcaster. This doesn't work so well for the shadowcaster
-            // + skirmisher pack - ideally we would kill the watcher second.
-            // But don't want to make this unnecessarily complex and rigid...
-            // Will revisit if this causes problems in heroic.
-            case NPC_WATCHER_SHADOWCASTER:
+            case NPC_WATCHER_SKIRMISHER:
                 priorityTargets[1] = npc;
                 break;
             // Named watcher next

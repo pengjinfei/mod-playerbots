@@ -168,7 +168,7 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         ++attempts;
         LOG_DEBUG("playerbots", "dungeon-run bot={} pull item={} along={:.0f} target={} attempt={} progress={:.0f}",
                   bot->GetName(), index, item->along, pullUnit->GetName(), attempts, progress);
-        return Pull(*route, pullUnit, progress);
+        return Pull(*route, *item, pullUnit, progress);
     }
 
     // Where the item is: the pack member, the object, or - an object not loaded yet - the route's position for it.
@@ -308,7 +308,8 @@ bool DungeonRunAdvanceAction::PendingObject(DungeonRouteItem const& item, GameOb
 // Pull the way the "pull" strategy does it on a chat command: a ranged pull, then back to the pull position so the
 // pack comes to the group. The pull position is the route node PULL_BACK yd behind, away from the packs ahead: a
 // melee pull where the leader stood brought the neighbouring forge packs along (run 1787, six elites, wipe).
-bool DungeonRunAdvanceAction::Pull(DungeonRoute const& route, Unit* target, float progress)
+bool DungeonRunAdvanceAction::Pull(DungeonRoute const& route, DungeonRouteItem const& item, Unit* target,
+                                   float progress)
 {
     PullStrategy* strategy = PullStrategy::Get(botAI);
     if (!strategy || strategy->HasPullStarted() || !strategy->CanDoPullAction(target))
@@ -326,7 +327,11 @@ bool DungeonRunAdvanceAction::Pull(DungeonRoute const& route, Unit* target, floa
     }
     PositionMap& positions = AI_VALUE(PositionMap&, "position");
     PositionInfo pullPosition = positions["pull"];
-    if (back)
+    // A pack with a hold point is fought there, as players do: Krik'thir's watchers are pulled back up the entrance
+    // ramp, round the corner, so the casters have to come into melee and the groups he sends arrive one at a time.
+    if (item.hold)
+        pullPosition.Set(item.holdX, item.holdY, item.holdZ, bot->GetMapId());
+    else if (back)
         pullPosition.Set(back->x, back->y, back->z, bot->GetMapId());
     else
         pullPosition.Set(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), bot->GetMapId());
