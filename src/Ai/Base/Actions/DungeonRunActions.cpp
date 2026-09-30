@@ -237,12 +237,15 @@ bool DungeonRunAdvanceAction::UseObject(DungeonRouteItem const& item, uint32 ind
 
 void DungeonRunAdvanceAction::StepOverDrop(DungeonRouteItem const& item)
 {
+    if (!bot->movespline->Finalized())
+        return;
     if (bot->GetExactDist(item.rimX, item.rimY, item.rimZ) > DROP_AT_RIM)
         MoveTo(bot->GetMapId(), item.rimX, item.rimY, item.rimZ, false, false, false, false,
                MovementPriority::MOVEMENT_NORMAL);
     else
-        bot->GetMotionMaster()->MovePoint(0, item.x, item.y, item.z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true,
-                                          MOTION_SLOT_CONTROLLED);
+        // Jump, as a player does: a straight walk to the hole stopped at the web's edge for all five (run 1875).
+        bot->GetMotionMaster()->MoveJump(item.x, item.y, item.z + DROP_JUMP_HEIGHT, DROP_JUMP_SPEED_XY,
+                                         DROP_JUMP_SPEED_Z);
 }
 
 bool DungeonRunAdvanceAction::PushOverDrop(DungeonRouteItem const& item, float range)
@@ -258,7 +261,8 @@ bool DungeonRunAdvanceAction::PushOverDrop(DungeonRouteItem const& item, float r
             member->GetPositionZ() < item.z - DROP_DEPTH || !GET_PLAYERBOT_AI(member))
             continue;
         above = true;
-        if (member->GetExactDist2d(item.x, item.y) > range)
+        // Mid-jump or mid-walk to the rim: let it finish; a new order every tick restarted the jump.
+        if (member->GetExactDist2d(item.x, item.y) > range || !member->movespline->Finalized())
             continue;
         // At the rim: straight over it, no path (there is none). Farther: walk to the rim first. In the controlled
         // slot, so the member's own follow movement does not replace it (only one of five went over in run 1865).
@@ -266,8 +270,8 @@ bool DungeonRunAdvanceAction::PushOverDrop(DungeonRouteItem const& item, float r
             member->GetMotionMaster()->MovePoint(0, item.rimX, item.rimY, item.rimZ, FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
                                                  true, true, MOTION_SLOT_CONTROLLED);
         else
-            member->GetMotionMaster()->MovePoint(0, item.x, item.y, item.z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false,
-                                                 true, MOTION_SLOT_CONTROLLED);
+            member->GetMotionMaster()->MoveJump(item.x, item.y, item.z + DROP_JUMP_HEIGHT, DROP_JUMP_SPEED_XY,
+                                                DROP_JUMP_SPEED_Z);
     }
     if (above && TraceDue())
         LOG_DEBUG("playerbots", "dungeon-run bot={} bringing the group down the hole at ({:.1f},{:.1f})",
