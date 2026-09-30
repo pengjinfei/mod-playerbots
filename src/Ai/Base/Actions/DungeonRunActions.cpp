@@ -414,9 +414,11 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
                 DungeonRouteItem const& after = route.items[j];
                 if (after.along > item.along + BOSS_AREA_AHEAD)
                     break;
-                if (after.boss || after.object || !ItemOpen(route, j) ||
-                    std::hypot(after.x - item.x, after.y - item.y) > BOSS_AREA_RADIUS ||
-                    std::fabs(after.z - item.z) > 10.0f)
+                // Not a pack right beside the boss: reaching it means walking past the boss, and it joins the boss
+                // fight anyway (Kolurg's berserkers 21 yd behind him: the leader walked into the boss, wipe, run 1829).
+                float const fromBoss = std::hypot(after.x - item.x, after.y - item.y);
+                if (after.boss || after.object || !ItemOpen(route, j) || fromBoss < BOSS_AREA_MIN_RADIUS ||
+                    fromBoss > BOSS_AREA_RADIUS || std::fabs(after.z - item.z) > 10.0f)
                     continue;
                 if (Unit* member = NearestLivingMember(after))
                 {
