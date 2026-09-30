@@ -287,6 +287,7 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
 {
     static constexpr uint32 GRAVITY_CHECK_MS = 500;
     static constexpr float AIRBORNE_HEIGHT = 2.0f;
+    static constexpr float FALL_SPEED = 40.0f;  // yd/s for a fall that ends on water
     _gravityCheckMs += elapsed;
     if (_gravityCheckMs < GRAVITY_CHECK_MS)
         return;
@@ -342,8 +343,9 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
         LOG_DEBUG("playerbots", "gravity bot={} falls from z={:.1f} into water at z={:.1f} at ({:.1f},{:.1f}) map={}",
                   bot->GetName(), bot->GetPositionZ(), liquid.Level, bot->GetPositionX(), bot->GetPositionY(),
                   bot->GetMapId());
-        bot->GetMotionMaster()->MovePoint(0, bot->GetPositionX(), bot->GetPositionY(), liquid.Level,
-                                          FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true, MOTION_SLOT_CONTROLLED);
+        // A straight spline down to the surface, at a fall's speed: a point move there never moved the bots, who
+        // stayed over the hole and were sent back to its rim (run 1877).
+        bot->GetMotionMaster()->MoveLand(0, bot->GetPositionX(), bot->GetPositionY(), liquid.Level, FALL_SPEED);
         return;
     }
     LOG_DEBUG("playerbots", "gravity bot={} falls from z={:.1f} to ground z={:.1f} at ({:.1f},{:.1f}) map={}",
