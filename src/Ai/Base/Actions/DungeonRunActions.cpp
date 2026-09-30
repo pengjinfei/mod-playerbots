@@ -311,12 +311,15 @@ bool DungeonRunAdvanceAction::Pull(DungeonRoute const& route, Unit* target, floa
     if (!strategy || strategy->HasPullStarted() || !strategy->CanDoPullAction(target))
         return Attack(target);
 
+    // Only a node on the leader's floor: below a drop the nodes behind are 360 yd up, and a pull back to one sent
+    // the tank down a path ending at z 0, through the level (run 1878).
     DungeonRouteNode const* back = nullptr;
     for (DungeonRouteNode const& node : route.nodes)
     {
         if (node.along > progress - PULL_BACK)
             break;
-        back = &node;
+        if (std::fabs(node.z - bot->GetPositionZ()) <= 10.0f)
+            back = &node;
     }
     PositionMap& positions = AI_VALUE(PositionMap&, "position");
     PositionInfo pullPosition = positions["pull"];
