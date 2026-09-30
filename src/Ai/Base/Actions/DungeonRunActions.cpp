@@ -36,6 +36,13 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         if (!unit || !unit->IsAlive())
             context->GetValue<ObjectGuid>("pull target")->Set(ObjectGuid::Empty);
     }
+    // Down a hole ahead of the group: bring the rest down before anything else (they are out of range above).
+    if (_dropItem < route->items.size())
+    {
+        if (PushOverDrop(route->items[_dropItem], 1000.0f))
+            return false;
+        _dropItem = UINT32_MAX;
+    }
     // Waiting yields the tick: eating, drinking, resurrecting and rebuffing are other actions.
     std::string waitReason;
     Player* dead = nullptr;
@@ -82,7 +89,7 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     GameObject* object = nullptr;
     uint32 index = 0;
     DungeonRouteItem const* item = NextItem(*route, target, object, index);
-    if (!item || (!target && !item->object && item->summonEntries.empty()))
+    if (!item || (!target && !item->object && !item->drop && item->summonEntries.empty()))
     {
         if (TraceDue())
             LOG_DEBUG("playerbots", "dungeon-run bot={} route cleared progress={:.0f}", bot->GetName(),
@@ -93,6 +100,21 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     float const progress = AI_VALUE(float, "dungeon run progress");
     if (object && bot->IsWithinDistInMap(object, object->GetInteractionDistance() - 1.0f))
         return UseObject(*item, index, object);
+
+    // A hole to jump down (Azjol-Nerub: from Hadronox's pit into the pool of Anub'arak's cavern, 360 yd below; the
+    // water takes the fall as it does for a player). Walk to the rim, then everyone steps over; gravity does the rest.
+    if (item->drop)
+    {
+        if (bot->GetExactDist2d(item->x, item->y) > DROP_RIM)
+            return MoveTo(bot->GetMapId(), item->x, item->y, item->z, false, false, false, false,
+                          MovementPriority::MOVEMENT_NORMAL);
+        _dropItem = index;
+        PushOverDrop(*item, GROUP_RANGE);
+        bot->GetMotionMaster()->MovePoint(0, item->x, item->y, item->z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false);
+        LOG_DEBUG("playerbots", "dungeon-run bot={} drop item={} along={:.0f} at ({:.1f},{:.1f},{:.1f})",
+                  bot->GetName(), index, item->along, item->x, item->y, item->z);
+        return true;
+    }
 
     // A pack the encounter sends by itself: stand and wait for it. Krik'thir sends his watchers one at a time once
     // the first is engaged; the leader pulling the next one as well brought two groups at once and wiped (run 1856).
@@ -195,6 +217,31 @@ bool DungeonRunAdvanceAction::UseObject(DungeonRouteItem const& item, uint32 ind
     packet << object->GetGUID();
     bot->GetSession()->HandleGameObjectUseOpcode(packet);
     return true;
+}
+
+bool DungeonRunAdvanceAction::PushOverDrop(DungeonRouteItem const& item, float range)
+{
+    Group* group = bot->GetGroup();
+    if (!group)
+        return false;
+    bool above = false;
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+    {
+        Player* member = ref->GetSource();
+        if (!member || member == bot || !member->IsAlive() || member->GetMapId() != bot->GetMapId() ||
+            member->GetPositionZ() < item.z - DROP_DEPTH || !GET_PLAYERBOT_AI(member))
+            continue;
+        above = true;
+        if (member->GetExactDist2d(item.x, item.y) > range)
+            continue;
+        // At the rim: straight over it, no path (there is none). Farther: walk to it first.
+        member->GetMotionMaster()->MovePoint(0, item.x, item.y, item.z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
+                                             member->GetExactDist2d(item.x, item.y) > DROP_RIM);
+    }
+    if (above && TraceDue())
+        LOG_DEBUG("playerbots", "dungeon-run bot={} bringing the group down the hole at ({:.1f},{:.1f})",
+                  bot->GetName(), item.x, item.y);
+    return above;
 }
 
 bool DungeonRunAdvanceAction::PendingObject(DungeonRouteItem const& item, GameObject*& object) const
@@ -421,6 +468,14 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
         {
             if (!PendingObject(item, object))
                 continue;
+            index = i;
+            return &item;
+        }
+        if (item.drop)
+        {
+            if (bot->GetPositionZ() < item.z - DROP_DEPTH)
+                continue;  // already down
+            target = nullptr;
             index = i;
             return &item;
         }

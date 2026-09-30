@@ -44,6 +44,8 @@ private:
     static constexpr float SUMMON_SIGHT = 80.0f;          // closer than this, a summoned pack is judged by what stands
     static constexpr uint32 MAX_USE_ATTEMPTS = 5;         // uses of one object before it is skipped
     static constexpr uint32 SENT_WAIT_MS = 240000;        // longest wait for a pack the encounter sends; then pull it
+    static constexpr float DROP_DEPTH = 50.0f;            // this far under a hole's rim counts as having dropped
+    static constexpr float DROP_RIM = 12.0f;              // this close to the hole, step over instead of walking
     static constexpr float BOSS_AREA_MIN_RADIUS = 35.0f;  // packs between this far from a boss...
     static constexpr float BOSS_AREA_RADIUS = 70.0f;      // ...and this far are cleared before it...
     static constexpr float BOSS_AREA_AHEAD = 150.0f;      // ...when the route reaches them at most this far after it
@@ -54,6 +56,8 @@ private:
     bool Pull(DungeonRoute const& route, Unit* target, float progress);
     bool CcGateOpen(DungeonRouteItem const& item, Unit* nearest);
     bool UseObject(DungeonRouteItem const& item, uint32 index, GameObject* object);
+    // Send the group's bots still above the hole to it, and over the rim once they stand at it; true if any is above.
+    bool PushOverDrop(DungeonRouteItem const& item, float range);
     // An object item still to be used: in sight and usable (selectable, not yet activated), or too far away to tell.
     bool PendingObject(DungeonRouteItem const& item, GameObject*& object) const;
     bool ItemOpen(DungeonRoute const& route, uint32 index) const;  // on the path and not given up on
@@ -73,6 +77,7 @@ private:
     uint32 _approachSinceMs = 0;
     uint32 _lastApproachTickMs = 0;
     uint32 _lastTraceMs = 0;
+    uint32 _dropItem = UINT32_MAX;  // hole the leader jumped down while members may still be above
     uint32 _sentItem = UINT32_MAX;  // sent pack being waited for, and since when
     uint32 _sentSinceMs = 0;
     ObjectGuid _ccGateTarget;

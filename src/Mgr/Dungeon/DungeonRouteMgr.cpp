@@ -103,7 +103,8 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
             route.nodes.push_back({*along, *x, *y, *z});
             continue;
         }
-        if (tokens[0] != "pack" && tokens[0] != "boss" && tokens[0] != "object" && tokens[0] != "summoned")
+        if (tokens[0] != "pack" && tokens[0] != "boss" && tokens[0] != "object" && tokens[0] != "summoned" &&
+            tokens[0] != "drop")
         {
             LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: unknown kind '{}'", path, lineNumber, tokens[0]);
             return false;
@@ -119,12 +120,13 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
         item.sent = Field(tokens, "sent") == "1";
         item.spawnIds = ParseIdList(Field(tokens, "spawns"));
         item.object = tokens[0] == "object";
+        item.drop = tokens[0] == "drop";
         bool const summoned = tokens[0] == "summoned";
         (item.object ? item.objectEntries : summoned ? item.summonEntries : item.bossEntries) =
             ParseIdList(Field(tokens, "entry"));
         if (summoned && item.radius <= 0.0f)
             item.radius = 20.0f;
-        if (item.spawnIds.empty() && item.bossEntries.empty() && item.objectEntries.empty() &&
+        if (!item.drop && item.spawnIds.empty() && item.bossEntries.empty() && item.objectEntries.empty() &&
             item.summonEntries.empty())
         {
             LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: pack without spawns= / boss or object without "
