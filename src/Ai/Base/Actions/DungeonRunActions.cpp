@@ -39,7 +39,16 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // Down a hole ahead of the group: bring the rest down before anything else (they are out of range above).
     if (_dropItem < route->items.size())
     {
-        if (PushOverDrop(route->items[_dropItem], 1000.0f))
+        DungeonRouteItem const& drop = route->items[_dropItem];
+        // Still above: the step over was cut short (run 1865: the leader stayed on the ledge while it pushed the
+        // others). Step over again.
+        if (bot->GetPositionZ() > drop.z - DROP_DEPTH)
+        {
+            PushOverDrop(drop, GROUP_RANGE);
+            StepOverDrop(drop);
+            return true;
+        }
+        if (PushOverDrop(drop, 1000.0f))
             return false;
         _dropItem = UINT32_MAX;
     }
@@ -110,7 +119,7 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
                           MovementPriority::MOVEMENT_NORMAL);
         _dropItem = index;
         PushOverDrop(*item, GROUP_RANGE);
-        bot->GetMotionMaster()->MovePoint(0, item->x, item->y, item->z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false);
+        StepOverDrop(*item);
         LOG_DEBUG("playerbots", "dungeon-run bot={} drop item={} along={:.0f} at ({:.1f},{:.1f},{:.1f})",
                   bot->GetName(), index, item->along, item->x, item->y, item->z);
         return true;
@@ -219,6 +228,12 @@ bool DungeonRunAdvanceAction::UseObject(DungeonRouteItem const& item, uint32 ind
     return true;
 }
 
+void DungeonRunAdvanceAction::StepOverDrop(DungeonRouteItem const& item)
+{
+    bot->GetMotionMaster()->MovePoint(0, item.x, item.y, item.z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
+                                      bot->GetExactDist2d(item.x, item.y) > DROP_RIM, true, MOTION_SLOT_CONTROLLED);
+}
+
 bool DungeonRunAdvanceAction::PushOverDrop(DungeonRouteItem const& item, float range)
 {
     Group* group = bot->GetGroup();
@@ -234,9 +249,11 @@ bool DungeonRunAdvanceAction::PushOverDrop(DungeonRouteItem const& item, float r
         above = true;
         if (member->GetExactDist2d(item.x, item.y) > range)
             continue;
-        // At the rim: straight over it, no path (there is none). Farther: walk to it first.
+        // At the rim: straight over it, no path (there is none). Farther: walk to it first. In the controlled slot,
+        // so the member's own follow movement does not replace it (only one of five went over in run 1865).
         member->GetMotionMaster()->MovePoint(0, item.x, item.y, item.z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
-                                             member->GetExactDist2d(item.x, item.y) > DROP_RIM);
+                                             member->GetExactDist2d(item.x, item.y) > DROP_RIM, true,
+                                             MOTION_SLOT_CONTROLLED);
     }
     if (above && TraceDue())
         LOG_DEBUG("playerbots", "dungeon-run bot={} bringing the group down the hole at ({:.1f},{:.1f})",

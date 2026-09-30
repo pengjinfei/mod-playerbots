@@ -58,6 +58,7 @@ private:
     bool UseObject(DungeonRouteItem const& item, uint32 index, GameObject* object);
     // Send the group's bots still above the hole to it, and over the rim once they stand at it; true if any is above.
     bool PushOverDrop(DungeonRouteItem const& item, float range);
+    void StepOverDrop(DungeonRouteItem const& item);  // the leader itself, over the rim
     // An object item still to be used: in sight and usable (selectable, not yet activated), or too far away to tell.
     bool PendingObject(DungeonRouteItem const& item, GameObject*& object) const;
     bool ItemOpen(DungeonRoute const& route, uint32 index) const;  // on the path and not given up on
