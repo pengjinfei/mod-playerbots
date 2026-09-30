@@ -15,7 +15,10 @@
 
 bool DungeonRunAdvanceAction::isUseful()
 {
-    return !bot->IsInCombat() && bot->IsAlive() && DungeonRouteMgr::instance().Get(bot->GetMapId());
+    // A combat flag with nobody attacking does not hold the leader: Hadronox's gauntlet left the tank flagged in
+    // combat for minutes with no attacker, and the run stood still on the ramp (run 1857).
+    return bot->IsAlive() && (!bot->IsInCombat() || bot->getAttackers().empty()) &&
+           DungeonRouteMgr::instance().Get(bot->GetMapId());
 }
 
 bool DungeonRunAdvanceAction::Execute(Event /*event*/)

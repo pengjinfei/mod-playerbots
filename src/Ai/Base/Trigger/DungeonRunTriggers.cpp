@@ -11,5 +11,5 @@
 
 bool DungeonRunTrigger::IsActive()
 {
-    return !bot->IsInCombat() && DungeonRouteMgr::instance().Get(bot->GetMapId());
+    return (!bot->IsInCombat() || bot->getAttackers().empty()) && DungeonRouteMgr::instance().Get(bot->GetMapId());
 }
