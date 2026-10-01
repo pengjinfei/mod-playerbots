@@ -104,7 +104,7 @@ pack 1150 693.1 -178.2 -29.0 radius=5.6 side=0 elite=2 spawns=126517,126518,1265
 pack 1158 677.5 -190.1 -25.2 radius=0.0 side=0 elite=0 spawns=126529 # 1xCrazed Mana-Wraith
 node 1158 675.5 -186.3 -24.6
 node 1181 661.3 -200.4 -14.7
-pack 1190 636.4 -208.4 -15.2 radius=17.0 side=0 elite=6 spawns=126435,126483,126484,126508,126509,126510,126555,126561,126566,126571,126577,126581 hold=675.5,-186.3,-24.6 pull=35 # 1xChaotic Rift, 2xAzure Enforcer, 3xCrazed Mana-Surge, 6xCrazed Mana-Wraith
+pack 1190 636.4 -208.4 -15.2 radius=17.0 side=0 elite=6 spawns=126435,126483,126484,126508,126509,126510,126555,126561,126566,126571,126577,126581 hold=675.5,-186.3,-24.6 pull=35 from=663.9,-195.3,-16.4 cc=0 # 1xChaotic Rift, 2xAzure Enforcer, 3xCrazed Mana-Surge, 6xCrazed Mana-Wraith
 node 1197 650.3 -212.0 -14.7
 node 1213 642.5 -225.6 -14.5
 node 1230 639.7 -241.2 -10.0
