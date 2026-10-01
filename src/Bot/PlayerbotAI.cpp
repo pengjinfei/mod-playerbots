@@ -27,6 +27,7 @@
 #include "LastSpellCastValue.h"
 #include "LogLevelAction.h"
 #include "LootObjectStack.h"
+#include "DetourNavMeshQuery.h"
 #include "MapMgr.h"
 #include "MotionMaster.h"
 #include "MoveSplineInit.h"
@@ -288,6 +289,7 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
     static constexpr uint32 GRAVITY_CHECK_MS = 500;
     static constexpr float AIRBORNE_HEIGHT = 2.0f;
     static constexpr float FALL_SPEED = 40.0f;  // yd/s for a fall that ends on water
+    static constexpr float NAVMESH_FLOOR_SEARCH = 4.0f;  // a navmesh floor this close below is ground, not air
     _gravityCheckMs += elapsed;
     if (_gravityCheckMs < GRAVITY_CHECK_MS)
         return;
@@ -321,6 +323,20 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
     if (++_airborneChecks < 2)
         return;
     _airborneChecks = 0;
+    // Walkable floor on the navmesh right under the bot: a hole in the collision model, not air. The Nexus has one
+    // at (677.9,-141.4) before Anomalus, no collision floor from z -26 down to -67 where the navmesh and the rest of
+    // the group stand at -26, and the tank fell through to -68 and stayed there (run 1942).
+    if (dtNavMeshQuery const* query = bot->GetMap()->GetMapCollisionData().GetMMapData().GetNavMeshQuery())
+    {
+        float const point[3] = {bot->GetPositionY(), bot->GetPositionZ(), bot->GetPositionX()};
+        float const extents[3] = {2.0f, NAVMESH_FLOOR_SEARCH, 2.0f};
+        float closest[3] = {0.0f, 0.0f, 0.0f};
+        dtQueryFilter const filter;
+        dtPolyRef poly = 0;
+        if (dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) && poly &&
+            closest[1] <= bot->GetPositionZ() + 0.5f)
+            return;
+    }
     // A floor just overhead means the bot sank into it, not that it stands in the air: put it back on top. The
     // tank swam to a pack whose centre lay under the pool floor and gravity then dropped it to z 0 (run 1866).
     float const overhead = bot->GetMap()->GetHeight(bot->GetPhaseMask(), bot->GetPositionX(), bot->GetPositionY(),
