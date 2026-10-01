@@ -152,9 +152,21 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         }
     }
 
+    // A pack with a pull spot is pulled from there, as a tank stops in a doorway: walking the route into the room
+    // took the leader from first sight of Kolurg's escort (36 yd) to 20 yd of it in one step, and Kolurg came too
+    // (run 1923). Away from the spot, nothing else is pulled on the way.
+    bool atSpot = false;
+    if (target && item->from)
+    {
+        if (bot->GetExactDist(item->fromX, item->fromY, item->fromZ) > 3.0f)
+            return MoveTo(bot->GetMapId(), item->fromX, item->fromY, item->fromZ, false, false, false, false,
+                          MovementPriority::MOVEMENT_NORMAL);
+        atSpot = true;
+    }
     // A pack whose aggro reaches past the default pull distance is engaged from farther, before anyone walks into
     // it: Krik'thir's first watcher group aggroed while the leader was still closing in, before any crowd control.
-    float const pullDistance = item->pullDistance > 0.0f ? item->pullDistance : PULL_DISTANCE;
+    float const pullDistance = atSpot ? PULL_FROM_SPOT_DISTANCE
+                               : item->pullDistance > 0.0f ? item->pullDistance : PULL_DISTANCE;
     if (target && bot->GetDistance(target) <= pullDistance && bot->IsWithinLOSInMap(target))
     {
         // A pack of three or more gets the trash crowd-control chain first; the leader stands still until the

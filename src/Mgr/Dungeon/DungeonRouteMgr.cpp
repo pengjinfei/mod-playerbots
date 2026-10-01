@@ -146,6 +146,7 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
             return false;
         }
         item.hold = ParsePoint(Field(tokens, "hold"), item.holdX, item.holdY, item.holdZ);
+        item.from = ParsePoint(Field(tokens, "from"), item.fromX, item.fromY, item.fromZ);
         bool const summoned = tokens[0] == "summoned";
         (item.object ? item.objectEntries : summoned ? item.summonEntries : item.bossEntries) =
             ParseIdList(Field(tokens, "entry"));

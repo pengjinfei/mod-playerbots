@@ -39,6 +39,7 @@ private:
     static constexpr uint32 WAIT_LOG_INTERVAL_MS = 10000;
     static constexpr uint32 APPROACH_TIMEOUT_MS = 45000;
     static constexpr float PULL_BACK = 20.0f;             // pull position: the node this far behind
+    static constexpr float PULL_FROM_SPOT_DISTANCE = 40.0f;  // from a pull spot, the pack is pulled at range
     static constexpr uint32 CC_WAIT_MS = 25000;           // longest wait for the crowd control to land
     static constexpr uint32 CC_NO_PLAN_MS = 10000;        // no crowd-control icon after this long: pull anyway
     static constexpr float OBJECT_SIGHT = 80.0f;          // closer than this, an object item is judged by its state
