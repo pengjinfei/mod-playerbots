@@ -80,7 +80,7 @@ private:
     uint32 _lastWaitLogMs = 0;
     uint32 _approachItem = UINT32_MAX;  // item being walked to, best distance reached, since when
     float _approachBest = 0.0f;
-    uint32 _approachSinceMs = 0;
+    uint32 _approachWalkedMs = 0;
     uint32 _lastApproachTickMs = 0;
     uint32 _lastTraceMs = 0;
     uint32 _dropItem = UINT32_MAX;  // hole the leader jumped down while members may still be above
