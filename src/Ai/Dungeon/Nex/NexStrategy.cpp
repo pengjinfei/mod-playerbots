@@ -14,7 +14,10 @@ WotlkDungeonNexStrategy::WotlkDungeonNexStrategy(PlayerbotAI* ai) : TrashCcPullS
     TrashCcRegisterHealerEntries({ NPC_CRYSTALLINE_TENDER, NPC_CRYSTALLINE_TENDER_HEROIC,
                                    NPC_MAGE_HUNTER_INITIATE, NPC_MAGE_HUNTER_INITIATE_HEROIC,
                                    NPC_HORDE_CLERIC, NPC_HORDE_CLERIC_HEROIC,
-                                   NPC_ALLIANCE_CLERIC, NPC_ALLIANCE_CLERIC_HEROIC });
+                                   NPC_ALLIANCE_CLERIC, NPC_ALLIANCE_CLERIC_HEROIC,
+                                   // Not a healer, but killed first for the same reason: a Chaotic Rift keeps
+                                   // summoning Mana-Wraiths into the pack until it dies (no crowd control lands on it).
+                                   NPC_CHAOTIC_RIFT, NPC_CHAOTIC_RIFT_HEROIC });
 }
 
 void WotlkDungeonNexStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
