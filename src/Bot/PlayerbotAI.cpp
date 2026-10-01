@@ -290,6 +290,7 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
     static constexpr float AIRBORNE_HEIGHT = 2.0f;
     static constexpr float FALL_SPEED = 40.0f;  // yd/s for a fall that ends on water
     static constexpr float NAVMESH_FLOOR_SEARCH = 4.0f;  // a navmesh floor this close below is ground, not air
+    static constexpr float NAVMESH_FLOOR_UNDER = 0.3f;   // and this close sideways: the polygon is under the bot
     _gravityCheckMs += elapsed;
     if (_gravityCheckMs < GRAVITY_CHECK_MS)
         return;
@@ -333,8 +334,11 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
         float closest[3] = {0.0f, 0.0f, 0.0f};
         dtQueryFilter const filter;
         dtPolyRef poly = 0;
+        // Straight under the bot only: the nearest polygon in a 2 yd box was a ledge on the wall of the shaft below
+        // Hadronox, and the group hung in it at z 646 instead of falling to the pool (run 1952).
         if (dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) && poly &&
-            closest[1] <= bot->GetPositionZ() + 0.5f)
+            closest[1] <= bot->GetPositionZ() + 0.5f &&
+            bot->GetExactDist2d(closest[2], closest[0]) < NAVMESH_FLOOR_UNDER)
             return;
     }
     // A floor just overhead means the bot sank into it, not that it stands in the air: put it back on top. The
