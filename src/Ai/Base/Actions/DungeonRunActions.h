@@ -30,6 +30,7 @@ public:
 
 private:
     static constexpr float PULL_DISTANCE = 25.0f;       // attack the pack from here
+    static constexpr float PULL_APPROACH_MARGIN = 5.0f; // walking at a pack, stop this far inside pull range
     static constexpr float GROUP_RANGE = 35.0f;         // everyone this close before moving on
     static constexpr float READY_HEALTH_PCT = 60.0f;
     static constexpr float READY_MANA_PCT = 40.0f;

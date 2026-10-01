@@ -6,6 +6,8 @@
 
 #include "DungeonRunActions.h"
 
+#include <cmath>
+
 #include "DungeonRouteMgr.h"
 #include "LastMovementValue.h"
 #include "PositionValue.h"
@@ -227,8 +229,22 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
                   bot->GetName(), index, item->along, name, _approachBest);
         return false;
     }
-    bool const moved = toTarget ? MoveTo(bot->GetMapId(), destination.GetPositionX(), destination.GetPositionY(),
-                                         destination.GetPositionZ(), false, false, false, false,
+    // Straight at a pack, stop short of it and pull on the next tick: walking at the pack member itself took the
+    // leader from 36 yd to 15 yd of the mage hunters past Telestra within one tick, inside their aggro (run 1925).
+    // Out of sight there, the next tick walks on at the member.
+    Position approach = destination;
+    if (toTarget && target && distance > pullDistance)
+    {
+        float const angle = target->GetAngle(bot);
+        float const shortOf = pullDistance - PULL_APPROACH_MARGIN;
+        float x = target->GetPositionX() + shortOf * std::cos(angle);
+        float y = target->GetPositionY() + shortOf * std::sin(angle);
+        float z = target->GetPositionZ();
+        bot->UpdateAllowedPositionZ(x, y, z);
+        approach.Relocate(x, y, z);
+    }
+    bool const moved = toTarget ? MoveTo(bot->GetMapId(), approach.GetPositionX(), approach.GetPositionY(),
+                                         approach.GetPositionZ(), false, false, false, false,
                                          MovementPriority::MOVEMENT_NORMAL)
                                 : MoveTo(bot->GetMapId(), next->x, next->y, next->z, false, false, false, false,
                                          MovementPriority::MOVEMENT_NORMAL);
