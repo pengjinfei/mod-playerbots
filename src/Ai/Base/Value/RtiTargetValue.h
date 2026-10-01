@@ -97,6 +97,8 @@ bool TrashCcPullInProgress(PlayerbotAI* botAI);
 Unit* TrashCcCastTarget(PlayerbotAI* botAI, Player* bot, TrashCcRole const& role);
 // 坦克此刻需不需要（重新）打标记：开怪前有信号且分工没配齐；战斗中骷髅目标已死。
 bool TrashCcMarkNeeded(PlayerbotAI* botAI, Player* bot);
+// The bot or a group member near it is in combat: the trash fight is still on.
+bool TrashCcGroupInCombat(Player* bot);
 // 该 bot 第一次看到这个图标当前目标以来过了多少毫秒（没有目标返回 0）。
 uint32 TrashCcIconAgeMs(PlayerbotAI* botAI, uint8 icon);
 // 拉怪目标周围成组的怪（含它本身），按 GUID 排序；不足 3 只返回空。

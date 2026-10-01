@@ -137,7 +137,7 @@ bool TrashCcMarkAction::Execute(Event /*event*/)
     if (!group)
         return false;
 
-    return bot->IsInCombat() ? AdvanceKillOrder(group) : AssignPrePull(group);
+    return TrashCcGroupInCombat(bot) ? AdvanceKillOrder(group) : AssignPrePull(group);
 }
 
 bool TrashCcMarkAction::AssignPrePull(Group* group)

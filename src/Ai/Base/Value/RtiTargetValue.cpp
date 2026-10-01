@@ -436,12 +436,32 @@ uint32 TrashCcIconAgeMs(PlayerbotAI* botAI, uint8 icon)
     return target ? getMSTimeDiff(entry.firstSeen, now) : 0;
 }
 
+bool TrashCcGroupInCombat(Player* bot)
+{
+    if (bot->IsInCombat())
+        return true;
+    Group* group = bot->GetGroup();
+    if (!group)
+        return false;
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+    {
+        Player* member = ref->GetSource();
+        if (member && member != bot && member->IsAlive() && member->IsInCombat() &&
+            member->GetMapId() == bot->GetMapId() && bot->GetDistance(member) < 100.0f)
+            return true;
+    }
+    return false;
+}
+
 bool TrashCcMarkNeeded(PlayerbotAI* botAI, Player* bot)
 {
     if (!PlayerbotAI::IsTank(bot) || !bot->GetGroup())
         return false;
 
-    if (bot->IsInCombat())
+    // The group's fight, not the tank's: a polymorphed Strategist whose threat sat on the mage kept the mage and
+    // priest in combat for minutes after the tank had dropped out - the tank kept the pre-pull marks, the mage kept
+    // re-sheeping it, and no one ever killed it (normal Utgarde Keep, runs 1902 and 1904).
+    if (TrashCcGroupInCombat(bot))
     {
         // 战斗中：控制链拉怪进行中、骷髅目标已死/失效 → 该挪骷髅了。
         return TrashCcPullInProgress(botAI) && !TrashCcIconUnit(botAI, TRASH_CC_ICON_SKULL);
