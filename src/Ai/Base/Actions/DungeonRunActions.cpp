@@ -159,16 +159,17 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     {
         // A pack of three or more gets the trash crowd-control chain first; the leader stands still until the
         // casters have it held (see CcGateOpen). One pull attempt is counted per gate, not per waiting tick.
-        // Off the mount first: the outdoor stretch before Ingvar lets the bots ride, and every pull spell failed with
-        // "not mounted" until the boss was skipped as unpullable (normal difficulty, run 1898).
+        if (!CcGateOpen(*item, target))
+            return true;
+        // Off the mount and pull in the same tick: the outdoor stretch before Ingvar lets the bots ride, and every
+        // pull spell failed with "not mounted" until the boss was skipped as unpullable (normal, run 1898); a
+        // dismount that yielded the tick was undone by "check mount state" every time (run 1900).
         if (bot->IsMounted())
         {
             WorldPacket packet;
             bot->GetSession()->HandleCancelMountAuraOpcode(packet);
-            return true;
+            bot->RemoveAurasByType(SPELL_AURA_MOUNTED);
         }
-        if (!CcGateOpen(*item, target))
-            return true;
         Unit* pullUnit = TrashCcIconUnit(botAI, TRASH_CC_SKULL_ICON);
         if (!pullUnit || !pullUnit->IsAlive())
             pullUnit = target;
