@@ -109,6 +109,17 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     GameObject* object = nullptr;
     uint32 index = 0;
     DungeonRouteItem const* item = NextItem(*route, target, object, index);
+    // The boss is there but cannot be attacked yet: wait for it where the route says.
+    if (item && item->boss && !target)
+    {
+        if (item->hold && bot->GetExactDist(item->holdX, item->holdY, item->holdZ) > 5.0f)
+            return MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
+                          MovementPriority::MOVEMENT_NORMAL);
+        if (TraceDue())
+            LOG_DEBUG("playerbots", "dungeon-run bot={} waiting for boss item={} to be attackable", bot->GetName(),
+                      index);
+        return false;
+    }
     if (!item || (!target && !item->object && !item->drop && item->summonEntries.empty()))
     {
         if (TraceDue())
@@ -611,6 +622,15 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
         Unit* nearest = NearestLivingMember(item);
         if (!nearest)
         {
+            // A boss alive but out of reach for now (evading home, resetting) is not cleared: Hadronox evaded, the
+            // next item was the hole in her pit, and the leader walked down into the tunnel her adds pour out of
+            // (run 1955).
+            if (item.boss && BossAlive(item))
+            {
+                target = nullptr;
+                index = i;
+                return &item;
+            }
             if (!item.summonEntries.empty())
                 _summonedDone.insert(i);
             continue;
@@ -650,6 +670,30 @@ bool DungeonRunAdvanceAction::ItemOpen(DungeonRoute const& route, uint32 index) 
         return false;
     auto const attempts = _pullAttempts.find(index);
     return attempts == _pullAttempts.end() || attempts->second < MAX_PULL_ATTEMPTS;
+}
+
+bool DungeonRunAdvanceAction::BossAlive(DungeonRouteItem const& item) const
+{
+    Map* map = bot->GetMap();
+    if (!map)
+        return false;
+    for (uint32 spawnId : item.spawnIds)
+    {
+        auto const bounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
+        for (auto itr = bounds.first; itr != bounds.second; ++itr)
+        {
+            Creature* creature = itr->second;
+            if (!creature || !creature->IsAlive())
+                continue;
+            // The boss itself, not whoever stands with it: Kolurg's room has an Alliance Commander no one fights.
+            // The spawn's own entry counts too, for a boss swapped by faction (Stoutbeard's spawn is Kolurg's).
+            CreatureData const* data = creature->GetCreatureData();
+            for (uint32 entry : item.bossEntries)
+                if (creature->GetEntry() == entry || (data && data->id == entry))
+                    return true;
+        }
+    }
+    return false;
 }
 
 Unit* DungeonRunAdvanceAction::NearestLivingMember(DungeonRouteItem const& item) const

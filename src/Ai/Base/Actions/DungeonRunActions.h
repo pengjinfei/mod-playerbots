@@ -68,6 +68,7 @@ private:
     // An object item still to be used: in sight and usable (selectable, not yet activated), or too far away to tell.
     bool PendingObject(DungeonRouteItem const& item, GameObject*& object) const;
     bool ItemOpen(DungeonRoute const& route, uint32 index) const;  // on the path and not given up on
+    bool BossAlive(DungeonRouteItem const& item) const;  // the boss creature alive, attackable or not
     Unit* NearestLivingMember(DungeonRouteItem const& item) const;  // attackable, nearest to the bot
     bool ApproachTimedOut(uint32 index, float distance);
     bool TraceDue();  // throttles the debug trace to one line per WAIT_LOG_INTERVAL_MS
