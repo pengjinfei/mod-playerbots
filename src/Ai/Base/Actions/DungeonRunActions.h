@@ -49,6 +49,8 @@ private:
     static constexpr uint32 SENT_WAIT_MS = 240000;        // longest wait for a pack the encounter sends; then pull it
     static constexpr float DROP_DEPTH = 50.0f;            // this far under a hole's rim counts as having dropped
     static constexpr float DROP_AT_RIM = 4.0f;            // this close to a drop's rim point, jump over the edge
+    static constexpr float DROP_LEDGE_HEIGHT = 20.0f;     // a member this far above the leader below a drop is stuck
+    static constexpr float DROP_LEDGE_RADIUS = 15.0f;     // ... when over the hole within this
     static constexpr float DROP_JUMP_HEIGHT = 2.0f;       // the jump lands this far above the hole's centre...
     static constexpr float DROP_JUMP_SPEED_XY = 7.0f;     // ...and gravity takes it from there
     static constexpr float DROP_JUMP_SPEED_Z = 8.0f;

@@ -336,8 +336,23 @@ bool DungeonRunAdvanceAction::PushOverDrop(DungeonRouteItem const& item, float r
     {
         Player* member = ref->GetSource();
         if (!member || member == bot || !member->IsAlive() || member->GetMapId() != bot->GetMapId() ||
-            member->GetPositionZ() < item.z - DROP_DEPTH || !GET_PLAYERBOT_AI(member))
+            !GET_PLAYERBOT_AI(member))
             continue;
+        if (member->GetPositionZ() < item.z - DROP_DEPTH)
+        {
+            // Caught on a web strand partway down, 2 yd off the line the others fell (run 1958: a member stood at
+            // z 380 over the pool at 288 and the leader waited for it until the run stalled). Once the leader is
+            // down, a member well above it over the hole steps sideways onto that line and falls the rest.
+            bool const leaderDown = bot->GetPositionZ() < item.z - DROP_DEPTH;
+            if (!leaderDown || member->GetPositionZ() < bot->GetPositionZ() + DROP_LEDGE_HEIGHT ||
+                member->GetExactDist2d(item.x, item.y) > DROP_LEDGE_RADIUS)
+                continue;
+            above = true;
+            if (member->movespline->Finalized())
+                member->GetMotionMaster()->MoveJump(item.x, item.y, member->GetPositionZ() + 1.0f, DROP_JUMP_SPEED_XY,
+                                                    DROP_JUMP_SPEED_Z);
+            continue;
+        }
         above = true;
         // Mid-jump or mid-walk to the rim: let it finish; a new order every tick restarted the jump.
         if (member->GetExactDist2d(item.x, item.y) > range || !member->movespline->Finalized())
