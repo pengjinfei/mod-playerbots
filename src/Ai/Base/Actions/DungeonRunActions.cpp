@@ -431,21 +431,18 @@ bool DungeonRunAdvanceAction::CcGateOpen(DungeonRouteItem const& item, Unit* nea
 
 bool DungeonRunAdvanceAction::ApproachTimedOut(uint32 index, float distance)
 {
-    // Only walking time counts, summed over the ticks spent walking at it: a fight or a rest in between neither
-    // counts nor restarts the clock. Restarting it on every pause kept a leader walking at a Spiritualist behind a
-    // wall for eight minutes, its group resting between tries (normal Utgarde Keep, run 1902).
+    // Only continuous walking counts: a fight or a rest in between starts the clock again.
     uint32 const now = getMSTime();
-    uint32 const step = std::min<uint32>(getMSTimeDiff(_lastApproachTickMs, now), 2000);
+    bool const resumed = getMSTimeDiff(_lastApproachTickMs, now) > 5000;
     _lastApproachTickMs = now;
-    if (index != _approachItem || distance < _approachBest - 2.0f)
+    if (resumed || index != _approachItem || distance < _approachBest - 2.0f)
     {
         _approachItem = index;
         _approachBest = distance;
-        _approachWalkedMs = 0;
+        _approachSinceMs = now;
         return false;
     }
-    _approachWalkedMs += step;
-    return _approachWalkedMs >= APPROACH_TIMEOUT_MS;
+    return getMSTimeDiff(_approachSinceMs, now) >= APPROACH_TIMEOUT_MS;
 }
 
 bool DungeonRunAdvanceAction::TraceDue()
