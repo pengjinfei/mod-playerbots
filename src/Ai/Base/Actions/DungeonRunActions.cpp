@@ -57,8 +57,16 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // Waiting yields the tick: eating, drinking, resurrecting and rebuffing are other actions.
     std::string waitReason;
     Player* dead = nullptr;
-    if (!GroupReady(waitReason, dead))
+    Player* fighting = nullptr;
+    if (!GroupReady(waitReason, dead, fighting))
     {
+        // Go to a member something is fighting out of the leader's sight: the Azure Magus caught the priest 16 yd off
+        // the entrance corridor while the others had walked on 40 yd round the corner, and the leader waited there
+        // for eight minutes while the priest fought him alone (run 1936).
+        if (!dead && fighting && fighting != bot &&
+            (bot->GetDistance(fighting) > 10.0f || !bot->IsWithinLOSInMap(fighting)))
+            MoveTo(fighting->GetMapId(), fighting->GetPositionX(), fighting->GetPositionY(), fighting->GetPositionZ(),
+                   false, false, false, false, MovementPriority::MOVEMENT_NORMAL);
         // Take the group to a dead member so the healers are in range and in sight of the body: a rogue who died
         // on the ledge above the ramp lay 34 yd away and 11 yd up and was never resurrected (run 1810).
         // A member who released its spirit stands wherever its ghost is; the body is what gets resurrected.
@@ -508,7 +516,7 @@ void DungeonRunAdvanceAction::UpdateProgress(DungeonRoute const& route)
         SET_AI_VALUE(float, "dungeon run progress", best->along);
 }
 
-bool DungeonRunAdvanceAction::GroupReady(std::string& reason, Player*& dead) const
+bool DungeonRunAdvanceAction::GroupReady(std::string& reason, Player*& dead, Player*& fighting) const
 {
     Group* group = bot->GetGroup();
     if (!group)
@@ -526,6 +534,8 @@ bool DungeonRunAdvanceAction::GroupReady(std::string& reason, Player*& dead) con
             reason = Acore::StringFormat("{} {}", member->GetName(), member->IsAlive() ? "in combat" : "dead");
             if (!member->IsAlive())
                 dead = member;
+            else
+                fighting = member;
         }
         // Sitting to eat or drink: a healer still drinking at 72% mana was left 36 yd behind and the tank fought the
         // next pack alone (run 1927).
