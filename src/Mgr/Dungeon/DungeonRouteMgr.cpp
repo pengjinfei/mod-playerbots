@@ -134,6 +134,7 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
         item.radius = Acore::StringTo<float>(Field(tokens, "radius")).value_or(0.0f);
         item.side = Field(tokens, "side") == "1";
         item.sent = Field(tokens, "sent") == "1";
+        item.noCc = Field(tokens, "cc") == "0";
         item.pullDistance = Acore::StringTo<float>(Field(tokens, "pull")).value_or(0.0f);
         item.spawnIds = ParseIdList(Field(tokens, "spawns"));
         item.object = tokens[0] == "object";

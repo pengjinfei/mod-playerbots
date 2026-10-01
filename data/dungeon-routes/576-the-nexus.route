@@ -35,9 +35,9 @@ node 399 378.8 160.6 -34.2
 pack 407 389.5 148.7 -34.9 radius=0.0 side=0 elite=1 spawns=126666 hold=312.7,149.3,-19.3 pull=35 # 1xAlliance Ranger
 pack 415 392.7 168.3 -34.9 radius=3.3 side=0 elite=2 spawns=126664,126667 hold=312.7,149.3,-19.3 pull=35 # 1xAlliance Berserker, 1xAlliance Ranger
 node 415 393.6 166.7 -34.5
-pack 431 407.2 180.4 -34.9 radius=3.0 side=0 elite=2 spawns=126665,126668 hold=312.7,149.3,-19.3 pull=35 from=385.0,164.0,-35.0 # 1xAlliance Ranger, 1xAlliance Cleric
+pack 431 407.2 180.4 -34.9 radius=3.0 side=0 elite=2 spawns=126665,126668 hold=312.7,149.3,-19.3 pull=35 from=385.0,164.0,-35.0 cc=0 # 1xAlliance Ranger, 1xAlliance Cleric
 node 431 408.4 172.8 -34.5
-boss 447 424.6 187.7 -34.9 radius=4.3 entry=26796 spawns=4764,116016,116017,247105 hold=312.7,149.3,-19.3 pull=35 from=400.0,174.0,-35.0 # 1xCommander Stoutbeard, 2xAlliance Cleric, 1xAlliance Commander
+boss 447 424.6 187.7 -34.9 radius=4.3 entry=26796 spawns=4764,116016,116017,247105 hold=312.7,149.3,-19.3 pull=35 from=400.0,174.0,-35.0 cc=0 # 1xCommander Stoutbeard, 2xAlliance Cleric, 1xAlliance Commander
 node 447 423.6 177.5 -34.5
 pack 463 445.5 178.4 -34.9 radius=5.6 side=0 elite=3 spawns=115899,115900,115933 hold=312.7,149.3,-19.3 pull=35 # 2xAlliance Berserker, 1xAlliance Ranger
 node 463 438.8 172.9 -34.5

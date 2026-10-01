@@ -173,7 +173,9 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     {
         // A pack of three or more gets the trash crowd-control chain first; the leader stands still until the
         // casters have it held (see CcGateOpen). One pull attempt is counted per gate, not per waiting tick.
-        if (!CcGateOpen(*item, target))
+        // Not where the sapper is seen first: the rogue walking up to Kolurg's escort was hit at 7 yd and the whole
+        // group came while the tank stood at the doorway spot, so nothing was pulled back round the bend (run 1929).
+        if (!item->noCc && !CcGateOpen(*item, target))
             return true;
         // Off the mount and pull in the same tick: the outdoor stretch before Ingvar lets the bots ride, and every
         // pull spell failed with "not mounted" until the boss was skipped as unpullable (normal, run 1898); a
