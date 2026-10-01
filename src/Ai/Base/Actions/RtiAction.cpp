@@ -116,6 +116,8 @@ namespace
 {
     // 变形术 / 妖术的施法距离（不含 combat reach）。
     constexpr float kCcSpellRange = 30.0f;
+    constexpr float kSapStandOff = 11.0f;   // TrashCcSapAction 停步距离
+    constexpr float kSapClearance = 12.0f;  // 站位离同组其他怪至少这么远才派闷棍
     // 控制迟迟不落地时，第一个控制图标打上多久后照样标骷髅（要小于编排层的等待上限）。
     constexpr uint32 kSkullDeadlineMs = 12000;
 }
@@ -192,6 +194,20 @@ bool TrashCcMarkAction::AssignPrePull(Group* group)
 
             if (icon == TRASH_CC_ICON_CROSS)
             {
+                // 盗贼要站到目标 11 码处才闷得到；那个位置离同组别的怪不到 12 码就会先被它看穿：
+                // 魔枢英雄紧凑的怪组闷棍 4 场只落地 1 次，每次被发现都是整组冲上来（run 1929 科卢尔格、run 1933 水晶守护者）。
+                float const angle = creature->GetAngle(caster);
+                float const standX = creature->GetPositionX() + kSapStandOff * std::cos(angle);
+                float const standY = creature->GetPositionY() + kSapStandOff * std::sin(angle);
+                bool seen = false;
+                for (Creature* other : pack)
+                    if (other != creature && other->GetExactDist2d(standX, standY) < kSapClearance)
+                    {
+                        seen = true;
+                        break;
+                    }
+                if (seen)
+                    continue;
                 if (!pick || caster->GetDistance(creature) < caster->GetDistance(pick))
                     pick = creature;
                 continue;
