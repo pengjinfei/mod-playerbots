@@ -218,7 +218,10 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     }
     // Past the last node before the pack, or the pack sits off the skeleton (a forge around a corner): walk to the
     // pack itself on the navmesh. MoveNear only picks points in sight and fails for a target behind a wall.
-    bool const toTarget = !next || next->along > item->along || bot->GetDistance(next->x, next->y, next->z) < 3.0f;
+    // A node already inside pull range of the pack is walked at as the pack itself, so the stop short below holds:
+    // node 630 lies 16 yd from Telestra's first mage-hunter group and the leader walked into it (run 1927).
+    bool const toTarget = !next || next->along > item->along || bot->GetDistance(next->x, next->y, next->z) < 3.0f ||
+                          (target && target->GetExactDist(next->x, next->y, next->z) < pullDistance);
     // Give up on a pack (never a boss) the leader cannot get closer to while walking straight at it - an unreachable
     // ledge: 45 s of continuous walking without gaining 2 yd. Walking the route nodes does not count; a leader that
     // cannot follow the route is a route problem and the stall watchdog reports it (run 1784 skipped Skarvald).
@@ -522,6 +525,11 @@ bool DungeonRunAdvanceAction::GroupReady(std::string& reason, Player*& dead) con
             if (!member->IsAlive())
                 dead = member;
         }
+        // Sitting to eat or drink: a healer still drinking at 72% mana was left 36 yd behind and the tank fought the
+        // next pack alone (run 1927).
+        else if (member->IsSitState() &&
+                 (member->HasAuraType(SPELL_AURA_MOD_POWER_REGEN) || member->HasAuraType(SPELL_AURA_MOD_REGEN)))
+            reason = Acore::StringFormat("{} eating or drinking", member->GetName());
         else if (member != bot && bot->GetDistance(member) > GROUP_RANGE)
             reason = Acore::StringFormat("{} {:.0f} yd away", member->GetName(), bot->GetDistance(member));
         else if (member->GetHealthPct() < READY_HEALTH_PCT)
