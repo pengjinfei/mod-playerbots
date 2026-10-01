@@ -12,7 +12,9 @@ WotlkDungeonNexStrategy::WotlkDungeonNexStrategy(PlayerbotAI* ai) : TrashCcPullS
 {
     // 守卫组里的治疗小怪，控制优先分给它们（普通/英雄 entry）。
     TrashCcRegisterHealerEntries({ NPC_CRYSTALLINE_TENDER, NPC_CRYSTALLINE_TENDER_HEROIC,
-                                   NPC_MAGE_HUNTER_INITIATE, NPC_MAGE_HUNTER_INITIATE_HEROIC });
+                                   NPC_MAGE_HUNTER_INITIATE, NPC_MAGE_HUNTER_INITIATE_HEROIC,
+                                   NPC_HORDE_CLERIC, NPC_HORDE_CLERIC_HEROIC,
+                                   NPC_ALLIANCE_CLERIC, NPC_ALLIANCE_CLERIC_HEROIC });
 }
 
 void WotlkDungeonNexStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)

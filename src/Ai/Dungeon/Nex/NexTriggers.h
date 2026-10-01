@@ -47,6 +47,12 @@ enum NexusIDs
     NPC_CRYSTALLINE_TENDER_HEROIC   = 30525,
     NPC_MAGE_HUNTER_INITIATE        = 26728,  // 瞬发单奶：恢复(25058)，定义上无法打断
     NPC_MAGE_HUNTER_INITIATE_HEROIC = 30478,
+    // Commander Kolurg / Stoutbeard's squad (Horde or Alliance by the group's faction): the clerics shield and
+    // flash-heal the others.
+    NPC_HORDE_CLERIC                = 26803,
+    NPC_HORDE_CLERIC_HEROIC         = 30497,
+    NPC_ALLIANCE_CLERIC             = 26805,
+    NPC_ALLIANCE_CLERIC_HEROIC      = 30498,
 };
 
 // Anomalus 的混乱空间裂隙不在仇恨表里，AI_VALUE2("find target") 找不到它，

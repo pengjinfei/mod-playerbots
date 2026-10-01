@@ -32,18 +32,18 @@ node 367 347.5 156.2 -29.1
 pack 383 364.2 152.6 -34.6 radius=1.6 side=0 elite=2 spawns=126455,126474 # 1xMage Hunter Ascendant, 1xMage Slayer
 node 383 363.4 157.1 -33.9
 node 399 378.8 160.6 -34.2
-pack 407 389.5 148.7 -34.9 radius=0.0 side=0 elite=1 spawns=126666 # 1xAlliance Ranger
-pack 415 392.7 168.3 -34.9 radius=3.3 side=0 elite=2 spawns=126664,126667 # 1xAlliance Berserker, 1xAlliance Ranger
+pack 407 389.5 148.7 -34.9 radius=0.0 side=0 elite=1 spawns=126666 hold=347.5,156.2,-29.1 pull=35 # 1xAlliance Ranger
+pack 415 392.7 168.3 -34.9 radius=3.3 side=0 elite=2 spawns=126664,126667 hold=347.5,156.2,-29.1 pull=35 # 1xAlliance Berserker, 1xAlliance Ranger
 node 415 393.6 166.7 -34.5
-pack 431 407.2 180.4 -34.9 radius=3.0 side=0 elite=2 spawns=126665,126668 # 1xAlliance Ranger, 1xAlliance Cleric
+pack 431 407.2 180.4 -34.9 radius=3.0 side=0 elite=2 spawns=126665,126668 hold=347.5,156.2,-29.1 pull=35 # 1xAlliance Ranger, 1xAlliance Cleric
 node 431 408.4 172.8 -34.5
-boss 447 424.6 187.7 -34.9 radius=4.3 entry=26796 spawns=4764,116016,116017,247105 # 1xCommander Stoutbeard, 2xAlliance Cleric, 1xAlliance Commander
+boss 447 424.6 187.7 -34.9 radius=4.3 entry=26796 spawns=4764,116016,116017,247105 hold=347.5,156.2,-29.1 pull=35 # 1xCommander Stoutbeard, 2xAlliance Cleric, 1xAlliance Commander
 node 447 423.6 177.5 -34.5
-pack 463 445.5 178.4 -34.9 radius=5.6 side=0 elite=3 spawns=115899,115900,115933 # 2xAlliance Berserker, 1xAlliance Ranger
+pack 463 445.5 178.4 -34.9 radius=5.6 side=0 elite=3 spawns=115899,115900,115933 hold=347.5,156.2,-29.1 pull=35 # 2xAlliance Berserker, 1xAlliance Ranger
 node 463 438.8 172.9 -34.5
 node 479 453.6 166.7 -34.5
-pack 487 460.8 162.7 -34.9 radius=0.0 side=0 elite=1 spawns=115965 # 1xAlliance Ranger
-pack 495 461.0 147.6 -34.9 radius=0.0 side=0 elite=1 spawns=115952 # 1xAlliance Ranger
+pack 487 460.8 162.7 -34.9 radius=0.0 side=0 elite=1 spawns=115965 hold=347.5,156.2,-29.1 pull=35 # 1xAlliance Ranger
+pack 495 461.0 147.6 -34.9 radius=0.0 side=0 elite=1 spawns=115952 hold=347.5,156.2,-29.1 pull=35 # 1xAlliance Ranger
 node 495 468.3 160.5 -34.4
 node 511 483.7 156.8 -33.9
 pack 515 485.7 152.2 -33.9 radius=3.1 side=0 elite=3 spawns=126461,126478,126479 # 1xMage Hunter Ascendant, 2xMage Slayer
@@ -206,6 +206,6 @@ pack 2502 288.0 -19.7 -16.6 radius=0.0 side=0 elite=1 spawns=126449 # 1xAzure Wa
 node 2510 301.4 -8.9 -15.4
 node 2514 301.5 -5.5 -15.5
 boss 2514 301.5 -5.5 -15.5 radius=0.0 entry=26723 spawns=126453 # 1xKeristrasza
-object 2505 281.9 -25.5 -16.9 entry=188526 # Telestra's Containment Sphere
-object 2506 322.2 14.7 -16.8 entry=188527 # Anomalus' Containment Sphere
-object 2507 281.8 15.2 -16.6 entry=188528 # Ormorok's Containment Sphere
+object 2505 281.9 -25.5 -16.9 entry=188526  # Telestra's Containment Sphere
+object 2506 322.2 14.7 -16.8 entry=188527  # Anomalus' Containment Sphere
+object 2507 281.8 15.2 -16.6 entry=188528  # Ormorok's Containment Sphere

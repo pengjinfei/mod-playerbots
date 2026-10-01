@@ -270,6 +270,15 @@ bool TrashCcMarkAction::AssignPrePull(Group* group)
 
 bool TrashCcMarkAction::AdvanceKillOrder(Group* group)
 {
+    auto const preference = [](Unit* unit)
+    { return unit->ToCreature() ? TrashCcPreference(unit->ToCreature()) == 0 ? 0 : 1 : 1; };
+    auto const Ranks = [&](Unit* a, Unit* b)
+    {
+        int const pa = preference(a);
+        int const pb = preference(b);
+        return pa != pb ? pa < pb : bot->GetDistance(a) < bot->GetDistance(b);
+    };
+
     // 先找活着的、没有控制图标的攻击者，离坦克最近的优先。
     Unit* best = nullptr;
     for (ObjectGuid const& guid : AI_VALUE(GuidVector, "attackers"))
@@ -286,7 +295,9 @@ bool TrashCcMarkAction::AdvanceKillOrder(Group* group)
         if (ccIcon)
             continue;
 
-        if (!best || bot->GetDistance(unit) < bot->GetDistance(best))
+        // Healers first, as players kill them (a cleric's shields and flash heals keep the rest alive), then by
+        // distance to the tank.
+        if (!best || Ranks(unit, best))
             best = unit;
     }
 
