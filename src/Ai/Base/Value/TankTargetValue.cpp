@@ -65,6 +65,12 @@ public:
         if (!attacker->IsAlive())
             return;
 
+        // A passive unit that attacks no one can never be held, so "not held yet" ranked it above everything: the
+        // tank spent 90% of Amanitar's fight on her mushrooms, which respawn in place (Ahn'kahet heroic, 2026-09-25).
+        if (Creature* creature = attacker->ToCreature())
+            if (creature->HasReactState(REACT_PASSIVE) && !creature->GetVictim())
+                return;
+
         if (!result || IsBetter(attacker, result))
             result = attacker;
     }
