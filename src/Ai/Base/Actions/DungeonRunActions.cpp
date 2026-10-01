@@ -6,6 +6,7 @@
 
 #include "DungeonRunActions.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "DungeonRouteMgr.h"
@@ -252,6 +253,19 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         float const shortOf = pullDistance - PULL_APPROACH_MARGIN;
         float x = target->GetPositionX() + shortOf * std::cos(angle);
         float y = target->GetPositionY() + shortOf * std::sin(angle);
+        // Short of every member, not only the one walked at: a spread pack's steward stood 5 yd nearer the leader,
+        // 15 yd from the stop, and pulled the pack before the leader did (run 1939).
+        float deficit = 0.0f;
+        if (Map* map = bot->GetMap())
+            for (uint32 spawnId : item->spawnIds)
+            {
+                auto const bounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
+                for (auto itr = bounds.first; itr != bounds.second; ++itr)
+                    if (itr->second && itr->second->IsAlive())
+                        deficit = std::max(deficit, shortOf - itr->second->GetExactDist2d(x, y));
+            }
+        x += deficit * std::cos(angle);
+        y += deficit * std::sin(angle);
         float z = target->GetPositionZ();
         bot->UpdateAllowedPositionZ(x, y, z);
         approach.Relocate(x, y, z);
