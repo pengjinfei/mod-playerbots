@@ -189,6 +189,25 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // it: Krik'thir's first watcher group aggroed while the leader was still closing in, before any crowd control.
     float const pullDistance = atSpot ? PULL_FROM_SPOT_DISTANCE
                                : item->pullDistance > 0.0f ? item->pullDistance : PULL_DISTANCE;
+    // At the spot with the pack out of reach: wait there, as players wait in a doorway for a patrol to come by. Walking
+    // after it took the tank past the next squad (Ahn'kahet's first hall, run 1965), and a step off the spot sent the
+    // leader straight back to it. A pack that never comes is walked to after a while.
+    if (atSpot && !(bot->GetDistance(target) <= pullDistance && bot->IsWithinLOSInMap(target)))
+    {
+        uint32 const now = getMSTime();
+        if (_spotItem != index)
+        {
+            _spotItem = index;
+            _spotSinceMs = now;
+        }
+        if (getMSTimeDiff(_spotSinceMs, now) < SPOT_WAIT_MS)
+        {
+            if (TraceDue())
+                LOG_DEBUG("playerbots", "dungeon-run bot={} waiting at the pull spot of item={} for {} dist={:.1f}",
+                          bot->GetName(), index, target->GetName(), bot->GetDistance(target));
+            return false;
+        }
+    }
     if (target && bot->GetDistance(target) <= pullDistance && bot->IsWithinLOSInMap(target))
     {
         // A pack of three or more gets the trash crowd-control chain first; the leader stands still until the

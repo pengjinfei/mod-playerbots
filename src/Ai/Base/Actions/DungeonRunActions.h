@@ -48,6 +48,7 @@ private:
     static constexpr uint32 MAX_USE_ATTEMPTS = 5;         // uses of one object before it is skipped
     static constexpr uint32 SENT_WAIT_MS = 240000;        // longest wait for a pack the encounter sends; then pull it
     static constexpr float DROP_DEPTH = 50.0f;            // this far under a hole's rim counts as having dropped
+    static constexpr uint32 SPOT_WAIT_MS = 60000;         // at a pull spot, wait this long for a pack out of reach
     static constexpr float DROP_AT_RIM = 4.0f;            // this close to a drop's rim point, jump over the edge
     static constexpr float DROP_LEDGE_HEIGHT = 20.0f;     // a member this far above the leader below a drop is stuck
     static constexpr float DROP_LEDGE_RADIUS = 15.0f;     // ... when over the hole within this
@@ -91,6 +92,8 @@ private:
     uint32 _dropItem = UINT32_MAX;  // hole the leader jumped down while members may still be above
     uint32 _sentItem = UINT32_MAX;  // sent pack being waited for, and since when
     uint32 _sentSinceMs = 0;
+    uint32 _spotItem = UINT32_MAX;    // the item waited for at its pull spot
+    uint32 _spotSinceMs = 0;
     ObjectGuid _ccGateTarget;
     uint32 _ccGateSinceMs = 0;
 };
