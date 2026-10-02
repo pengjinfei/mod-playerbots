@@ -51,7 +51,10 @@ bool AvoidFlameSphereAction::Execute(Event /*event*/)
     float x, y, z;
     if (!FlameSphereSafePoint(bot, x, y, z))
         return false;
-    return MoveTo(bot->GetMapId(), x, y, z, false, false, false, true, MovementPriority::MOVEMENT_FORCED);
+    // A straight step on Taldaram's platform: it is a game object the navmesh does not have, and every path search
+    // to the safe side failed there (run 1977).
+    bot->GetMotionMaster()->MovePoint(0, x, y, bot->GetPositionZ(), FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
+    return true;
 }
 
 bool AvoidShadowCrashAction::Execute(Event /*event*/)

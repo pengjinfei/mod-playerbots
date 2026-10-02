@@ -9,6 +9,7 @@
 #include "Playerbots.h"
 #include "MoveSpline.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 
@@ -46,10 +47,33 @@ bool FlameSphereSafePoint(Player* bot, float& x, float& y, float& z)
     return false;
 }
 
+// On a moving sphere's way (from where it is to where it walks), or within reach of it.
+static bool OnFlameSpherePath(Player* bot)
+{
+    for (uint32 entry : {NPC_FLAME_SPHERE_1, NPC_FLAME_SPHERE_2, NPC_FLAME_SPHERE_3})
+    {
+        Creature* sphere = bot->FindNearestCreature(entry, TALDARAM_SPHERE_SIGHT);
+        if (!sphere || sphere->movespline->Finalized())
+            continue;
+        G3D::Vector3 const to = sphere->movespline->FinalDestination();
+        float const ax = sphere->GetPositionX(), ay = sphere->GetPositionY();
+        float const dx = to.x - ax, dy = to.y - ay;
+        float const length2 = dx * dx + dy * dy;
+        float t = length2 > 0.0f ? ((bot->GetPositionX() - ax) * dx + (bot->GetPositionY() - ay) * dy) / length2 : 0.0f;
+        t = std::clamp(t, 0.0f, 1.0f);
+        if (bot->GetExactDist2d(ax + t * dx, ay + t * dy) < TALDARAM_SPHERE_PATH_WIDTH)
+            return true;
+    }
+    return false;
+}
+
 bool TaldaramFlameSphereTrigger::IsActive()
 {
     float x, y, z;
-    return FlameSphereSafePoint(bot, x, y, z) && bot->GetExactDist2d(x, y) > 3.0f;
+    if (!FlameSphereSafePoint(bot, x, y, z) || bot->GetExactDist2d(x, y) <= 3.0f)
+        return false;
+    // The tank takes Taldaram there and melee go with him; casters only step out of a sphere's way and go on.
+    return botAI->IsTank(bot) || botAI->IsMelee(bot) || OnFlameSpherePath(bot);
 }
 
 bool NadoxGuardianTrigger::IsActive()
