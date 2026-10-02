@@ -6,6 +6,8 @@
 
 #include "BattleGroundTactics.h"
 #include "Chat.h"
+#include "DungeonRouteMgr.h"
+#include "PlayerbotAIConfig.h"
 #include "GuildTaskMgr.h"
 #include "PerfMonitor.h"
 #include "PlayerbotMgr.h"
@@ -32,6 +34,10 @@ public:
             {"unlink", HandleUnlinkAccountCommand, SEC_PLAYER, Console::No},
         };
 
+        static ChatCommandTable playerbotsRoutesCommandTable = {
+            {"reload", HandleRoutesReloadCommand, SEC_ADMINISTRATOR, Console::Yes},
+        };
+
         static ChatCommandTable playerbotsCommandTable = {
             {"bot", HandlePlayerbotCommand, SEC_PLAYER, Console::No},
             {"gtask", HandleGuildTaskCommand, SEC_GAMEMASTER, Console::Yes},
@@ -39,6 +45,7 @@ public:
             {"rndbot", HandleRandomPlayerbotCommand, SEC_GAMEMASTER, Console::Yes},
             {"debug", playerbotsDebugCommandTable},
             {"account", playerbotsAccountCommandTable},
+            {"routes", playerbotsRoutesCommandTable},
         };
 
         static ChatCommandTable commandTable = {
@@ -46,6 +53,15 @@ public:
         };
 
         return commandTable;
+    }
+
+    // Re-read the dungeon routes after editing a .route file, without a restart. Only while no bot runs a route: the
+    // leaders read the routes from their map threads.
+    static bool HandleRoutesReloadCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        DungeonRouteMgr::instance().Load(sPlayerbotAIConfig.dungeonRouteDir);
+        handler->PSendSysMessage("Dungeon routes reloaded from '{}'", sPlayerbotAIConfig.dungeonRouteDir);
+        return true;
     }
 
     static bool HandlePlayerbotCommand(ChatHandler* handler, char const* args)

@@ -30,6 +30,19 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     if (!route)
         return false;
 
+    // Joined part way along the route (players who brought the group there, a test started at a later stretch): go
+    // on from the nearest node on the leader's floor; what lies behind it is not walked back to.
+    if (!_started)
+    {
+        _started = true;
+        _startAlong = StartAlong(*route);
+        if (_startAlong > 0.0f)
+        {
+            SET_AI_VALUE(float, "dungeon run progress", _startAlong);
+            LOG_DEBUG("playerbots", "dungeon-run bot={} joins the route at {:.0f} yd", bot->GetName(), _startAlong);
+        }
+    }
+
     UpdateProgress(*route);
     // The pack the crowd-control gate pinned is done: stop signalling a pending pull to the trash-cc strategy.
     ObjectGuid const pinned = AI_VALUE(ObjectGuid, "pull target");
@@ -558,6 +571,25 @@ bool DungeonRunAdvanceAction::TraceDue()
     return true;
 }
 
+float DungeonRunAdvanceAction::StartAlong(DungeonRoute const& route) const
+{
+    DungeonRouteNode const* best = nullptr;
+    float bestDistance = START_NODE_RANGE;
+    for (DungeonRouteNode const& node : route.nodes)
+    {
+        if (std::fabs(node.z - bot->GetPositionZ()) > 8.0f)
+            continue;
+        float const distance = bot->GetDistance(node.x, node.y, node.z);
+        if (distance < bestDistance)
+        {
+            best = &node;
+            bestDistance = distance;
+        }
+    }
+    // At the entrance the route starts as usual.
+    return best && best->along > START_AT_ENTRANCE ? best->along : 0.0f;
+}
+
 void DungeonRunAdvanceAction::UpdateProgress(DungeonRoute const& route)
 {
     float progress = AI_VALUE(float, "dungeon run progress");
@@ -628,7 +660,7 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
     for (uint32 i = 0; i < route.items.size(); ++i)
     {
         DungeonRouteItem const& item = route.items[i];
-        if (!ItemOpen(route, i))
+        if (!ItemOpen(route, i) || item.along < _startAlong)
             continue;
         if (item.object)
         {
