@@ -45,13 +45,13 @@ bool AttackJedogaVolunteerAction::Execute(Event /*event*/)
     return Attack(target);
 }
 
-// Step out of a flame sphere's way, as players do: they move out from Taldaram slowly in three directions.
+// Out of the flame spheres' way, as players do: to the side none of them walks to, until they are gone.
 bool AvoidFlameSphereAction::Execute(Event /*event*/)
 {
-    Unit* sphere = NearestFlameSphere(bot, TALDARAM_SPHERE_KEEP_AWAY);
-    if (!sphere)
+    float x, y, z;
+    if (!FlameSphereSafePoint(bot, x, y, z))
         return false;
-    return MoveAway(sphere, TALDARAM_SPHERE_KEEP_AWAY - bot->GetDistance(sphere) + 3.0f);
+    return MoveTo(bot->GetMapId(), x, y, z, false, false, false, true, MovementPriority::MOVEMENT_FORCED);
 }
 
 bool AvoidShadowCrashAction::Execute(Event /*event*/)

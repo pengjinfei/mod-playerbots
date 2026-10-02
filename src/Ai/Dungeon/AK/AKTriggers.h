@@ -46,10 +46,16 @@ public:
     bool IsActive() override;
 };
 
-// The nearest of Taldaram's flame spheres within this of the bot. Their burn (59509 on heroic) killed four of five
-// standing together in three spheres; the generic avoid aoe does not see them (Ahn'kahet, runs 1970/1971).
-constexpr float TALDARAM_SPHERE_KEEP_AWAY = 9.0f;
+// Taldaram's flame spheres spawn on him; one then walks 25 yd towards a target, the other two at +-90 degrees to
+// it. Their burn (59509 on heroic) killed four of five standing together in them (Ahn'kahet, runs 1970/1971/1976);
+// stepping away from the nearest one did not hold, melee walked straight back to the boss. The side opposite the
+// first sphere's way is clear: everyone waits there until they are gone.
+constexpr float TALDARAM_SPHERE_SIGHT = 40.0f;
+constexpr float TALDARAM_SPHERE_SAFE_DISTANCE = 12.0f;  // from where they spawned
+constexpr float TALDARAM_SPHERE_WALK = 25.0f;           // how far each walks
 Unit* NearestFlameSphere(Player* bot, float range);
+// The point to wait at while the spheres walk, or false while their way is not known yet (not moving).
+bool FlameSphereSafePoint(Player* bot, float& x, float& y, float& z);
 
 class TaldaramFlameSphereTrigger : public Trigger
 {

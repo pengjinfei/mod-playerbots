@@ -7,6 +7,10 @@
 #include "AKTriggers.h"
 #include "AiObjectContext.h"
 #include "Playerbots.h"
+#include "MoveSpline.h"
+
+#include <array>
+#include <cmath>
 
 Unit* NearestFlameSphere(Player* bot, float range)
 {
@@ -18,9 +22,34 @@ Unit* NearestFlameSphere(Player* bot, float range)
     return nearest;
 }
 
+bool FlameSphereSafePoint(Player* bot, float& x, float& y, float& z)
+{
+    // The way the spheres walk: the first one's straight from its spawn point; the others' turned back by 90 degrees.
+    static constexpr std::array<std::pair<uint32, float>, 3> spheres = {{
+        {NPC_FLAME_SPHERE_1, 0.0f}, {NPC_FLAME_SPHERE_2, -float(M_PI) / 2.0f}, {NPC_FLAME_SPHERE_3, float(M_PI) / 2.0f}}};
+    for (auto const& [entry, turn] : spheres)
+    {
+        Creature* sphere = bot->FindNearestCreature(entry, TALDARAM_SPHERE_SIGHT);
+        if (!sphere || sphere->movespline->Finalized())
+            continue;
+        // Straight walks of 25 yd (boss_prince_taldaram DATA_SPHERE_DISTANCE): the spawn point is that far back.
+        G3D::Vector3 const destination = sphere->movespline->FinalDestination();
+        float const heading = std::atan2(destination.y - sphere->GetPositionY(), destination.x - sphere->GetPositionX());
+        float const startX = destination.x - TALDARAM_SPHERE_WALK * std::cos(heading);
+        float const startY = destination.y - TALDARAM_SPHERE_WALK * std::sin(heading);
+        float const way = heading + turn;
+        x = startX + TALDARAM_SPHERE_SAFE_DISTANCE * std::cos(way + float(M_PI));
+        y = startY + TALDARAM_SPHERE_SAFE_DISTANCE * std::sin(way + float(M_PI));
+        z = sphere->GetPositionZ();
+        return true;
+    }
+    return false;
+}
+
 bool TaldaramFlameSphereTrigger::IsActive()
 {
-    return NearestFlameSphere(bot, TALDARAM_SPHERE_KEEP_AWAY) != nullptr;
+    float x, y, z;
+    return FlameSphereSafePoint(bot, x, y, z) && bot->GetExactDist2d(x, y) > 3.0f;
 }
 
 bool NadoxGuardianTrigger::IsActive()
