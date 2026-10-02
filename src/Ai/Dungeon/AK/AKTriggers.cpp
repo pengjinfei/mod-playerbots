@@ -44,6 +44,19 @@ bool FlameSphereSafePoint(Player* bot, float& x, float& y, float& z)
         z = sphere->GetPositionZ();
         return true;
     }
+    // Not moving yet: they sit where they spawned for a few seconds and burn everyone around once they set off -
+    // the group by Taldaram took 25k each in 2 s (run 1979). Straight away from them, before they move.
+    for (auto const& [entry, turn] : spheres)
+    {
+        Creature* sphere = bot->FindNearestCreature(entry, TALDARAM_SPHERE_SAFE_DISTANCE);
+        if (!sphere)
+            continue;
+        float const away = sphere->GetAngle(bot);
+        x = sphere->GetPositionX() + TALDARAM_SPHERE_SAFE_DISTANCE * std::cos(away);
+        y = sphere->GetPositionY() + TALDARAM_SPHERE_SAFE_DISTANCE * std::sin(away);
+        z = bot->GetPositionZ();
+        return true;
+    }
     return false;
 }
 
@@ -72,6 +85,13 @@ bool TaldaramFlameSphereTrigger::IsActive()
     float x, y, z;
     if (!FlameSphereSafePoint(bot, x, y, z) || bot->GetExactDist2d(x, y) <= 3.0f)
         return false;
+    // Spawned and still: everyone near them gets away.
+    bool moving = false;
+    for (uint32 entry : {NPC_FLAME_SPHERE_1, NPC_FLAME_SPHERE_2, NPC_FLAME_SPHERE_3})
+        if (Creature* sphere = bot->FindNearestCreature(entry, TALDARAM_SPHERE_SIGHT))
+            moving = moving || !sphere->movespline->Finalized();
+    if (!moving)
+        return true;
     // The tank takes Taldaram there and melee go with him; casters only step out of a sphere's way and go on.
     return botAI->IsTank(bot) || botAI->IsMelee(bot) || OnFlameSpherePath(bot);
 }
