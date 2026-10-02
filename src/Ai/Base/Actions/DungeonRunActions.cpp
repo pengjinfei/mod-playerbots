@@ -452,6 +452,9 @@ bool DungeonRunAdvanceAction::PendingObject(DungeonRouteItem const& item, GameOb
 bool DungeonRunAdvanceAction::Pull(DungeonRoute const& route, DungeonRouteItem const& item, Unit* target,
                                    float progress)
 {
+    // The pull is on: the others come again. Kept at the hold point, they stood 60 yd off while the patrol the
+    // leader pulled killed it alone (Ahn'kahet, run 1974); following, they meet the leader on its way back.
+    ReleaseGroup();
     PullStrategy* strategy = PullStrategy::Get(botAI);
     if (!strategy || strategy->HasPullStarted() || !strategy->CanDoPullAction(target))
         return Attack(target);

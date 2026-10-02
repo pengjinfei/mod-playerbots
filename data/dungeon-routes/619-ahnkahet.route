@@ -35,7 +35,7 @@ node 333 621.4 -1015.9 27.0
 pack 337 628.2 -1038.4 23.0 radius=8.0 side=0 elite=0 spawns=131954,131955,131956,131957 hold=589.9,-1020.2,37.9 pull=30 # 4xAhn'kahar Swarmer
 node 349 630.5 -1004.4 23.8
 node 365 637.1 -989.9 23.7
-pack 375 658.9 -980.6 23.1 radius=4.5 side=0 elite=3 spawns=131870,131886,131903 hold=589.9,-1020.2,37.9 pull=22 from=625.0,-1012.0,22.9 # 1xAhn'kahar Web Winder, 1xAhn'kahar Spell Flinger, 1xPlague Walker
+pack 375 658.9 -980.6 23.1 radius=4.5 side=0 elite=3 spawns=131870,131886,131903 hold=589.9,-1020.2,37.9 pull=28 from=630.0,-1025.0,22.9 # 1xAhn'kahar Web Winder, 1xAhn'kahar Spell Flinger, 1xPlague Walker
 node 381 643.7 -975.3 23.8
 pack 385 645.1 -981.6 23.0 radius=6.1 side=0 elite=4 spawns=131869,131876,131877,131885 hold=589.9,-1020.2,37.9 pull=35 from=625.0,-1005.0,22.9 # 1xAhn'kahar Web Winder, 2xAhn'kahar Slasher, 1xAhn'kahar Spell Flinger
 pack 390 718.5 -990.0 35.2 radius=10.0 side=1 elite=0 spawns=131958,131959,131960,131961,131962,131963,131964,131965 # 8xAhn'kahar Swarmer
