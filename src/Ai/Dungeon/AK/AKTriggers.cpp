@@ -133,6 +133,31 @@ bool TaldaramFlameSphereTrigger::IsActive()
     return botAI->IsTank(bot) || botAI->IsMelee(bot) || OnFlameSpherePath(bot);
 }
 
+Unit* NearestJedogaWorshipper(Player* bot)
+{
+    std::list<Creature*> worshippers;
+    bot->GetCreatureListWithEntryInGrid(worshippers, NPC_TWILIGHT_WORSHIPPER_OK, 40.0f);
+    Unit* nearest = nullptr;
+    for (Creature* worshipper : worshippers)
+    {
+        if (!worshipper->IsAlive() || !worshipper->IsInCombat() || !bot->IsValidAttackTarget(worshipper))
+            continue;
+        if (!nearest || bot->GetDistance(worshipper) < bot->GetDistance(nearest))
+            nearest = worshipper;
+    }
+    return nearest;
+}
+
+bool JedogaWorshipperTrigger::IsActive()
+{
+    if (botAI->IsTank(bot) || botAI->IsHeal(bot))
+        return false;
+    if (!AI_VALUE2(Unit*, "find target", "jedoga shadowseeker"))
+        return false;
+    Unit* worshipper = NearestJedogaWorshipper(bot);
+    return worshipper && AI_VALUE(Unit*, "current target") != worshipper;
+}
+
 bool NadoxGuardianTrigger::IsActive()
 {
     if (botAI->IsHeal(bot)) { return false; }

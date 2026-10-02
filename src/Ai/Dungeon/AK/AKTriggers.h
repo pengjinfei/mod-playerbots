@@ -25,6 +25,7 @@ enum OldKingdomIDs
 
     // Jedoga Shadowseeker
     NPC_TWILIGHT_VOLUNTEER             = 30385,
+    NPC_TWILIGHT_WORSHIPPER_OK         = 30111,  // casters she summons round her room when the fight starts
 
     // Forgotten One(s)
     SPELL_SHADOW_CRASH_N               = 60833,
@@ -65,6 +66,17 @@ class TaldaramFlameSphereTrigger : public Trigger
 {
 public:
     TaldaramFlameSphereTrigger(PlayerbotAI* ai) : Trigger(ai, "taldaram flame sphere") {}
+    bool IsActive() override;
+};
+
+// The worshippers Jedoga summons round her room join the fight casting Fireball and Flamestrike: 210k of the
+// damage taken in her fight, three times hers (runs 1993/1994). The nearest one fighting the group, for DPS.
+Unit* NearestJedogaWorshipper(Player* bot);
+
+class JedogaWorshipperTrigger : public Trigger
+{
+public:
+    JedogaWorshipperTrigger(PlayerbotAI* ai) : Trigger(ai, "jedoga worshipper") {}
     bool IsActive() override;
 };
 

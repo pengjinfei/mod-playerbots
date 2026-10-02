@@ -45,6 +45,15 @@ bool AttackJedogaVolunteerAction::Execute(Event /*event*/)
     return Attack(target);
 }
 
+// The casters first, as players kill them: Jedoga herself hits far less than ten of them casting Fireball.
+bool AttackJedogaWorshipperAction::Execute(Event /*event*/)
+{
+    Unit* worshipper = NearestJedogaWorshipper(bot);
+    if (!worshipper || AI_VALUE(Unit*, "current target") == worshipper)
+        return false;
+    return Attack(worshipper);
+}
+
 // Out of the flame spheres' way, as players do: to the side none of them walks to, until they are gone.
 bool AvoidFlameSphereAction::Execute(Event /*event*/)
 {
