@@ -1864,6 +1864,28 @@ const Movement::PointsArray MovementAction::SearchForBestPath(float x, float y, 
     bool found = false;
     modified_z = INVALID_HEIGHT;
     float tempZ = bot->GetMapHeight(x, y, z);
+    // The ground search can miss the floor the move was asked for and find one far below: at the rim of Drak'Tharon
+    // Keep's entrance pit it found the pit bottom (z -122 under a node at z 3), on the ramp past the first hall the
+    // terrain under the keep (z -41 under z 10). The shortest candidate then was the incomplete path towards that
+    // floor, the floor guard refused it as under the map, and the leader stood still (my-mac run100048/100049).
+    // Ask the navmesh for the requested height first; it projects onto the nearest polygon. Keep that path only when
+    // it is complete and ends at the requested point.
+    if (tempZ == INVALID_HEIGHT || tempZ < z - PATH_UNDER_MAP_DEPTH)
+    {
+        PathGenerator direct(bot);
+        direct.CalculatePath(x, y, z);
+        Movement::PointsArray const& points = direct.GetPath();
+        uint32 const type = direct.GetPathType();
+        if ((type & PATHFIND_NORMAL) && !(type & (PATHFIND_INCOMPLETE | PATHFIND_NOPATH)) && !points.empty())
+        {
+            G3D::Vector3 const& end = points.back();
+            if (std::hypot(end.x - x, end.y - y) < 3.0f && std::abs(end.z - z) < 5.0f)
+            {
+                modified_z = end.z;
+                return points;
+            }
+        }
+    }
     PathGenerator gen(bot);
     gen.CalculatePath(x, y, tempZ);
     Movement::PointsArray result = gen.GetPath();
