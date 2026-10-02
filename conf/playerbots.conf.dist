@@ -471,6 +471,10 @@ AiPlayerbot.ApplyInstanceStrategies = 1
 # Default: 1 (enabled)
 AiPlayerbot.AutoAvoidAoe = 1
 
+# Also for bots without a real player master (bots grouped with bots only, e.g. a bot-led dungeon run)
+# Default: 0 (disabled)
+AiPlayerbot.AutoAvoidAoeWithoutMaster = 0
+
 # Only avoid aoe spells with a radius smaller than this value
 AiPlayerbot.MaxAoeAvoidRadius = 15.0
 

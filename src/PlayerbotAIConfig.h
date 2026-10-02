@@ -124,6 +124,7 @@ public:
     bool forceRebuffOnReadyCheck;
     uint32 forceRebuffMarginSecs;
     bool autoAvoidAoe;
+    bool autoAvoidAoeWithoutMaster;
     float maxAoeAvoidRadius;
     std::set<uint32> aoeAvoidSpellWhitelist;
     bool tellWhenAvoidAoe;

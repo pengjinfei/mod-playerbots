@@ -322,7 +322,10 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
     if (!player->InBattleground())
         engine->addStrategiesNoInit("racials", "chat", "default", "cast time", "potions", "duel", "boost", nullptr);
 
-    if (sPlayerbotAIConfig.autoAvoidAoe && facade->HasGameClientMaster())
+    // Only bots a player leads get it by default; a group of bots on their own (a bot-led dungeon run) needs the
+    // option, or nobody steps out of anything (Ahn'kahet: the whole group stood in Taldaram's flame spheres).
+    if (sPlayerbotAIConfig.autoAvoidAoe &&
+        (facade->HasGameClientMaster() || sPlayerbotAIConfig.autoAvoidAoeWithoutMaster))
         engine->addStrategy("avoid aoe", false);
 
     engine->addStrategy("formation", false);
