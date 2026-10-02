@@ -633,19 +633,19 @@ void DungeonRunAdvanceAction::UpdateProgress(DungeonRoute const& route)
     float progress = AI_VALUE(float, "dungeon run progress");
     // Only look near the current progress so a node on another floor straight above or below never counts.
     DungeonRouteNode const* best = nullptr;
-    float bestDistance = NODE_REACHED;
+    float const bestDistance = NODE_REACHED;
     for (DungeonRouteNode const& node : route.nodes)
     {
         // 100 yd ahead, past a node in the air the leader never reaches (Taldaram's at 901 between 859 and 931: with
         // 60 yd the progress stuck at 859 while the leader walked on, run 1992).
         if (node.along < progress - 20.0f || node.along > progress + PROGRESS_WINDOW)
             continue;
+        // The farthest along of the nodes the leader stands on, not the nearest: past Jedoga the recorded path loops
+        // in place, a dozen nodes from 2017 to 2242 within 10 yd, and the nearest kept the progress at 2017 while
+        // the next one ahead could not be walked to (Ahn'kahet, run 1996).
         float const distance = bot->GetDistance(node.x, node.y, node.z);
-        if (distance < bestDistance)
-        {
+        if (distance < bestDistance && (!best || node.along > best->along))
             best = &node;
-            bestDistance = distance;
-        }
     }
     if (best && best->along > progress)
         SET_AI_VALUE(float, "dungeon run progress", best->along);
