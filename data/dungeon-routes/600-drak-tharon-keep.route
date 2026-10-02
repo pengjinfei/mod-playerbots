@@ -8,10 +8,10 @@ node 20 -512.8 -507.5 11.6
 node 36 -514.8 -522.2 11.6
 node 52 -522.6 -536.3 11.0
 node 70 -529.3 -550.7 3.3
-node 86 -531.6 -566.5 3.1
-node 102 -527.9 -579.5 3.1
+node 86 -537.0 -566.0 2.5 # node-fix, was -531.6 -566.5 3.1
+node 102 -537.0 -582.0 2.5 # node-fix, was -527.9 -579.5 3.1
 pack 118 -522.4 -599.7 1.2 radius=7.9 side=0 elite=3 spawns=127436,127437,127596 # 2xDrakkari Guardian, 1xScourge Reanimator
-node 118 -515.3 -589.4 3.1
+node 118 -515.0 -594.0 2.5 # node-fix, was -515.3 -589.4 3.1
 node 134 -501.7 -597.8 1.8
 node 150 -485.7 -599.0 1.9
 pack 158 -479.1 -602.7 1.5 radius=16.2 side=0 elite=7 spawns=127411,127440,127441,127572,127575,127576,127587 # 1xScourge Reanimator, 2xRisen Drakkari Soulmage, 4xDrakkari Guardian
