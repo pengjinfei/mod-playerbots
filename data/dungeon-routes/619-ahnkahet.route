@@ -91,7 +91,7 @@ node 947 509.4 -840.9 11.6
 node 963 508.2 -851.6 11.4
 node 983 520.5 -866.1 11.4
 node 1003 540.2 -866.0 11.3
-pack 1020 565.7 -878.8 22.7 radius=18.9 side=0 elite=7 spawns=131866,131868,131873,131875,131882,131884,131902 # 2xAhn'kahar Web Winder, 2xAhn'kahar Slasher, 2xAhn'kahar Spell Flinger, 1xPlague Walker
+pack 1020 565.7 -878.8 22.7 radius=18.9 side=1 elite=7 spawns=131866,131868,131873,131875,131882,131884,131902 # 2xAhn'kahar Web Winder, 2xAhn'kahar Slasher, 2xAhn'kahar Spell Flinger, 1xPlague Walker
 node 1020 551.0 -871.8 8.0
 node 1037 544.5 -882.6 3.8
 node 1054 531.5 -873.3 -0.1
