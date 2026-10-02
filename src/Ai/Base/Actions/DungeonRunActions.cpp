@@ -296,9 +296,10 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             }
         x += deficit * std::cos(angle);
         y += deficit * std::sin(angle);
-        float z = target->GetPositionZ();
-        bot->UpdateAllowedPositionZ(x, y, z);
-        approach.Relocate(x, y, z);
+        // The target's height, not a ground search: where the collision model has no floor (Ahn'kahet's ledges) the
+        // search found the void under the map and the tank walked straight down through the ledge (run 1968). The
+        // path search puts the point on the navmesh.
+        approach.Relocate(x, y, target->GetPositionZ());
     }
     bool const moved = toTarget ? MoveTo(bot->GetMapId(), approach.GetPositionX(), approach.GetPositionY(),
                                          approach.GetPositionZ(), false, false, false, false,
