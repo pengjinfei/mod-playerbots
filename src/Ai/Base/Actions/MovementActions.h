@@ -25,6 +25,8 @@ struct Position;
 
 class MovementAction : public Action
 {
+    static constexpr float PATH_UNDER_MAP_DEPTH = 30.0f;  // a path ending this far below both ends is a fall
+
 public:
     MovementAction(PlayerbotAI* botAI, std::string const name);
 

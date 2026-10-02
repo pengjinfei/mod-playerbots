@@ -347,6 +347,16 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
         // keep the path - refusing it stalled Utgarde Keep's leader at a portcullis before Ingvar (run 1850).
         // Only a path that also goes down from where the bot stands: a partial path that stays on the bot's floor
         // on the way up a staircase is progress (Utgarde Keep's stairs to the upper floor, run 1846).
+        // A path ending far below both the destination and the bot goes under the map: Ahn'kahet's collision
+        // model has no floor to test against there, and a follower took a navmesh path from the hall at z -3 to z
+        // -223 and stayed under the world (run 1967). No staircase drops 30 yd below both of its ends.
+        if (modifiedZ < z - PATH_UNDER_MAP_DEPTH && modifiedZ < bot->GetPositionZ() - PATH_UNDER_MAP_DEPTH)
+        {
+            if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
+                LOG_DEBUG("playerbots", "floor-guard bot={} action={} path under the map refused dest=({:.1f},{:.1f},"
+                          "{:.1f}) path z {:.1f}", bot->GetName(), getName(), x, y, z, modifiedZ);
+            return false;
+        }
         if (modifiedZ < z - 6.0f && modifiedZ < bot->GetPositionZ() - 2.0f)
         {
             float const floor =
