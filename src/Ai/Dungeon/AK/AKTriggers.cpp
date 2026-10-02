@@ -8,6 +8,21 @@
 #include "AiObjectContext.h"
 #include "Playerbots.h"
 
+Unit* NearestFlameSphere(Player* bot, float range)
+{
+    Unit* nearest = nullptr;
+    for (uint32 entry : {NPC_FLAME_SPHERE_1, NPC_FLAME_SPHERE_2, NPC_FLAME_SPHERE_3})
+        if (Creature* sphere = bot->FindNearestCreature(entry, range))
+            if (!nearest || bot->GetDistance(sphere) < bot->GetDistance(nearest))
+                nearest = sphere;
+    return nearest;
+}
+
+bool TaldaramFlameSphereTrigger::IsActive()
+{
+    return NearestFlameSphere(bot, TALDARAM_SPHERE_KEEP_AWAY) != nullptr;
+}
+
 bool NadoxGuardianTrigger::IsActive()
 {
     if (botAI->IsHeal(bot)) { return false; }

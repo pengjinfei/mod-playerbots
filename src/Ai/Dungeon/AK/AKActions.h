@@ -27,6 +27,13 @@ public:
     bool Execute(Event event) override;
 };
 
+class AvoidFlameSphereAction : public MovementAction
+{
+public:
+    AvoidFlameSphereAction(PlayerbotAI* ai) : MovementAction(ai, "avoid flame sphere") {}
+    bool Execute(Event event) override;
+};
+
 class AvoidShadowCrashAction : public MovementAction
 {
 public:

@@ -17,6 +17,11 @@ enum OldKingdomIDs
     // Elder Nadox
     BUFF_GUARDIAN_AURA                 = 56153,
 
+    // Prince Taldaram: the three flame spheres (one per entry), moving out 25 yd from him
+    NPC_FLAME_SPHERE_1                 = 30106,
+    NPC_FLAME_SPHERE_2                 = 31686,
+    NPC_FLAME_SPHERE_3                 = 31687,
+
     // Jedoga Shadowseeker
     NPC_TWILIGHT_VOLUNTEER             = 30385,
 
@@ -38,6 +43,18 @@ class JedogaVolunteerTrigger : public Trigger
 {
 public:
     JedogaVolunteerTrigger(PlayerbotAI* ai) : Trigger(ai, "jedoga volunteer") {}
+    bool IsActive() override;
+};
+
+// The nearest of Taldaram's flame spheres within this of the bot. Their burn (59509 on heroic) killed four of five
+// standing together in three spheres; the generic avoid aoe does not see them (Ahn'kahet, runs 1970/1971).
+constexpr float TALDARAM_SPHERE_KEEP_AWAY = 9.0f;
+Unit* NearestFlameSphere(Player* bot, float range);
+
+class TaldaramFlameSphereTrigger : public Trigger
+{
+public:
+    TaldaramFlameSphereTrigger(PlayerbotAI* ai) : Trigger(ai, "taldaram flame sphere") {}
     bool IsActive() override;
 };
 

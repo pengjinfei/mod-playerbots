@@ -45,6 +45,15 @@ bool AttackJedogaVolunteerAction::Execute(Event /*event*/)
     return Attack(target);
 }
 
+// Step out of a flame sphere's way, as players do: they move out from Taldaram slowly in three directions.
+bool AvoidFlameSphereAction::Execute(Event /*event*/)
+{
+    Unit* sphere = NearestFlameSphere(bot, TALDARAM_SPHERE_KEEP_AWAY);
+    if (!sphere)
+        return false;
+    return MoveAway(sphere, TALDARAM_SPHERE_KEEP_AWAY - bot->GetDistance(sphere) + 3.0f);
+}
+
 bool AvoidShadowCrashAction::Execute(Event /*event*/)
 {
     // Could check all enemy units in range as it's possible to pull multiple of these mobs.

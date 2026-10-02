@@ -14,9 +14,10 @@ void WotlkDungeonOKStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         { NextAction("attack nadox guardian", ACTION_RAID + 5) }));
 
     // Prince Taldaram
-    // Flame Orb spawns in melee, doesn't have a clear direction until it starts moving.
-    // Maybe not worth trying to avoid and just heal through. Only consideration is not to have ranged
-    // players anywhere near melee when it spawns
+    // Flame spheres spawn on him and move out 25 yd in three directions; on heroic three of them killed four of five
+    // standing in them (runs 1970/1971). Step out of their way.
+    triggers.push_back(new TriggerNode("taldaram flame sphere",
+        { NextAction("avoid flame sphere", ACTION_MOVE + 5) }));
 
     // Jedoga Shadowseeker
     triggers.push_back(new TriggerNode("jedoga volunteer",

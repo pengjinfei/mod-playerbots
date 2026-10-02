@@ -18,11 +18,13 @@ class WotlkDungeonOKTriggerContext : public NamedObjectContext<Trigger>
             creators["nadox guardian"] = &WotlkDungeonOKTriggerContext::nadox_guardian;
             creators["jedoga volunteer"] = &WotlkDungeonOKTriggerContext::jedoga_volunteer;
             creators["shadow crash"] = &WotlkDungeonOKTriggerContext::shadow_crash;
+            creators["taldaram flame sphere"] = &WotlkDungeonOKTriggerContext::taldaram_flame_sphere;
         }
     private:
         static Trigger* nadox_guardian(PlayerbotAI* ai) { return new NadoxGuardianTrigger(ai); }
         static Trigger* jedoga_volunteer(PlayerbotAI* ai) { return new JedogaVolunteerTrigger(ai); }
         static Trigger* shadow_crash(PlayerbotAI* ai) { return new ShadowCrashTrigger(ai); }
+        static Trigger* taldaram_flame_sphere(PlayerbotAI* ai) { return new TaldaramFlameSphereTrigger(ai); }
 };
 
 #endif
