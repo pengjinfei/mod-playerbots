@@ -286,6 +286,11 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         if (bot->GetExactDist2d(node.x, node.y) < 8.0f && std::fabs(node.z - bot->GetPositionZ()) > 4.0f &&
             node.along < item->along)
             continue;
+        // A node high in the air over the leader's floor: the travel node of a boss that floats (Taldaram's at z 42,
+        // 30 yd over his lowered platform) is not walked to - every move there was refused (Ahn'kahet, run 1989).
+        if (bot->GetExactDist2d(node.x, node.y) < AIR_NODE_RANGE &&
+            std::fabs(node.z - bot->GetPositionZ()) > AIR_NODE_HEIGHT && node.along < item->along)
+            continue;
         next = &node;
         break;
     }
