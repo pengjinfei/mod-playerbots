@@ -48,6 +48,7 @@ private:
     static constexpr uint32 MAX_USE_ATTEMPTS = 5;         // uses of one object before it is skipped
     static constexpr uint32 SENT_WAIT_MS = 240000;        // longest wait for a pack the encounter sends; then pull it
     static constexpr float DROP_DEPTH = 50.0f;            // this far under a hole's rim counts as having dropped
+    static constexpr float HOLD_ARRIVED = 8.0f;           // a member this close to the hold point is there
     static constexpr float START_NODE_RANGE = 25.0f;      // a leader this close to a route node joins the route there
     static constexpr float START_AT_ENTRANCE = 30.0f;     // ... unless that node is this close to the entrance
     static constexpr uint32 SPOT_WAIT_MS = 60000;         // at a pull spot, wait this long for a pack out of reach
@@ -75,6 +76,8 @@ private:
     bool ItemOpen(DungeonRoute const& route, uint32 index) const;  // on the path and not given up on
     bool BossAlive(DungeonRouteItem const& item) const;  // the boss creature alive, attackable or not
     float StartAlong(DungeonRoute const& route) const;
+    bool HoldGroupAt(DungeonRouteItem const& item);  // the others wait at the item's hold point; true when there
+    void ReleaseGroup();
     Unit* NearestLivingMember(DungeonRouteItem const& item) const;  // attackable, nearest to the bot
     bool ApproachTimedOut(uint32 index, float distance);
     bool TraceDue();  // throttles the debug trace to one line per WAIT_LOG_INTERVAL_MS
@@ -94,6 +97,8 @@ private:
     uint32 _lastApproachTickMs = 0;
     uint32 _lastTraceMs = 0;
     uint32 _dropItem = UINT32_MAX;  // hole the leader jumped down while members may still be above
+    std::unordered_set<ObjectGuid> _held;  // members waiting at the hold point
+    float _holdX = 0.0f, _holdY = 0.0f, _holdZ = 0.0f;
     bool _started = false;          // the first tick of the run has been seen
     float _startAlong = 0.0f;       // joined the route here; items before it are not walked back to
     uint32 _sentItem = UINT32_MAX;  // sent pack being waited for, and since when

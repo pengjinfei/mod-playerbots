@@ -122,6 +122,21 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     GameObject* object = nullptr;
     uint32 index = 0;
     DungeonRouteItem const* item = NextItem(*route, target, object, index);
+    // A pack the route fights at a hold point: the group waits there and the leader pulls alone, as players stand
+    // round the corner while the tank goes for the pull. Following the leader to the pull, the others were caught in
+    // the pack (Kolurg, Nexus run 1963; Ahn'kahet's crawlers, run 1972).
+    if (item && item->hold && target)
+    {
+        if (!HoldGroupAt(*item))
+        {
+            if (TraceDue())
+                LOG_DEBUG("playerbots", "dungeon-run bot={} sending the group to the hold point of item={}",
+                          bot->GetName(), index);
+            return false;
+        }
+    }
+    else
+        ReleaseGroup();
     // The boss is there but cannot be attacked yet: wait for it where the route says.
     if (item && item->boss && !target)
     {
@@ -637,6 +652,13 @@ bool DungeonRunAdvanceAction::GroupReady(std::string& reason, Player*& dead, Pla
         else if (member->IsSitState() &&
                  (member->HasAuraType(SPELL_AURA_MOD_POWER_REGEN) || member->HasAuraType(SPELL_AURA_MOD_REGEN)))
             reason = Acore::StringFormat("{} eating or drinking", member->GetName());
+        else if (member != bot && _held.count(member->GetGUID()))
+        {
+            // Waiting at the hold point while the leader pulls: ready there, however far the leader stands.
+            if (member->GetExactDist(_holdX, _holdY, _holdZ) > GROUP_RANGE)
+                reason = Acore::StringFormat("{} {:.0f} yd from the hold point", member->GetName(),
+                                             member->GetExactDist(_holdX, _holdY, _holdZ));
+        }
         else if (member != bot && bot->GetDistance(member) > GROUP_RANGE)
             reason = Acore::StringFormat("{} {:.0f} yd away", member->GetName(), bot->GetDistance(member));
         else if (member->GetHealthPct() < READY_HEALTH_PCT)
@@ -748,6 +770,57 @@ bool DungeonRunAdvanceAction::ItemOpen(DungeonRoute const& route, uint32 index) 
         return false;
     auto const attempts = _pullAttempts.find(index);
     return attempts == _pullAttempts.end() || attempts->second < MAX_PULL_ATTEMPTS;
+}
+
+bool DungeonRunAdvanceAction::HoldGroupAt(DungeonRouteItem const& item)
+{
+    Group* group = bot->GetGroup();
+    if (!group)
+        return true;
+    if (!_held.empty() && (_holdX != item.holdX || _holdY != item.holdY || _holdZ != item.holdZ))
+        ReleaseGroup();
+    _holdX = item.holdX;
+    _holdY = item.holdY;
+    _holdZ = item.holdZ;
+    bool allThere = true;
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+    {
+        Player* member = ref->GetSource();
+        PlayerbotAI* memberAI = member ? GET_PLAYERBOT_AI(member) : nullptr;
+        if (!memberAI || member == bot || !member->IsAlive() || member->GetMapId() != bot->GetMapId())
+            continue;
+        if (!_held.count(member->GetGUID()))
+        {
+            // The "stay" a player orders, at the hold point: the member walks there and stays; in combat it fights
+            // as usual, and after a fight it walks back there.
+            memberAI->ChangeStrategy("+stay,-follow", BOT_STATE_NON_COMBAT);
+            PositionMap& positions = memberAI->GetAiObjectContext()->GetValue<PositionMap&>("position")->Get();
+            PositionInfo stay = positions["stay"];
+            stay.Set(item.holdX, item.holdY, item.holdZ, bot->GetMapId());
+            positions["stay"] = stay;
+            _held.insert(member->GetGUID());
+        }
+        if (!member->IsInCombat() && member->GetExactDist(item.holdX, item.holdY, item.holdZ) > HOLD_ARRIVED)
+            allThere = false;
+    }
+    return allThere;
+}
+
+void DungeonRunAdvanceAction::ReleaseGroup()
+{
+    for (ObjectGuid const& guid : _held)
+    {
+        Player* member = ObjectAccessor::FindPlayer(guid);
+        PlayerbotAI* memberAI = member ? GET_PLAYERBOT_AI(member) : nullptr;
+        if (!memberAI)
+            continue;
+        memberAI->ChangeStrategy("-stay,+follow", BOT_STATE_NON_COMBAT);
+        PositionMap& positions = memberAI->GetAiObjectContext()->GetValue<PositionMap&>("position")->Get();
+        PositionInfo stay = positions["stay"];
+        stay.Reset();
+        positions["stay"] = stay;
+    }
+    _held.clear();
 }
 
 bool DungeonRunAdvanceAction::BossAlive(DungeonRouteItem const& item) const
