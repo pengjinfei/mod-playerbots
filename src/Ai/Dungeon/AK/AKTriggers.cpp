@@ -44,20 +44,20 @@ bool FlameSphereSafePoint(Player* bot, float& x, float& y, float& z)
         z = sphere->GetPositionZ();
         return true;
     }
-    // Not moving yet: they sit where they spawned for a few seconds and burn everyone around once they set off -
-    // the group by Taldaram took 25k each in 2 s (run 1979). Straight away from them, before they move.
-    for (auto const& [entry, turn] : spheres)
-    {
-        Creature* sphere = bot->FindNearestCreature(entry, TALDARAM_SPHERE_SAFE_DISTANCE);
-        if (!sphere)
-            continue;
-        float const away = sphere->GetAngle(bot);
-        x = sphere->GetPositionX() + TALDARAM_SPHERE_SAFE_DISTANCE * std::cos(away);
-        y = sphere->GetPositionY() + TALDARAM_SPHERE_SAFE_DISTANCE * std::sin(away);
-        z = bot->GetPositionZ();
-        return true;
-    }
-    return false;
+    // Not moving yet: they sit where they spawned for 3 s and burn everyone around once they set off - the group by
+    // Taldaram took 25k each in 2 s (run 1979). The first one will walk towards where his victim, the tank, stood when
+    // he cast them (boss_prince_taldaram SetVictimPos), so the clear side is already known: go there now. Scattering
+    // straight away first and crossing to the clear side once they moved walked the group through them (run 1985).
+    Creature* first = bot->FindNearestCreature(NPC_FLAME_SPHERE_1, TALDARAM_SPHERE_SIGHT);
+    Creature* taldaram = bot->FindNearestCreature(NPC_TALDARAM_OK, TALDARAM_SPHERE_SIGHT);
+    Unit* victim = taldaram ? taldaram->GetVictim() : nullptr;
+    if (!first || !victim)
+        return false;
+    float const way = first->GetAngle(victim);
+    x = first->GetPositionX() + TALDARAM_SPHERE_SAFE_DISTANCE * std::cos(way + float(M_PI));
+    y = first->GetPositionY() + TALDARAM_SPHERE_SAFE_DISTANCE * std::sin(way + float(M_PI));
+    z = bot->GetPositionZ();
+    return true;
 }
 
 // On a moving sphere's way (from where it is to where it walks), or within reach of it.

@@ -18,6 +18,7 @@ enum OldKingdomIDs
     BUFF_GUARDIAN_AURA                 = 56153,
 
     // Prince Taldaram: the three flame spheres (one per entry), moving out 25 yd from him
+    NPC_TALDARAM_OK                    = 29308,
     NPC_FLAME_SPHERE_1                 = 30106,
     NPC_FLAME_SPHERE_2                 = 31686,
     NPC_FLAME_SPHERE_3                 = 31687,
