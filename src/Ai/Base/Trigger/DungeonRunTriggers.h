@@ -20,4 +20,12 @@ public:
     bool IsActive() override;
 };
 
+class DungeonRunGroupHeldTrigger : public Trigger
+{
+public:
+    DungeonRunGroupHeldTrigger(PlayerbotAI* botAI) : Trigger(botAI, "dungeon run group held") {}
+
+    bool IsActive() override;
+};
+
 #endif

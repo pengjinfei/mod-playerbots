@@ -170,6 +170,7 @@ public:
         creators["party needs offheal"] = &TriggerContext::party_needs_offheal;
         creators["invalid target"] = &TriggerContext::invalid_target;
         creators["dungeon run"] = &TriggerContext::dungeon_run;
+        creators["dungeon run group held"] = &TriggerContext::dungeon_run_group_held;
         creators["lfg proposal active"] = &TriggerContext::lfg_proposal_active;
 
         creators["unknown dungeon"] = &TriggerContext::unknown_dungeon;
@@ -284,6 +285,7 @@ private:
     static Trigger* unknown_dungeon(PlayerbotAI* botAI) { return new UnknownDungeonTrigger(botAI); }
     static Trigger* invalid_target(PlayerbotAI* botAI) { return new InvalidTargetTrigger(botAI); }
     static Trigger* dungeon_run(PlayerbotAI* botAI) { return new DungeonRunTrigger(botAI); }
+    static Trigger* dungeon_run_group_held(PlayerbotAI* botAI) { return new DungeonRunGroupHeldTrigger(botAI); }
     static Trigger* critical_aoe_heal(PlayerbotAI* botAI)
     {
         return new AoeHealTrigger(botAI, "critical aoe heal", "critical", 2);

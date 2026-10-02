@@ -11,4 +11,6 @@
 void DungeonRunStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     triggers.push_back(new TriggerNode("dungeon run", { NextAction("dungeon run advance", ACTION_MOVE) }));
+    triggers.push_back(
+        new TriggerNode("dungeon run group held", { NextAction("dungeon run release group", ACTION_EMERGENCY) }));
 }

@@ -7,9 +7,18 @@
 #include "DungeonRunTriggers.h"
 
 #include "DungeonRouteMgr.h"
+#include "DungeonRunActions.h"
 #include "Playerbots.h"
 
 bool DungeonRunTrigger::IsActive()
 {
     return (!bot->IsInCombat() || bot->getAttackers().empty()) && DungeonRouteMgr::instance().Get(bot->GetMapId());
+}
+
+bool DungeonRunGroupHeldTrigger::IsActive()
+{
+    if (!bot->IsInCombat())
+        return false;
+    auto* advance = dynamic_cast<DungeonRunAdvanceAction*>(context->GetAction("dungeon run advance"));
+    return advance && advance->HoldsGroup();
 }

@@ -785,6 +785,9 @@ bool DungeonRunAdvanceAction::HoldGroupAt(DungeonRouteItem const& item)
     _holdX = item.holdX;
     _holdY = item.holdY;
     _holdZ = item.holdZ;
+    // In combat the release is the combat engine's: a pack that comes by itself starts the fight without a pull.
+    if (!botAI->HasStrategy("dungeon run", BOT_STATE_COMBAT))
+        botAI->ChangeStrategy("+dungeon run", BOT_STATE_COMBAT);
     bool allThere = true;
     for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
     {
@@ -881,4 +884,13 @@ Unit* DungeonRunAdvanceAction::NearestLivingMember(DungeonRouteItem const& item)
         }
     }
     return nearest;
+}
+
+bool DungeonRunReleaseGroupAction::Execute(Event /*event*/)
+{
+    auto* advance = dynamic_cast<DungeonRunAdvanceAction*>(context->GetAction("dungeon run advance"));
+    if (!advance || !advance->HoldsGroup())
+        return false;
+    advance->ReleaseGroup();
+    return true;
 }

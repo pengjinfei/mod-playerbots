@@ -28,6 +28,9 @@ public:
     bool Execute(Event event) override;
     bool isUseful() override;
 
+    bool HoldsGroup() const { return !_held.empty(); }
+    void ReleaseGroup();  // the members waiting at a hold point follow again
+
 private:
     static constexpr float PULL_DISTANCE = 25.0f;       // attack the pack from here
     static constexpr float PULL_APPROACH_MARGIN = 5.0f; // walking at a pack, stop this far inside pull range
@@ -77,7 +80,6 @@ private:
     bool BossAlive(DungeonRouteItem const& item) const;  // the boss creature alive, attackable or not
     float StartAlong(DungeonRoute const& route) const;
     bool HoldGroupAt(DungeonRouteItem const& item);  // the others wait at the item's hold point; true when there
-    void ReleaseGroup();
     Unit* NearestLivingMember(DungeonRouteItem const& item) const;  // attackable, nearest to the bot
     bool ApproachTimedOut(uint32 index, float distance);
     bool TraceDue();  // throttles the debug trace to one line per WAIT_LOG_INTERVAL_MS
@@ -107,6 +109,17 @@ private:
     uint32 _spotSinceMs = 0;
     ObjectGuid _ccGateTarget;
     uint32 _ccGateSinceMs = 0;
+};
+
+// The leader in combat while the others wait at a hold point: they come. A pack that came by itself killed the
+// leader alone while the group stood 40 yd off at the hold point (Ahn'kahet, run 1975); the advance action, where
+// the release on a pull is, does not run in combat.
+class DungeonRunReleaseGroupAction : public Action
+{
+public:
+    DungeonRunReleaseGroupAction(PlayerbotAI* botAI) : Action(botAI, "dungeon run release group") {}
+
+    bool Execute(Event event) override;
 };
 
 #endif

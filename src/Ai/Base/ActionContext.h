@@ -146,6 +146,7 @@ public:
         creators["aggressive target"] = &ActionContext::aggressive_target;
         creators["attack anything"] = &ActionContext::attack_anything;
         creators["dungeon run advance"] = &ActionContext::dungeon_run_advance;
+        creators["dungeon run release group"] = &ActionContext::dungeon_run_release_group;
         creators["attack least hp target"] = &ActionContext::attack_least_hp_target;
         creators["attack enemy player"] = &ActionContext::attack_enemy_player;
         creators["emote"] = &ActionContext::emote;
@@ -356,6 +357,7 @@ private:
     static Action* aggressive_target(PlayerbotAI* botAI) { return new AggressiveTargetAction(botAI); }
     static Action* attack_anything(PlayerbotAI* botAI) { return new AttackAnythingAction(botAI); }
     static Action* dungeon_run_advance(PlayerbotAI* botAI) { return new DungeonRunAdvanceAction(botAI); }
+    static Action* dungeon_run_release_group(PlayerbotAI* botAI) { return new DungeonRunReleaseGroupAction(botAI); }
     static Action* attack_least_hp_target(PlayerbotAI* botAI) { return new AttackLeastHpTargetAction(botAI); }
     static Action* attack_enemy_player(PlayerbotAI* botAI) { return new AttackEnemyPlayerAction(botAI); }
     static Action* stay(PlayerbotAI* botAI) { return new StayAction(botAI); }
