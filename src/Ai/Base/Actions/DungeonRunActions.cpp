@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "DetourNavMeshQuery.h"
 #include "DungeonRouteMgr.h"
 #include "LastMovementValue.h"
 #include "PositionValue.h"
@@ -332,11 +333,25 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         // path search puts the point on the navmesh.
         approach.Relocate(x, y, target->GetPositionZ());
     }
-    bool const moved = toTarget ? MoveTo(bot->GetMapId(), approach.GetPositionX(), approach.GetPositionY(),
-                                         approach.GetPositionZ(), false, false, false, false,
-                                         MovementPriority::MOVEMENT_NORMAL)
-                                : MoveTo(bot->GetMapId(), next->x, next->y, next->z, false, false, false, false,
-                                         MovementPriority::MOVEMENT_NORMAL);
+    bool moved = toTarget ? MoveTo(bot->GetMapId(), approach.GetPositionX(), approach.GetPositionY(),
+                                   approach.GetPositionZ(), false, false, false, false,
+                                   MovementPriority::MOVEMENT_NORMAL)
+                          : MoveTo(bot->GetMapId(), next->x, next->y, next->z, false, false, false, false,
+                                   MovementPriority::MOVEMENT_NORMAL);
+    // Standing off the navmesh no path starts: Taldaram's lowered platform is a game object, and after him the leader
+    // stood on it for eight minutes, every move refused (Ahn'kahet, run 1981). A straight step towards where it goes
+    // takes it back onto the navmesh.
+    if (!moved && !OnNavmesh() && bot->movespline->Finalized())
+    {
+        float const toX = toTarget ? approach.GetPositionX() : next->x;
+        float const toY = toTarget ? approach.GetPositionY() : next->y;
+        float const angle = bot->GetAngle(toX, toY);
+        float const step = std::min(OFF_NAVMESH_STEP, bot->GetExactDist2d(toX, toY));
+        bot->GetMotionMaster()->MovePoint(0, bot->GetPositionX() + step * std::cos(angle),
+                                          bot->GetPositionY() + step * std::sin(angle), bot->GetPositionZ(),
+                                          FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
+        moved = true;
+    }
     if (TraceDue())
         LOG_DEBUG("playerbots", "dungeon-run bot={} approach item={} target={} dist={:.1f} los={} to={} moved={} "
                   "progress={:.0f}", bot->GetName(), index, name, distance,
@@ -773,6 +788,19 @@ bool DungeonRunAdvanceAction::ItemOpen(DungeonRoute const& route, uint32 index) 
         return false;
     auto const attempts = _pullAttempts.find(index);
     return attempts == _pullAttempts.end() || attempts->second < MAX_PULL_ATTEMPTS;
+}
+
+bool DungeonRunAdvanceAction::OnNavmesh() const
+{
+    dtNavMeshQuery const* query = bot->GetMap()->GetMapCollisionData().GetMMapData().GetNavMeshQuery();
+    if (!query)
+        return true;
+    float const point[3] = {bot->GetPositionY(), bot->GetPositionZ(), bot->GetPositionX()};
+    float const extents[3] = {2.0f, 4.0f, 2.0f};
+    float closest[3] = {0.0f, 0.0f, 0.0f};
+    dtQueryFilter const filter;
+    dtPolyRef poly = 0;
+    return dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) && poly;
 }
 
 bool DungeonRunAdvanceAction::HoldGroupAt(DungeonRouteItem const& item)
