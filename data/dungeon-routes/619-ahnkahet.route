@@ -102,16 +102,16 @@ node 1122 506.9 -818.9 -23.8
 node 1138 497.3 -806.1 -23.5
 node 1154 487.7 -793.3 -23.2
 node 1173 478.0 -780.6 -29.5
-pack 1185 504.8 -765.2 -31.6 radius=5.7 side=0 elite=3 spawns=131944,131996,132060 # 1xTwilight Darkcaster, 1xTwilight Worshipper, 1xTwilight Apostle
+pack 1185 504.8 -765.2 -31.6 radius=5.7 side=0 elite=3 spawns=131944,131996,132060 hold=497.3,-806.1,-23.5 pull=30 from=486.0,-780.0,-30.5 # 1xTwilight Darkcaster, 1xTwilight Worshipper, 1xTwilight Apostle
 node 1193 474.6 -761.4 -31.0
 node 1209 473.5 -745.4 -30.5
-pack 1217 468.1 -743.3 -31.6 radius=6.8 side=0 elite=4 spawns=131940,131990,131991,132053 # 1xTwilight Darkcaster, 2xTwilight Worshipper, 1xTwilight Apostle
 node 1230 468.0 -756.4 -30.5
-pack 1238 462.7 -765.8 -31.6 radius=3.7 side=0 elite=3 spawns=131943,131995,132057 # 1xTwilight Darkcaster, 1xTwilight Worshipper, 1xTwilight Apostle
+pack 1238 462.7 -765.8 -31.6 radius=3.7 side=0 elite=3 spawns=131943,131995,132057 hold=497.3,-806.1,-23.5 pull=30 from=486.0,-780.0,-30.5 # 1xTwilight Darkcaster, 1xTwilight Worshipper, 1xTwilight Apostle
 node 1246 462.7 -771.5 -30.6
 node 1262 458.9 -787.1 -30.9
-pack 1270 453.1 -792.7 -31.6 radius=1.5 side=0 elite=2 spawns=131939,132052 # 1xTwilight Darkcaster, 1xTwilight Apostle
+pack 1270 453.1 -792.7 -31.6 radius=1.5 side=0 elite=2 spawns=131939,132052 hold=497.3,-806.1,-23.5 pull=30 # 1xTwilight Darkcaster, 1xTwilight Apostle
 node 1278 455.2 -802.6 -30.8
+pack 1280 468.1 -743.3 -31.6 radius=6.8 side=0 elite=4 spawns=131940,131990,131991,132053 hold=497.3,-806.1,-23.5 pull=30 # 1xTwilight Darkcaster, 2xTwilight Worshipper, 1xTwilight Apostle
 node 1298 453.9 -822.2 -31.0
 node 1314 457.0 -837.9 -31.3
 node 1330 460.1 -853.6 -34.2
