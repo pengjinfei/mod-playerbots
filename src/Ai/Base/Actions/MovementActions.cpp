@@ -40,6 +40,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iomanip>
+#include <limits>
 #include <string>
 
 namespace
@@ -1962,8 +1963,16 @@ const Movement::PointsArray MovementAction::SearchForBestPath(float x, float y, 
         modified_z = tempZ;
         return result;
     }
-    // Start searching
-    if (gen.GetPathType() & typeOk)
+    // Start searching. A floor more than PATH_UNDER_MAP_DEPTH below the request is not where the move was asked for:
+    // the incomplete path towards it is short, so as a candidate it beat the real floor 0.8 yd below a Drak'Tharon Keep
+    // node and took the leader's path to z -131 (my-mac run100052).
+    bool const firstFarBelow = tempZ == INVALID_HEIGHT || tempZ < z - PATH_UNDER_MAP_DEPTH;
+    if (firstFarBelow)
+    {
+        result.clear();
+        min_length = std::numeric_limits<float>::max();
+    }
+    else if (gen.GetPathType() & typeOk)
     {
         modified_z = tempZ;
         found = true;
@@ -1972,7 +1981,7 @@ const Movement::PointsArray MovementAction::SearchForBestPath(float x, float y, 
     for (float delta = step; count < maxSearchCount / 2 + 1; count++, delta += step)
     {
         tempZ = bot->GetMapHeight(x, y, z + delta);
-        if (tempZ == INVALID_HEIGHT)
+        if (tempZ == INVALID_HEIGHT || tempZ < z - PATH_UNDER_MAP_DEPTH)
         {
             continue;
         }
@@ -1989,7 +1998,7 @@ const Movement::PointsArray MovementAction::SearchForBestPath(float x, float y, 
     for (float delta = -step; count < maxSearchCount; count++, delta -= step)
     {
         tempZ = bot->GetMapHeight(x, y, z + delta);
-        if (tempZ == INVALID_HEIGHT)
+        if (tempZ == INVALID_HEIGHT || tempZ < z - PATH_UNDER_MAP_DEPTH)
         {
             continue;
         }
