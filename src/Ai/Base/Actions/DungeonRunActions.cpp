@@ -830,17 +830,19 @@ bool DungeonRunAdvanceAction::HoldGroupAt(DungeonRouteItem const& item)
         PlayerbotAI* memberAI = member ? GET_PLAYERBOT_AI(member) : nullptr;
         if (!memberAI || member == bot || !member->IsAlive() || member->GetMapId() != bot->GetMapId())
             continue;
-        if (!_held.count(member->GetGUID()))
-        {
-            // The "stay" a player orders, at the hold point: the member walks there and stays; in combat it fights
-            // as usual, and after a fight it walks back there.
+        // The "stay" a player orders, at the hold point: the member walks there and stays; in combat it fights as
+        // usual, and after a fight it walks back there. Set again whenever it is gone: a reset after a fight cleared
+        // the stay position, and a member stood where the fight had been while the leader waited (Nexus, run 2004).
+        if (!memberAI->HasStrategy("stay", BOT_STATE_NON_COMBAT) || memberAI->HasStrategy("follow", BOT_STATE_NON_COMBAT))
             memberAI->ChangeStrategy("+stay,-follow", BOT_STATE_NON_COMBAT);
-            PositionMap& positions = memberAI->GetAiObjectContext()->GetValue<PositionMap&>("position")->Get();
-            PositionInfo stay = positions["stay"];
+        PositionMap& positions = memberAI->GetAiObjectContext()->GetValue<PositionMap&>("position")->Get();
+        PositionInfo stay = positions["stay"];
+        if (!stay.isSet() || stay.x != item.holdX || stay.y != item.holdY || stay.z != item.holdZ)
+        {
             stay.Set(item.holdX, item.holdY, item.holdZ, bot->GetMapId());
             positions["stay"] = stay;
-            _held.insert(member->GetGUID());
         }
+        _held.insert(member->GetGUID());
         if (!member->IsInCombat() && member->GetExactDist(item.holdX, item.holdY, item.holdZ) > HOLD_ARRIVED)
             allThere = false;
     }

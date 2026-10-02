@@ -172,3 +172,20 @@ ReachPartyMemberToResurrectAction::ReachPartyMemberToResurrectAction(PlayerbotAI
 }
 
 std::string const ReachPartyMemberToResurrectAction::GetTargetName() { return "party member to resurrect"; }
+
+bool ReachPartyMemberToResurrectAction::isUseful()
+{
+    Unit* target = AI_VALUE(Unit*, GetTargetName());
+    if (target && !bot->IsWithinLOSInMap(target))
+        return true;
+    return ReachTargetAction::isUseful();
+}
+
+bool ReachPartyMemberToResurrectAction::Execute(Event event)
+{
+    Unit* target = AI_VALUE(Unit*, GetTargetName());
+    if (target && !bot->IsWithinLOSInMap(target))
+        return MoveTo(target->GetMapId(), target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(),
+                      false, false, false, true, MovementPriority::MOVEMENT_NORMAL);
+    return ReachTargetAction::Execute(event);
+}

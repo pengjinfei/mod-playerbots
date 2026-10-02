@@ -22,6 +22,10 @@ public:
 
 protected:
     Unit* Calculate() override;
+    // A corpse out of sight is still one to resurrect: its reach action walks into sight first. With the sight
+    // filter a rogue dead on Taldaram's lowered platform, 6 yd from the priest but behind its rim, was never chosen
+    // and the run waited for it until it stalled (Ahn'kahet, run 2003).
+    bool Check(Unit* player) override;
 };
 
 #endif

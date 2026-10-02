@@ -46,3 +46,10 @@ Unit* PartyMemberToResurrect::Calculate()
     FindDeadPlayer finder(this);
     return FindPartyMember(finder);
 }
+
+bool PartyMemberToResurrect::Check(Unit* player)
+{
+    bool const isGM = player->ToPlayer() && player->ToPlayer()->IsGameMaster();
+    return player && player->GetMapId() == bot->GetMapId() && !isGM &&
+           bot->GetDistance(player) < sPlayerbotAIConfig.spellDistance * 2;
+}

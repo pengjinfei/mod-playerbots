@@ -86,6 +86,9 @@ public:
 
     std::string const GetTargetName() override;
     bool ChasesEnemy() const override { return false; }
+    // In range but out of sight is not reached: a corpse behind a platform rim (Ahn'kahet, run 2003).
+    bool isUseful() override;
+    bool Execute(Event event) override;
 };
 
 #endif

@@ -62,6 +62,11 @@ bool AvoidFlameSphereAction::Execute(Event /*event*/)
         return false;
     // A straight step on Taldaram's platform: it is a game object the navmesh does not have, and every path search
     // to the safe side failed there (run 1977).
+    Creature* taldaram = bot->FindNearestCreature(NPC_TALDARAM_OK, TALDARAM_SPHERE_SIGHT);
+    Unit* victim = taldaram ? taldaram->GetVictim() : nullptr;
+    LOG_DEBUG("playerbots", "flame-sphere bot={} from=({:.1f},{:.1f}) to=({:.1f},{:.1f}) victim={} los={}",
+              bot->GetName(), bot->GetPositionX(), bot->GetPositionY(), x, y, victim ? victim->GetName() : "-",
+              bot->IsWithinLOS(x, y, z + 2.0f));
     bot->GetMotionMaster()->MovePoint(0, x, y, bot->GetPositionZ(), FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
     return true;
 }
