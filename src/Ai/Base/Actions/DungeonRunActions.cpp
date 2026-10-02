@@ -207,12 +207,21 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // took the leader from first sight of Kolurg's escort (36 yd) to 20 yd of it in one step, and Kolurg came too
     // (run 1923). Away from the spot, nothing else is pulled on the way.
     bool atSpot = false;
+    bool spotRefused = false;
     if (target && item->from)
     {
         if (bot->GetExactDist(item->fromX, item->fromY, item->fromZ) > 3.0f)
-            return MoveTo(bot->GetMapId(), item->fromX, item->fromY, item->fromZ, false, false, false, false,
-                          MovementPriority::MOVEMENT_NORMAL);
-        atSpot = true;
+        {
+            if (MoveTo(bot->GetMapId(), item->fromX, item->fromY, item->fromZ, false, false, false, false,
+                       MovementPriority::MOVEMENT_NORMAL))
+                return true;
+            // Refused (another floor from where the leader stands): walk the route on towards it instead. On a ledge
+            // over Ahn'kahet's lower room the spot 18 yd below was refused every tick and the run stood still
+            // (run 2013).
+            spotRefused = true;
+        }
+        else
+            atSpot = true;
     }
     // A pack whose aggro reaches past the default pull distance is engaged from farther, before anyone walks into
     // it: Krik'thir's first watcher group aggroed while the leader was still closing in, before any crowd control.
@@ -240,7 +249,7 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             return false;
         }
     }
-    if (target && bot->GetDistance(target) <= pullDistance && bot->IsWithinLOSInMap(target))
+    if (target && !spotRefused && bot->GetDistance(target) <= pullDistance && bot->IsWithinLOSInMap(target))
     {
         // A pack of three or more gets the trash crowd-control chain first; the leader stands still until the
         // casters have it held (see CcGateOpen). One pull attempt is counted per gate, not per waiting tick.
