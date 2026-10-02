@@ -363,10 +363,17 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         float const toY = toTarget ? approach.GetPositionY() : next->y;
         float const angle = bot->GetAngle(toX, toY);
         float const step = std::min(OFF_NAVMESH_STEP, bot->GetExactDist2d(toX, toY));
-        bot->GetMotionMaster()->MovePoint(0, bot->GetPositionX() + step * std::cos(angle),
-                                          bot->GetPositionY() + step * std::sin(angle), bot->GetPositionZ(),
-                                          FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
-        moved = true;
+        float const stepX = bot->GetPositionX() + step * std::cos(angle);
+        float const stepY = bot->GetPositionY() + step * std::sin(angle);
+        // Only onto ground at the leader's height: where the collision model has no floor (most of Ahn'kahet) the
+        // step was put on whatever lay far below and the tank walked down to z -123 (run 2015).
+        float const ground =
+            bot->GetMap()->GetHeight(bot->GetPhaseMask(), stepX, stepY, bot->GetPositionZ() + 2.0f, true, 6.0f);
+        if (ground > INVALID_HEIGHT && std::fabs(ground - bot->GetPositionZ()) < 4.0f)
+        {
+            bot->GetMotionMaster()->MovePoint(0, stepX, stepY, ground, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
+            moved = true;
+        }
     }
     if (TraceDue())
         LOG_DEBUG("playerbots", "dungeon-run bot={} approach item={} target={} dist={:.1f} los={} to={} moved={} "
