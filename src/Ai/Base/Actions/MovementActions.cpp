@@ -936,7 +936,13 @@ bool MovementAction::MoveTo(WorldObject* target, float distance, MovementPriorit
         dz = bz + (tz - bz) * (needToGo / distanceToTarget);
     else
         dz = tz;
+    float const seedZ = dz;
     bot->UpdateAllowedPositionZ(dx, dy, dz);
+    // Where the collision model has no floor - Drak'Tharon Keep's stairs up from King Dred - the clamp finds one far
+    // below (z -131 under a follower at z 55); every follow step was then refused as a fall and the follower stood
+    // 183 yd behind the group (my-mac run100056). Keep the seed and let the path search put it on the navmesh.
+    if (dz < seedZ - PATH_UNDER_MAP_DEPTH)
+        dz = seedZ;
     return MoveTo(target->GetMapId(), dx, dy, dz, false, false, false, false, priority);
 }
 
