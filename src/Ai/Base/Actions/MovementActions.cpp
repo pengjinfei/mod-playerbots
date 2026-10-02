@@ -350,7 +350,11 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
         // A path ending far below both the destination and the bot goes under the map: Ahn'kahet's collision
         // model has no floor to test against there, and a follower took a navmesh path from the hall at z -3 to z
         // -223 and stayed under the world (run 1967). No staircase drops 30 yd below both of its ends.
-        if (modifiedZ < z - PATH_UNDER_MAP_DEPTH && modifiedZ < bot->GetPositionZ() - PATH_UNDER_MAP_DEPTH)
+        // Only where the collision model has no floor at the destination: Utgarde Keep's portcullis before Ingvar
+        // has a path ending 90 yd low that walks fine, and refusing it stalled the run there (run 2008, as 1850).
+        if (modifiedZ < z - PATH_UNDER_MAP_DEPTH && modifiedZ < bot->GetPositionZ() - PATH_UNDER_MAP_DEPTH &&
+            bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, z + Z_OFFSET_FIND_HEIGHT, true, 10.0f) <=
+                INVALID_HEIGHT)
         {
             if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
                 LOG_DEBUG("playerbots", "floor-guard bot={} action={} path under the map refused dest=({:.1f},{:.1f},"
