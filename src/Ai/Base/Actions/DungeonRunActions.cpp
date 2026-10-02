@@ -636,7 +636,9 @@ void DungeonRunAdvanceAction::UpdateProgress(DungeonRoute const& route)
     float bestDistance = NODE_REACHED;
     for (DungeonRouteNode const& node : route.nodes)
     {
-        if (node.along < progress - 20.0f || node.along > progress + 60.0f)
+        // 100 yd ahead, past a node in the air the leader never reaches (Taldaram's at 901 between 859 and 931: with
+        // 60 yd the progress stuck at 859 while the leader walked on, run 1992).
+        if (node.along < progress - 20.0f || node.along > progress + PROGRESS_WINDOW)
             continue;
         float const distance = bot->GetDistance(node.x, node.y, node.z);
         if (distance < bestDistance)
