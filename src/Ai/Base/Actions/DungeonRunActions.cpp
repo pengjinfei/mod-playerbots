@@ -632,8 +632,16 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
             continue;
         if (item.object)
         {
-            if (!PendingObject(item, object))
+            // Once seen used it stays done: out of sight again it read as "not loaded yet, walk there" and the leader
+            // walked back to Taldaram's first device four times from the hall below (Ahn'kahet, run 1970).
+            if (_objectsDone.count(i))
                 continue;
+            if (!PendingObject(item, object))
+            {
+                if (bot->GetExactDist(item.x, item.y, item.z) <= OBJECT_SIGHT)
+                    _objectsDone.insert(i);
+                continue;
+            }
             index = i;
             return &item;
         }

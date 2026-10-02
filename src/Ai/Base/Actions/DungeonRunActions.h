@@ -83,6 +83,7 @@ private:
 
     std::unordered_map<uint32, uint32> _pullAttempts;  // route item index -> pulls issued
     mutable std::unordered_set<uint32> _summonedDone;  // summoned packs seen cleared
+    mutable std::unordered_set<uint32> _objectsDone;   // objects seen used
     uint32 _lastWaitLogMs = 0;
     uint32 _approachItem = UINT32_MAX;  // item being walked to, best distance reached, since when
     float _approachBest = 0.0f;
