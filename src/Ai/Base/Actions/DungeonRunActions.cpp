@@ -257,8 +257,10 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             bot->GetSession()->HandleCancelMountAuraOpcode(packet);
             bot->RemoveAurasByType(SPELL_AURA_MOUNTED);
         }
+        // The skull only when it marks this pack: a skull left on a Crystalline Keeper of another pack had the leader
+        // pull that one from 100 yd short of the item, and the Keepers, Tenders and Frayers there came (Nexus, run 2007).
         Unit* pullUnit = TrashCcIconUnit(botAI, TRASH_CC_SKULL_ICON);
-        if (!pullUnit || !pullUnit->IsAlive())
+        if (!pullUnit || !pullUnit->IsAlive() || !InItem(*item, pullUnit))
             pullUnit = target;
         uint32& attempts = _pullAttempts[index];
         ++attempts;
@@ -795,6 +797,16 @@ bool DungeonRunAdvanceAction::ItemOpen(DungeonRoute const& route, uint32 index) 
         return false;
     auto const attempts = _pullAttempts.find(index);
     return attempts == _pullAttempts.end() || attempts->second < MAX_PULL_ATTEMPTS;
+}
+
+bool DungeonRunAdvanceAction::InItem(DungeonRouteItem const& item, Unit* unit) const
+{
+    Creature* creature = unit->ToCreature();
+    if (!creature)
+        return false;
+    if (!item.summonEntries.empty())
+        return creature->GetExactDist(item.x, item.y, item.z) <= item.radius;
+    return std::find(item.spawnIds.begin(), item.spawnIds.end(), creature->GetSpawnId()) != item.spawnIds.end();
 }
 
 bool DungeonRunAdvanceAction::OnNavmesh() const

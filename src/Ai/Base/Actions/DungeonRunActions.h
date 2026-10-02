@@ -83,7 +83,8 @@ private:
     bool ItemOpen(DungeonRoute const& route, uint32 index) const;  // on the path and not given up on
     bool BossAlive(DungeonRouteItem const& item) const;  // the boss creature alive, attackable or not
     float StartAlong(DungeonRoute const& route) const;
-    bool OnNavmesh() const;  // a navmesh polygon under the leader
+    bool OnNavmesh() const;
+    bool InItem(DungeonRouteItem const& item, Unit* unit) const;  // one of the item's pack  // a navmesh polygon under the leader
     bool HoldGroupAt(DungeonRouteItem const& item);  // the others wait at the item's hold point; true when there
     Unit* NearestLivingMember(DungeonRouteItem const& item) const;  // attackable, nearest to the bot
     bool ApproachTimedOut(uint32 index, float distance);
