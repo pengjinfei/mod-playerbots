@@ -187,8 +187,11 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     }
     // A pack whose aggro reaches past the default pull distance is engaged from farther, before anyone walks into
     // it: Krik'thir's first watcher group aggroed while the leader was still closing in, before any crowd control.
-    float const pullDistance = atSpot ? PULL_FROM_SPOT_DISTANCE
-                               : item->pullDistance > 0.0f ? item->pullDistance : PULL_DISTANCE;
+    // At a spot the route's own pull distance still holds: a patrol is pulled only at the end of its walk, away from
+    // the squad it passes (Ahn'kahet's lower room, run 1969).
+    float const pullDistance = item->pullDistance > 0.0f ? item->pullDistance
+                               : atSpot                  ? PULL_FROM_SPOT_DISTANCE
+                                                         : PULL_DISTANCE;
     // At the spot with the pack out of reach: wait there, as players wait in a doorway for a patrol to come by. Walking
     // after it took the tank past the next squad (Ahn'kahet's first hall, run 1965), and a step off the spot sent the
     // leader straight back to it. A pack that never comes is walked to after a while.
