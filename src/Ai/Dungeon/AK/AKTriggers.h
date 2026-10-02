@@ -54,6 +54,8 @@ public:
 constexpr float TALDARAM_SPHERE_SIGHT = 40.0f;
 constexpr float TALDARAM_SPHERE_SAFE_DISTANCE = 20.0f;  // from where they spawned: their burn reached 16 yd (run 1983)
 constexpr float TALDARAM_SPHERE_WALK = 25.0f;           // how far each walks
+constexpr float TALDARAM_SPHERE_DIAGONAL_DISTANCE = 30.0f;  // out between two of their ways
+constexpr float TALDARAM_SPHERE_SPAWN_CLEARANCE = 8.0f;     // a way to safety passing their spawn closer than this burns
 constexpr float TALDARAM_SPHERE_PATH_WIDTH = 18.0f;     // this close to a sphere's way is in it
 Unit* NearestFlameSphere(Player* bot, float range);
 // The point to wait at while the spheres walk, or false while their way is not known yet (not moving).
