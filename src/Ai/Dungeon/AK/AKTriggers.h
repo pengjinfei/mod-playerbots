@@ -51,9 +51,9 @@ public:
 // stepping away from the nearest one did not hold, melee walked straight back to the boss. The side opposite the
 // first sphere's way is clear: everyone waits there until they are gone.
 constexpr float TALDARAM_SPHERE_SIGHT = 40.0f;
-constexpr float TALDARAM_SPHERE_SAFE_DISTANCE = 12.0f;  // from where they spawned
+constexpr float TALDARAM_SPHERE_SAFE_DISTANCE = 20.0f;  // from where they spawned: their burn reached 16 yd (run 1983)
 constexpr float TALDARAM_SPHERE_WALK = 25.0f;           // how far each walks
-constexpr float TALDARAM_SPHERE_PATH_WIDTH = 8.0f;      // this close to a sphere's way is in it
+constexpr float TALDARAM_SPHERE_PATH_WIDTH = 18.0f;     // this close to a sphere's way is in it
 Unit* NearestFlameSphere(Player* bot, float range);
 // The point to wait at while the spheres walk, or false while their way is not known yet (not moving).
 bool FlameSphereSafePoint(Player* bot, float& x, float& y, float& z);
