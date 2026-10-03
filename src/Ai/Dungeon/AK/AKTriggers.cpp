@@ -15,6 +15,7 @@
 #include <array>
 #include <cmath>
 #include <limits>
+#include <unordered_map>
 
 Unit* NearestFlameSphere(Player* bot, float range)
 {
@@ -49,17 +50,37 @@ static bool FlameSphereLayout(Player* bot, float& startX, float& startY, float& 
     // Taldaram took 25k each in 2 s (run 1979). The first one will walk towards where his victim, the tank, stood when
     // he cast them (boss_prince_taldaram SetVictimPos), so the way is known before they move.
     Creature* first = bot->FindNearestCreature(NPC_FLAME_SPHERE_1, TALDARAM_SPHERE_SIGHT);
+    if (!first)
+        return false;
+    // The way as first seen, kept for the wave: worked out from where the tank stands, it turned with him as he
+    // dodged, and the safe side flipped between opposite ends of the platform each tick until the spheres burnt
+    // the group (run 2023, the mage dead in the first wave). One map's bots share a thread.
+    struct Seen
+    {
+        float x, y, way;
+    };
+    thread_local std::unordered_map<ObjectGuid, Seen> seen;
+    if (auto const itr = seen.find(first->GetGUID()); itr != seen.end())
+    {
+        startX = itr->second.x;
+        startY = itr->second.y;
+        way = itr->second.way;
+        return true;
+    }
     Creature* taldaram = bot->FindNearestCreature(NPC_TALDARAM_OK, TALDARAM_SPHERE_SIGHT);
     Unit* victim = taldaram ? taldaram->GetVictim() : nullptr;
     // No victim while he vanishes for the Embrace of the Vampyr: the spheres still walk to where his victim stood
     // when he cast them, the tank holding him. Without a way nobody moved and all five took 12-25k in 3 s (run 2018).
     if (!victim && bot->GetGroup())
         victim = ObjectAccessor::FindPlayer(PlayerbotAI::GetMainTankGuid(bot->GetGroup()));
-    if (!first || !victim)
+    if (!victim)
         return false;
     startX = first->GetPositionX();
     startY = first->GetPositionY();
     way = first->GetAngle(victim);
+    if (seen.size() > 64)
+        seen.clear();
+    seen[first->GetGUID()] = {startX, startY, way};
     return true;
 }
 
