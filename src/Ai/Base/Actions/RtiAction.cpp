@@ -239,6 +239,15 @@ bool TrashCcMarkAction::AssignPrePull(Group* group)
     // 骷髅缺席会让战斗中的「挪骷髅」把还没被控住的怪当成"都控着了"而放出一只真被控的
     //（run406：门禁超时开怪时骷髅未标，坦克把骷髅挪到了被闷棍的那只上）。
     // 所以：全部落地、或有没被控的怪已进战斗、或第一个控制图标已经打了 12 秒，就标骷髅。
+    // 一只都没分给控制时不标：没有控制要等，「全部落地」空成立，骷髅一挂上开怪前的排除（只在有控制图标时生效）
+    // 就不管它，而编排层的门禁还要等 no_plan 才开怪——这段空档里 DPS 把骷髅打了，达克萨隆要塞第一大厅 14 只
+    // 被萨满的烈焰震击整片拉起（my-mac run100070：控制职业在 45 码外的退守点，30 码内一只都分不出去）。
+    // 开怪后由 AdvanceKillOrder 从攻击者里标骷髅；没有被控的怪，也就不会误放。
+    if (assigned.empty())
+    {
+        context->GetValue<std::string>("rti")->Set("skull");
+        return changed;
+    }
     bool allLanded = true;
     bool engaged = false;
     uint32 oldestIconMs = 0;
