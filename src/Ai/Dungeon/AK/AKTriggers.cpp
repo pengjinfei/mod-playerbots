@@ -59,11 +59,11 @@ static bool FlameSphereStillAway(Player* bot, float& x, float& y)
     if (!first || !first->movespline->Finalized())
         return false;
     float const distance = bot->GetExactDist2d(first);
-    if (distance >= TALDARAM_SPHERE_SAFE_DISTANCE)
+    if (distance >= TALDARAM_SPHERE_STILL_CLEARANCE)
         return false;
     float const angle = distance > 0.5f ? first->GetAngle(bot) : bot->GetOrientation() + float(M_PI);
-    x = first->GetPositionX() + TALDARAM_SPHERE_SAFE_DISTANCE * std::cos(angle);
-    y = first->GetPositionY() + TALDARAM_SPHERE_SAFE_DISTANCE * std::sin(angle);
+    x = first->GetPositionX() + TALDARAM_SPHERE_STILL_CLEARANCE * std::cos(angle);
+    y = first->GetPositionY() + TALDARAM_SPHERE_STILL_CLEARANCE * std::sin(angle);
     return true;
 }
 
