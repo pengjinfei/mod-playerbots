@@ -273,22 +273,33 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             return false;
         }
     }
-    // A patrol walking past the pack comes with it: wait until it has walked off before the crowd-control chain
-    // starts (once it has, the casters may already be casting). Drak'Tharon's first hall: the south Belcher on the
-    // near half of its loop, 7 yd from the north corner's tormentor, came within 2-7 s with the tormentors of the west
-    // corner behind it - 6 wipes; at the far half (14-25 yd) or later the pull was won (my-mac runs 100063-100098).
+    // A patrol walking past the pack comes with it: wait until it is far off and walking away before the
+    // crowd-control chain starts (once it has, the casters may already be casting). Drak'Tharon's first hall: the
+    // south Belcher on the near half of its loop, 7 yd from the north corner's tormentor, came within 2-7 s with the
+    // tormentors of the west corner behind it - 6 wipes (my-mac runs 100063-100098). Far off alone was not enough: let
+    // go at 17 yd on its way back, it was there 2 s after the pull (run 100099).
     if (target && item->clearSpawn && _ccGateTarget != target->GetGUID())
     {
         auto const bounds = bot->GetMap()->GetCreatureBySpawnIdStore().equal_range(item->clearSpawn);
         for (auto itr = bounds.first; itr != bounds.second; ++itr)
         {
             Creature* patrol = itr->second;
-            if (!patrol || !patrol->IsAlive() || patrol->IsInCombat() ||
-                patrol->GetExactDist2d(item->x, item->y) >= item->clearDistance)
+            if (!patrol || !patrol->IsAlive() || patrol->IsInCombat())
                 continue;
+            float const distance = patrol->GetExactDist2d(item->x, item->y);
+            bool const measured = _clearItem == index;
+            bool const away = measured && distance >= item->clearDistance && distance >= _clearLastDist - 0.1f;
+            _clearItem = index;
+            _clearLastDist = distance;
+            if (away)
+            {
+                LOG_DEBUG("playerbots", "dungeon-run bot={} {} walking off item={} dist={:.1f}: pull", bot->GetName(),
+                          patrol->GetName(), index, distance);
+                continue;
+            }
             if (TraceDue())
                 LOG_DEBUG("playerbots", "dungeon-run bot={} waiting for {} to walk off item={} dist={:.1f}",
-                          bot->GetName(), patrol->GetName(), index, patrol->GetExactDist2d(item->x, item->y));
+                          bot->GetName(), patrol->GetName(), index, distance);
             return false;
         }
     }
