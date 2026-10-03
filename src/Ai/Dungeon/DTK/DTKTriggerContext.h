@@ -20,6 +20,7 @@ class WotlkDungeonDTKTriggerContext : public NamedObjectContext<Trigger>
             creators["arcane field"] = &WotlkDungeonDTKTriggerContext::arcane_field;
             // creators["crystal handler"] = &WotlkDungeonDTKTriggerContext::crystal_handler;
             creators["gift of tharon'ja"] = &WotlkDungeonDTKTriggerContext::gift_of_tharonja;
+            creators["grievous bite"] = &WotlkDungeonDTKTriggerContext::grievous_bite;
             creators["tharon'ja out of melee"] = &WotlkDungeonDTKTriggerContext::tharonja_out_of_melee;
 
         }
@@ -28,6 +29,7 @@ class WotlkDungeonDTKTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* arcane_field(PlayerbotAI* ai) { return new ArcaneFieldTrigger(ai); }
         // static Trigger* crystal_handler(PlayerbotAI* ai) { return new CrystalHandlerTrigger(ai); }
         static Trigger* gift_of_tharonja(PlayerbotAI* ai) { return new GiftOfTharonjaTrigger(ai); }
+        static Trigger* grievous_bite(PlayerbotAI* ai) { return new GrievousBiteTrigger(ai); }
         static Trigger* tharonja_out_of_melee(PlayerbotAI* ai) { return new TwoTriggers(ai, "gift of tharon'ja", "enemy out of melee"); }
 };
 

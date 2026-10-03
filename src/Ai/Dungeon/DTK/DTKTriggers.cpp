@@ -29,6 +29,30 @@ bool CorpseExplodeTrigger::IsActive()
     return false;
 }
 
+Player* FindGrievousBiteTarget(Player* bot)
+{
+    Group* group = bot->GetGroup();
+    if (!group)
+        return nullptr;
+
+    Player* best = nullptr;
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+    {
+        Player* member = ref->GetSource();
+        if (!member || !member->IsAlive() || !member->IsInWorld() || member->GetMapId() != bot->GetMapId() ||
+            member->GetHealth() >= member->GetMaxHealth() || !member->HasAura(SPELL_GRIEVOUS_BITE))
+            continue;
+        if (!best || member->GetHealthPct() < best->GetHealthPct())
+            best = member;
+    }
+    return best;
+}
+
+bool GrievousBiteTrigger::IsActive()
+{
+    return botAI->IsHeal(bot) && FindGrievousBiteTarget(bot);
+}
+
 bool ArcaneFieldTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "novos the summoner");

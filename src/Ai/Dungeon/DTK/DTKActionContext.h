@@ -23,6 +23,8 @@ class WotlkDungeonDTKActionContext : public NamedObjectContext<Action>
             creators["tharonja taunt"] = &WotlkDungeonDTKActionContext::taunt;
             creators["bone armor"] = &WotlkDungeonDTKActionContext::bone_armor;
             creators["touch of life"] = &WotlkDungeonDTKActionContext::touch_of_life;
+            creators["grievous bite heal"] = &WotlkDungeonDTKActionContext::grievous_bite_heal;
+            creators["grievous bite reach"] = &WotlkDungeonDTKActionContext::grievous_bite_reach;
         }
     private:
         static Action* corpse_explode_spread(PlayerbotAI* ai) { return new CorpseExplodeSpreadAction(ai); }
@@ -33,6 +35,8 @@ class WotlkDungeonDTKActionContext : public NamedObjectContext<Action>
         static Action* taunt(PlayerbotAI* ai) { return new CastTauntAction(ai); }
         static Action* bone_armor(PlayerbotAI* ai) { return new CastBoneArmorAction(ai); }
         static Action* touch_of_life(PlayerbotAI* ai) { return new CastTouchOfLifeAction(ai); }
+        static Action* grievous_bite_heal(PlayerbotAI* ai) { return new GrievousBiteHealAction(ai); }
+        static Action* grievous_bite_reach(PlayerbotAI* ai) { return new GrievousBiteReachAction(ai); }
 };
 
 #endif
