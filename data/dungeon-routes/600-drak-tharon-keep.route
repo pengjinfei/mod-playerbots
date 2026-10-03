@@ -68,7 +68,7 @@ node 522 -327.3 -711.1 28.9
 node 542 -344.6 -721.1 29.2
 node 558 -358.5 -729.0 29.2
 node 574 -372.4 -736.9 28.2
-boss 581 -379.3 -737.7 27.3 radius=0.0 entry=26631 spawns=127424 # 1xNovos the Summoner
+boss 581 -379.3 -737.7 27.3 radius=0.0 entry=26631 spawns=127424 hold=-378.9,-760.3,28.6 pull=30 from=-378.9,-760.3,28.6 # 1xNovos the Summoner
 node 590 -380.1 -729.8 28.0
 node 606 -396.0 -728.1 29.6
 node 626 -413.5 -721.2 29.2
