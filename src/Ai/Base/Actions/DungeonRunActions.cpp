@@ -393,6 +393,22 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
                                    MovementPriority::MOVEMENT_NORMAL)
                           : MoveTo(bot->GetMapId(), next->x, next->y, next->z, false, false, false, false,
                                    MovementPriority::MOVEMENT_NORMAL);
+    // The node a step ahead refused, the nearest one ahead instead: up the ramp from Jedoga's room the path to the
+    // node 36 yd on dived to a level 60 yd below and the leader stood at the ramp's middle ten minutes (Ahn'kahet,
+    // run 2088); the node 18 yd on is reached straight up the ramp.
+    if (!moved && !toTarget)
+        for (DungeonRouteNode const& node : route->nodes)
+        {
+            if (node.along <= progress || node.along >= next->along)
+                continue;
+            if (bot->GetExactDist(node.x, node.y, node.z) < 3.0f)
+                continue;
+            moved = MoveTo(bot->GetMapId(), node.x, node.y, node.z, false, false, false, false,
+                           MovementPriority::MOVEMENT_NORMAL);
+            if (moved)
+                next = &node;
+            break;
+        }
     // Standing off the navmesh no path starts: Taldaram's lowered platform is a game object, and after him the leader
     // stood on it for eight minutes, every move refused (Ahn'kahet, run 1981). A straight step towards where it goes
     // takes it back onto the navmesh.
