@@ -15,7 +15,6 @@
 #include <array>
 #include <cmath>
 #include <limits>
-#include <unordered_map>
 
 Unit* NearestFlameSphere(Player* bot, float range)
 {
@@ -46,46 +45,25 @@ static bool FlameSphereLayout(Player* bot, float& startX, float& startY, float& 
         way = heading + turn;
         return true;
     }
-    // Not moving yet: they sit where they spawned for 3 s and burn everyone around once they set off - the group by
-    // Taldaram took 25k each in 2 s (run 1979). The first one will walk towards where his victim, the tank, stood when
-    // he cast them (boss_prince_taldaram SetVictimPos), so the way is known before they move.
+    return false;
+}
+
+// Still at their spawn: they sit there 3 s and burn everyone round them once they set off - the group by Taldaram took
+// 25k each in 2 s (run 1979). Which way the first one walks is not known yet: it heads for where his victim stood
+// when he cast them, and a way guessed from where the tank stands now sent the group to one side, then back through
+// the burn when the spheres set off the other way (runs 2023, 2061). Straight out of their reach instead; the way is
+// read off the moving spheres after that.
+static bool FlameSphereStillAway(Player* bot, float& x, float& y)
+{
     Creature* first = bot->FindNearestCreature(NPC_FLAME_SPHERE_1, TALDARAM_SPHERE_SIGHT);
-    if (!first)
+    if (!first || !first->movespline->Finalized())
         return false;
-    // The way as first seen, kept for the wave: worked out from where the tank stands, it turned with him as he
-    // dodged, and the safe side flipped between opposite ends of the platform each tick until the spheres burnt
-    // the group (run 2023, the mage dead in the first wave). One map's bots share a thread. A new instance numbers its
-    // creatures from the start again: a sphere of a later run took the way kept for an earlier one's under the same
-    // guid, the safe side came out where the group stood and nobody moved (run 2031) - kept per instance and spot.
-    struct Seen
-    {
-        uint32 instanceId;
-        float x, y, way;
-    };
-    thread_local std::unordered_map<ObjectGuid, Seen> seen;
-    if (auto const itr = seen.find(first->GetGUID());
-        itr != seen.end() && itr->second.instanceId == first->GetInstanceId() &&
-        first->GetExactDist2d(itr->second.x, itr->second.y) < 2.0f)
-    {
-        startX = itr->second.x;
-        startY = itr->second.y;
-        way = itr->second.way;
-        return true;
-    }
-    Creature* taldaram = bot->FindNearestCreature(NPC_TALDARAM_OK, TALDARAM_SPHERE_SIGHT);
-    Unit* victim = taldaram ? taldaram->GetVictim() : nullptr;
-    // No victim while he vanishes for the Embrace of the Vampyr: the spheres still walk to where his victim stood
-    // when he cast them, the tank holding him. Without a way nobody moved and all five took 12-25k in 3 s (run 2018).
-    if (!victim && bot->GetGroup())
-        victim = ObjectAccessor::FindPlayer(PlayerbotAI::GetMainTankGuid(bot->GetGroup()));
-    if (!victim)
+    float const distance = bot->GetExactDist2d(first);
+    if (distance >= TALDARAM_SPHERE_SAFE_DISTANCE)
         return false;
-    startX = first->GetPositionX();
-    startY = first->GetPositionY();
-    way = first->GetAngle(victim);
-    if (seen.size() > 64)
-        seen.clear();
-    seen[first->GetGUID()] = {first->GetInstanceId(), startX, startY, way};
+    float const angle = distance > 0.5f ? first->GetAngle(bot) : bot->GetOrientation() + float(M_PI);
+    x = first->GetPositionX() + TALDARAM_SPHERE_SAFE_DISTANCE * std::cos(angle);
+    y = first->GetPositionY() + TALDARAM_SPHERE_SAFE_DISTANCE * std::sin(angle);
     return true;
 }
 
@@ -93,7 +71,13 @@ bool FlameSphereSafePoint(Player* bot, float& x, float& y, float& z)
 {
     float startX, startY, way;
     if (!FlameSphereLayout(bot, startX, startY, way))
-        return false;
+    {
+        if (!FlameSphereStillAway(bot, x, y))
+            return false;
+        float const floor = bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, bot->GetPositionZ() + 2.0f, true, 6.0f);
+        z = floor > INVALID_HEIGHT && std::fabs(floor - bot->GetPositionZ()) < 3.0f ? floor : bot->GetPositionZ();
+        return true;
+    }
     // Clear of all three ways: 20 yd straight behind the first one's way, or 30 yd out between it and a side one's
     // (21 yd off both; they walk only 25). The nearest of these whose straight way there does not pass their spawn
     // point: the tank, standing where the first one walks, crossed it to reach the back and was burnt (run 1987).
