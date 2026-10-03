@@ -29,12 +29,12 @@ pack 284 -323.1 -575.9 11.1 radius=5.5 side=1 elite=3 spawns=127425,127434,12759
 node 284 -357.5 -619.7 10.4
 pack 300 -301.8 -580.4 11.1 radius=0.0 side=1 elite=1 spawns=127599 # 1xDrakkari Guardian
 node 300 -345.3 -630.1 11.9
-pack 301 -322.7 -647.6 11.0 radius=0.0 side=0 elite=1 spawns=127608 hold=-357.5,-619.7,10.4 pull=35 from=-345.3,-630.1,11.9 # 1xGhoul Tormentor
-pack 302 -320.9 -646.6 11.0 radius=0.0 side=0 elite=1 spawns=127568 hold=-357.5,-619.7,10.4 pull=35 from=-345.3,-630.1,11.9 # 1xDrakkari Guardian
-pack 303 -319.3 -648.0 11.0 radius=0.0 side=0 elite=1 spawns=127560 hold=-357.5,-619.7,10.4 pull=35 from=-345.3,-630.1,11.9 # 1xFlesheating Ghoul
-pack 304 -317.5 -652.5 10.5 radius=0.0 side=0 elite=1 spawns=127609 hold=-357.5,-619.7,10.4 pull=40 from=-345.3,-630.1,11.9 # 1xGhoul Tormentor
-pack 305 -315.3 -654.6 10.5 radius=0.0 side=0 elite=1 spawns=127583 hold=-357.5,-619.7,10.4 pull=40 from=-345.3,-630.1,11.9 # 1xDrakkari Guardian
-pack 306 -318.2 -640.5 12.0 radius=0.0 side=0 elite=1 spawns=127404 hold=-357.5,-619.7,10.4 pull=35 from=-345.3,-630.1,11.9 # 1xWretched Belcher
+pack 301 -322.7 -647.6 11.0 radius=0.0 side=0 elite=1 spawns=127608 hold=-345.3,-630.1,11.9 pull=35 from=-345.3,-630.1,11.9 # 1xGhoul Tormentor
+pack 302 -320.9 -646.6 11.0 radius=0.0 side=0 elite=1 spawns=127568 hold=-345.3,-630.1,11.9 pull=35 from=-345.3,-630.1,11.9 # 1xDrakkari Guardian
+pack 303 -319.3 -648.0 11.0 radius=0.0 side=0 elite=1 spawns=127560 hold=-345.3,-630.1,11.9 pull=35 from=-345.3,-630.1,11.9 # 1xFlesheating Ghoul
+pack 304 -317.5 -652.5 10.5 radius=0.0 side=0 elite=1 spawns=127609 hold=-345.3,-630.1,11.9 pull=40 from=-345.3,-630.1,11.9 # 1xGhoul Tormentor
+pack 305 -315.3 -654.6 10.5 radius=0.0 side=0 elite=1 spawns=127583 hold=-345.3,-630.1,11.9 pull=40 from=-345.3,-630.1,11.9 # 1xDrakkari Guardian
+pack 306 -318.2 -640.5 12.0 radius=0.0 side=0 elite=1 spawns=127404 hold=-345.3,-630.1,11.9 pull=35 from=-345.3,-630.1,11.9 # 1xWretched Belcher
 pack 307 -334.1 -652.4 11.9 radius=0.0 side=0 elite=1 spawns=127429 hold=-357.5,-619.7,10.4 pull=30 from=-319.6,-638.7,11.8 # 1xRisen Drakkari Warrior
 pack 308 -331.0 -658.2 11.0 radius=0.0 side=0 elite=1 spawns=127439 hold=-357.5,-619.7,10.4 pull=30 from=-319.6,-638.7,11.8 # 1xRisen Drakkari Soulmage
 pack 309 -329.3 -658.4 11.0 radius=0.0 side=0 elite=1 spawns=127607 hold=-357.5,-619.7,10.4 pull=30 from=-319.6,-638.7,11.8 # 1xGhoul Tormentor
@@ -108,12 +108,12 @@ node 1014 -475.7 -652.2 62.1
 node 1030 -473.4 -640.4 72.6
 node 1046 -467.1 -625.8 73.2
 node 1066 -450.9 -615.4 73.2
-pack 1071 -445.0 -608.3 72.7 radius=6.2 side=0 elite=4 spawns=127438,127589,127590,127617 # 2xScourge Brute, 2xDrakkari Guardian
+pack 1071 -445.0 -608.3 72.7 radius=6.2 side=0 elite=4 spawns=127438,127589,127590,127617 hold=-473.4,-640.4,72.6 pull=30 from=-467.1,-625.8,73.2 # 2xScourge Brute, 2xDrakkari Guardian
+pack 1075 -420.2 -594.2 72.7 radius=2.5 side=0 elite=3 spawns=127427,127428,127580 hold=-473.4,-640.4,72.6 pull=40 from=-450.9,-615.4,73.2 # 2xRisen Drakkari Warrior, 1xDrakkari Guardian
+pack 1077 -390.7 -608.3 72.6 radius=0.0 side=0 elite=1 spawns=127553 hold=-473.4,-640.4,72.6 pull=35 from=-450.9,-615.4,73.2 # 1xRisen Drakkari Death Knight
 node 1083 -433.6 -613.8 73.2
-pack 1099 -420.2 -594.2 72.7 radius=2.5 side=0 elite=3 spawns=127427,127428,127580 # 2xRisen Drakkari Warrior, 1xDrakkari Guardian
 node 1099 -417.6 -613.2 73.2
 node 1115 -401.6 -612.7 73.2
-pack 1123 -390.7 -608.3 72.6 radius=0.0 side=0 elite=1 spawns=127553 # 1xRisen Drakkari Death Knight
 node 1131 -385.6 -612.2 73.2
 node 1147 -369.6 -611.7 73.2
 node 1163 -353.6 -611.1 73.2
