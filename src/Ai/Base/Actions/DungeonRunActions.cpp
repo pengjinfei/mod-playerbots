@@ -209,6 +209,25 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // (run 1923). Away from the spot, nothing else is pulled on the way.
     bool atSpot = false;
     bool spotRefused = false;
+    // A patrol passing the spot comes with whatever is pulled there: wait where the group holds until it has walked
+    // off. Going down to the swarmers' spot as the lower room's patrol passed 22 yd from it brought the patrol and the
+    // squad it walks through (Ahn'kahet, run 2057, wipe).
+    if (target && item->from && item->awaySpawn && bot->GetExactDist(item->fromX, item->fromY, item->fromZ) > 3.0f)
+    {
+        auto const bounds = bot->GetMap()->GetCreatureBySpawnIdStore().equal_range(item->awaySpawn);
+        for (auto itr = bounds.first; itr != bounds.second; ++itr)
+        {
+            Creature* patrol = itr->second;
+            if (!patrol || !patrol->IsAlive() || patrol->IsInCombat() ||
+                patrol->GetExactDist2d(item->fromX, item->fromY) >= item->awayDistance)
+                continue;
+            if (TraceDue())
+                LOG_DEBUG("playerbots", "dungeon-run bot={} waiting for {} to walk off the spot of item={} dist={:.1f}",
+                          bot->GetName(), patrol->GetName(), index,
+                          patrol->GetExactDist2d(item->fromX, item->fromY));
+            return false;
+        }
+    }
     if (target && item->from)
     {
         // Over the spot counts as at it: a spot written at the floor's height under a ledge (z -31.6 for -25.1) kept

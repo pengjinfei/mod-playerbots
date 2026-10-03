@@ -36,6 +36,8 @@ struct DungeonRouteItem
     float rimX = 0.0f, rimY = 0.0f, rimZ = 0.0f;  // drop: a point on the floor at the hole's edge, walked to first
     float pullDistance = 0.0f;         // pull=<yd>: engage from this far instead of the default
     bool noCc = false;                 // cc=0: no crowd control before the pull (a stealthed sapper is seen first)
+    uint32 awaySpawn = 0;              // away=<spawnId>:<yd>: go to the pull spot only while that unit (a patrol)...
+    float awayDistance = 0.0f;         // ...is at least this far from it
     bool from = false;                 // from=<x>,<y>,<z>: walk there first and pull from it (a doorway spot in sight)
     float fromX = 0.0f, fromY = 0.0f, fromZ = 0.0f;
     bool hold = false;                 // sent: where to wait for the pack (hold=<x>,<y>,<z>); else where the leader is

@@ -135,6 +135,15 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
         item.side = Field(tokens, "side") == "1";
         item.sent = Field(tokens, "sent") == "1";
         item.noCc = Field(tokens, "cc") == "0";
+        if (std::string_view const away = Field(tokens, "away"); !away.empty())
+        {
+            size_t const colon = away.find(':');
+            if (colon != std::string_view::npos)
+            {
+                item.awaySpawn = Acore::StringTo<uint32>(away.substr(0, colon)).value_or(0);
+                item.awayDistance = Acore::StringTo<float>(away.substr(colon + 1)).value_or(0.0f);
+            }
+        }
         item.pullDistance = Acore::StringTo<float>(Field(tokens, "pull")).value_or(0.0f);
         item.spawnIds = ParseIdList(Field(tokens, "spawns"));
         item.object = tokens[0] == "object";
