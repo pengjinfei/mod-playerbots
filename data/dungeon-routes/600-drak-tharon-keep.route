@@ -84,20 +84,20 @@ node 734 -464.7 -660.0 29.2
 pack 750 -477.5 -652.1 28.7 radius=11.3 side=0 elite=3 spawns=127444,127456,127457 # 1xRisen Drakkari Handler, 2xDrakkari Gutripper
 node 750 -480.7 -660.7 29.2
 node 766 -496.5 -661.8 30.6
-pack 774 -527.8 -659.7 31.0 radius=0.0 side=0 elite=1 spawns=127453 # 1xDrakkari Gutripper
+pack 776 -502.6 -694.8 30.5 radius=11.5 side=0 elite=2 spawns=127442,127443 hold=-492.0,-650.0,28.6 pull=30 from=-492.0,-650.0,28.6 # 2xRisen Drakkari Handler
 node 782 -502.5 -676.6 31.1
-pack 802 -502.6 -694.8 30.5 radius=11.5 side=0 elite=2 spawns=127442,127443 # 2xRisen Drakkari Handler
+boss 790 -544.0 -699.7 30.3 radius=2.9 entry=27483 spawns=127452,127507 hold=-492.0,-650.0,28.6 pull=30 # 1xDrakkari Gutripper, 1xKing Dred
 node 802 -505.5 -695.6 31.1
 node 818 -505.7 -711.6 31.3
 node 834 -509.5 -721.9 30.8
-pack 838 -519.1 -722.7 30.3 radius=0.0 side=0 elite=1 spawns=127454 # 1xDrakkari Gutripper
-pack 854 -533.9 -718.2 30.3 radius=0.0 side=0 elite=1 spawns=127413 # 1xDrakkari Scytheclaw
 node 854 -525.9 -710.4 31.1
 node 870 -539.0 -701.2 30.9
-pack 877 -541.5 -668.6 30.3 radius=5.9 side=0 elite=2 spawns=127415,127455 # 1xDrakkari Scytheclaw, 1xDrakkari Gutripper
-boss 881 -544.0 -699.7 30.3 radius=2.9 entry=27483 spawns=127452,127507 # 1xDrakkari Gutripper, 1xKing Dred
-pack 889 -527.7 -693.9 30.3 radius=0.0 side=0 elite=1 spawns=127414 # 1xDrakkari Scytheclaw
 node 889 -534.6 -703.2 30.8
+pack 892 -527.8 -659.7 31.0 radius=0.0 side=0 elite=1 spawns=127453 # 1xDrakkari Gutripper
+pack 893 -519.1 -722.7 30.3 radius=0.0 side=0 elite=1 spawns=127454 # 1xDrakkari Gutripper
+pack 894 -533.9 -718.2 30.3 radius=0.0 side=0 elite=1 spawns=127413 # 1xDrakkari Scytheclaw
+pack 895 -541.5 -668.6 30.3 radius=5.9 side=0 elite=2 spawns=127415,127455 # 1xDrakkari Scytheclaw, 1xDrakkari Gutripper
+pack 896 -527.7 -693.9 30.3 radius=0.0 side=0 elite=1 spawns=127414 # 1xDrakkari Scytheclaw
 node 909 -518.5 -715.0 31.5
 node 925 -505.1 -721.0 30.9
 node 941 -492.0 -711.9 30.8
