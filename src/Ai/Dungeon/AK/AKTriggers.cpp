@@ -183,7 +183,11 @@ Unit* NearestJedogaWorshipper(Player* bot)
     {
         if (!worshipper->IsAlive() || !worshipper->IsInCombat() || !bot->IsValidAttackTarget(worshipper))
             continue;
-        if (!nearest || bot->GetDistance(worshipper) < bot->GetDistance(nearest))
+        // The most hurt one, so everyone ends on the same: each on its nearest, the DPS spread over nine worshippers,
+        // switched as the nearest changed and killed none before the group fell (run 2036).
+        if (!nearest || worshipper->GetHealthPct() < nearest->GetHealthPct() ||
+            (worshipper->GetHealthPct() == nearest->GetHealthPct() &&
+             bot->GetDistance(worshipper) < bot->GetDistance(nearest)))
             nearest = worshipper;
     }
     return nearest;
@@ -195,8 +199,11 @@ bool JedogaWorshipperTrigger::IsActive()
         return false;
     if (!AI_VALUE2(Unit*, "find target", "jedoga shadowseeker"))
         return false;
-    Unit* worshipper = NearestJedogaWorshipper(bot);
-    return worshipper && AI_VALUE(Unit*, "current target") != worshipper;
+    // On one already: stay on it until it dies.
+    Unit* current = AI_VALUE(Unit*, "current target");
+    if (current && current->IsAlive() && current->GetEntry() == NPC_TWILIGHT_WORSHIPPER_OK)
+        return false;
+    return NearestJedogaWorshipper(bot) != nullptr;
 }
 
 bool NadoxGuardianTrigger::IsActive()
