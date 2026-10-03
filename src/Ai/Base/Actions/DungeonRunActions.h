@@ -114,6 +114,8 @@ private:
     uint32 _spotItem = UINT32_MAX;    // the item waited for at its pull spot
     uint32 _spotSinceMs = 0;
     ObjectGuid _ccGateTarget;
+    uint32 _clearItem = UINT32_MAX;   // the item whose clear= patrol was last measured...
+    float _clearLastDist = 0.0f;      // ...and how far it was then
     uint32 _ccGateSinceMs = 0;
 };
 
