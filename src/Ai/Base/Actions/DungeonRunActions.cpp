@@ -12,6 +12,7 @@
 #include "DetourNavMeshQuery.h"
 #include "DungeonRouteMgr.h"
 #include "LastMovementValue.h"
+#include "PathGenerator.h"
 #include "PositionValue.h"
 #include "PullStrategy.h"
 #include "RtiTargetValue.h"
@@ -352,6 +353,20 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         // search found the void under the map and the tank walked straight down through the ledge (run 1968). The
         // path search puts the point on the navmesh.
         approach.Relocate(x, y, target->GetPositionZ());
+        // On the pack's level: a stop over a hole puts the path's end on the floor below. The stop past Taldaram's
+        // second ramp lay over the space under it; the navmesh took the tank down to z -23, from where no path
+        // led back up, and the run stood still (Ahn'kahet, run 2050). Step towards the pack until the path ends on
+        // its level.
+        for (uint32 step = 0; step < STOP_LEVEL_TRIES; ++step)
+        {
+            PathGenerator path(bot);
+            if (!path.CalculatePath(approach.GetPositionX(), approach.GetPositionY(), approach.GetPositionZ(), false) ||
+                path.GetPath().empty() ||
+                path.GetPath().back().z >= target->GetPositionZ() - STOP_LEVEL_DROP)
+                break;
+            approach.Relocate(approach.GetPositionX() - STOP_LEVEL_STEP * std::cos(angle),
+                              approach.GetPositionY() - STOP_LEVEL_STEP * std::sin(angle), target->GetPositionZ());
+        }
     }
     bool moved = toTarget ? MoveTo(bot->GetMapId(), approach.GetPositionX(), approach.GetPositionY(),
                                    approach.GetPositionZ(), false, false, false, false,
