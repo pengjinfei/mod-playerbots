@@ -181,7 +181,10 @@ Unit* NearestJedogaWorshipper(Player* bot)
     Unit* nearest = nullptr;
     for (Creature* worshipper : worshippers)
     {
-        if (!worshipper->IsAlive() || !worshipper->IsInCombat() || !bot->IsValidAttackTarget(worshipper))
+        // In sight only: the attack refuses one that is not, and the mage, given one behind the altar, failed nine
+        // times out of eleven and stayed on Jedoga (run 2042).
+        if (!worshipper->IsAlive() || !worshipper->IsInCombat() || !bot->IsValidAttackTarget(worshipper) ||
+            !bot->IsWithinLOSInMap(worshipper))
             continue;
         // The most hurt one, so everyone ends on the same: each on its nearest, the DPS spread over nine worshippers,
         // switched as the nearest changed and killed none before the group fell (run 2036).
