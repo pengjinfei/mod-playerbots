@@ -53,6 +53,7 @@ public:
 // stepping away from the nearest one did not hold, melee walked straight back to the boss. The side opposite the
 // first sphere's way is clear: everyone waits there until they are gone.
 constexpr float TALDARAM_SPHERE_SIGHT = 40.0f;
+constexpr float JEDOGA_KNEELING_CLEARANCE = 25.0f;  // melee keep a target this far from a worshipper not yet fighting
 constexpr float TALDARAM_SPHERE_SAFE_DISTANCE = 20.0f;  // from where they spawned: their burn reached 16 yd (run 1983)
 constexpr float TALDARAM_SPHERE_WALK = 25.0f;           // how far each walks
 constexpr float TALDARAM_SPHERE_DIAGONAL_DISTANCE = 30.0f;  // out between two of their ways

@@ -11,6 +11,7 @@
 #include "ChooseTargetActions.h"
 #include "GenericSpellActions.h"
 #include "MovementActions.h"
+#include "ReachTargetActions.h"
 
 float ElderNadoxMultiplier::GetValue(Action* action)
 {
@@ -25,6 +26,26 @@ float ElderNadoxMultiplier::GetValue(Action* action)
             return 0.0f;
         }
     }
+    return 1.0f;
+}
+
+// Her ten worshippers kneel in two groups of five, 55-70 yd off her, and stay there unless someone comes near. Chasing a
+// fleeing Twilight Initiate the tank went to 15 yd of the south group, all five came with Jedoga and the group wiped
+// (run 2044). As players do: melee let a target that runs to them go, the casters finish it from range.
+float JedogaKneelingWorshippersMultiplier::GetValue(Action* action)
+{
+    if (!dynamic_cast<ReachTargetAction*>(action) || botAI->IsRanged(bot))
+        return 1.0f;
+    if (!AI_VALUE2(Unit*, "find target", "jedoga shadowseeker"))
+        return 1.0f;
+    Unit* target = AI_VALUE(Unit*, "current target");
+    if (!target || target->GetEntry() == NPC_TWILIGHT_WORSHIPPER_OK)
+        return 1.0f;
+    std::list<Creature*> worshippers;
+    target->GetCreatureListWithEntryInGrid(worshippers, NPC_TWILIGHT_WORSHIPPER_OK, JEDOGA_KNEELING_CLEARANCE);
+    for (Creature* worshipper : worshippers)
+        if (worshipper->IsAlive() && !worshipper->IsInCombat())
+            return 0.0f;
     return 1.0f;
 }
 

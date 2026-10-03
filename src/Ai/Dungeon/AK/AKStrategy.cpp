@@ -41,5 +41,6 @@ void WotlkDungeonOKStrategy::InitMultipliers(std::vector<Multiplier*>& multiplie
 {
     multipliers.push_back(new ElderNadoxMultiplier(botAI));
     multipliers.push_back(new JedogaShadowseekerMultiplier(botAI));
+    multipliers.push_back(new JedogaKneelingWorshippersMultiplier(botAI));
     multipliers.push_back(new ForgottenOneMultiplier(botAI));
 }
