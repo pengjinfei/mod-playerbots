@@ -393,8 +393,11 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
         float modifiedZ;
         Movement::PointsArray path =
             SearchForBestPath(x, y, z, modifiedZ, sPlayerbotAIConfig.maxMovementSearchTime, normal_only);
+        // No path at all: the same way back to the navmesh. In a side pocket of the cave before Amanitar, where the
+        // tank had chased a beast, every move back to the route found no path and the run stood still (Ahn'kahet,
+        // run 2094).
         if (modifiedZ == INVALID_HEIGHT)
-            return false;
+            return StepTowardsNavmesh(x, y, z);
         // The path ends well below a floor that exists where the move was asked for: the navmesh lacks that floor
         // (the Nexus' bridge to Telestra is walkable in the collision model but not in the navmesh) and the path
         // takes the pit under it. The tank followed such paths down to 34 yd below the bridge and the group wiped
