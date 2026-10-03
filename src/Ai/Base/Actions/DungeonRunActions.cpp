@@ -374,14 +374,15 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         approach.Relocate(x, y, target->GetPositionZ());
         // On the pack's level: a stop over a hole puts the path's end on the floor below. The stop past Taldaram's
         // second ramp lay over the space under it; the navmesh took the tank down to z -23, from where no path
-        // led back up, and the run stood still (Ahn'kahet, run 2050). Step towards the pack until the path ends on
-        // its level.
+        // led back up, and the run stood still (Ahn'kahet, run 2050). Above it alike: a stop over the cave tunnel
+        // before Amanitar took the tank along a ledge 20 yd over the beasts it was to pull (run 2073). Step towards
+        // the pack until the path ends on its level.
         for (uint32 step = 0; step < STOP_LEVEL_TRIES; ++step)
         {
             PathGenerator path(bot);
             if (!path.CalculatePath(approach.GetPositionX(), approach.GetPositionY(), approach.GetPositionZ(), false) ||
                 path.GetPath().empty() ||
-                path.GetPath().back().z >= target->GetPositionZ() - STOP_LEVEL_DROP)
+                std::fabs(path.GetPath().back().z - target->GetPositionZ()) <= STOP_LEVEL_DROP)
                 break;
             approach.Relocate(approach.GetPositionX() - STOP_LEVEL_STEP * std::cos(angle),
                               approach.GetPositionY() - STOP_LEVEL_STEP * std::sin(angle), target->GetPositionZ());
