@@ -711,8 +711,26 @@ bool DungeonRunAdvanceAction::GroupReady(std::string& reason, Player*& dead, Pla
         {
             // Waiting at the hold point while the leader pulls: ready there, however far the leader stands.
             if (member->GetExactDist(_holdX, _holdY, _holdZ) > GROUP_RANGE)
+            {
                 reason = Acore::StringFormat("{} {:.0f} yd from the hold point", member->GetName(),
                                              member->GetExactDist(_holdX, _holdY, _holdZ));
+                // Send it there again: only HoldGroupAt sets the stay, and it runs after this check. A shaman whose
+                // stay was gone after a death stood 56 yd off while the leader waited for it (Drak'Tharon Keep,
+                // my-mac run100075, stalled at 234 yd).
+                if (PlayerbotAI* memberAI = GET_PLAYERBOT_AI(member))
+                {
+                    if (!memberAI->HasStrategy("stay", BOT_STATE_NON_COMBAT) ||
+                        memberAI->HasStrategy("follow", BOT_STATE_NON_COMBAT))
+                        memberAI->ChangeStrategy("+stay,-follow", BOT_STATE_NON_COMBAT);
+                    PositionMap& positions = memberAI->GetAiObjectContext()->GetValue<PositionMap&>("position")->Get();
+                    PositionInfo stay = positions["stay"];
+                    if (!stay.isSet() || stay.x != _holdX || stay.y != _holdY || stay.z != _holdZ)
+                    {
+                        stay.Set(_holdX, _holdY, _holdZ, bot->GetMapId());
+                        positions["stay"] = stay;
+                    }
+                }
+            }
         }
         else if (member != bot && bot->GetDistance(member) > GROUP_RANGE)
             reason = Acore::StringFormat("{} {:.0f} yd away", member->GetName(), bot->GetDistance(member));
