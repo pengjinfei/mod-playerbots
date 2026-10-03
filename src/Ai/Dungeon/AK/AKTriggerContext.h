@@ -18,6 +18,7 @@ class WotlkDungeonOKTriggerContext : public NamedObjectContext<Trigger>
             creators["nadox guardian"] = &WotlkDungeonOKTriggerContext::nadox_guardian;
             creators["jedoga volunteer"] = &WotlkDungeonOKTriggerContext::jedoga_volunteer;
             creators["jedoga worshipper"] = &WotlkDungeonOKTriggerContext::jedoga_worshipper;
+            creators["taldaram embrace"] = &WotlkDungeonOKTriggerContext::taldaram_embrace;
             creators["shadow crash"] = &WotlkDungeonOKTriggerContext::shadow_crash;
             creators["taldaram flame sphere"] = &WotlkDungeonOKTriggerContext::taldaram_flame_sphere;
         }
@@ -25,6 +26,7 @@ class WotlkDungeonOKTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* nadox_guardian(PlayerbotAI* ai) { return new NadoxGuardianTrigger(ai); }
         static Trigger* jedoga_volunteer(PlayerbotAI* ai) { return new JedogaVolunteerTrigger(ai); }
         static Trigger* jedoga_worshipper(PlayerbotAI* ai) { return new JedogaWorshipperTrigger(ai); }
+        static Trigger* taldaram_embrace(PlayerbotAI* ai) { return new TaldaramEmbraceTrigger(ai); }
         static Trigger* shadow_crash(PlayerbotAI* ai) { return new ShadowCrashTrigger(ai); }
         static Trigger* taldaram_flame_sphere(PlayerbotAI* ai) { return new TaldaramFlameSphereTrigger(ai); }
 };

@@ -18,6 +18,9 @@ void WotlkDungeonOKStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     // standing in them (runs 1970/1971). Step out of their way.
     triggers.push_back(new TriggerNode("taldaram flame sphere",
         { NextAction("avoid flame sphere", ACTION_MOVE + 5) }));
+    // His Embrace of the Vampyr breaks after enough damage: everyone back on him the moment he starts it.
+    triggers.push_back(new TriggerNode("taldaram embrace",
+        { NextAction("attack taldaram embracing", ACTION_RAID + 4) }));
 
     // Jedoga Shadowseeker
     triggers.push_back(new TriggerNode("jedoga volunteer",

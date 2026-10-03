@@ -53,6 +53,8 @@ public:
 // stepping away from the nearest one did not hold, melee walked straight back to the boss. The side opposite the
 // first sphere's way is clear: everyone waits there until they are gone.
 constexpr float TALDARAM_SPHERE_SIGHT = 40.0f;
+constexpr uint32 SPELL_EMBRACE_OF_THE_VAMPYR_OK = 55959;
+constexpr uint32 SPELL_EMBRACE_OF_THE_VAMPYR_H_OK = 59513;
 constexpr float JEDOGA_KNEELING_CLEARANCE = 25.0f;  // melee keep a target this far from a worshipper not yet fighting
 constexpr float TALDARAM_SPHERE_SAFE_DISTANCE = 20.0f;  // from where they spawned: their burn reached 16 yd (run 1983)
 constexpr float TALDARAM_SPHERE_WALK = 25.0f;           // how far each walks
@@ -74,6 +76,15 @@ public:
 // The worshippers Jedoga summons round her room join the fight casting Fireball and Flamestrike: 210k of the
 // damage taken in her fight, three times hers (runs 1993/1994). The nearest one fighting the group, for DPS.
 Unit* NearestJedogaWorshipper(Player* bot);
+
+class TaldaramEmbraceTrigger : public Trigger
+{
+public:
+    TaldaramEmbraceTrigger(PlayerbotAI* ai) : Trigger(ai, "taldaram embrace") {}
+    bool IsActive() override;
+};
+
+Unit* TaldaramEmbracing(Player* bot);
 
 class JedogaWorshipperTrigger : public Trigger
 {

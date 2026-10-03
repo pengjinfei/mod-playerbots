@@ -46,6 +46,14 @@ bool AttackJedogaVolunteerAction::Execute(Event /*event*/)
 }
 
 // The casters first, as players kill them: Jedoga herself hits far less than ten of them casting Fireball.
+bool AttackTaldaramEmbracingAction::Execute(Event /*event*/)
+{
+    Unit* taldaram = TaldaramEmbracing(bot);
+    if (!taldaram || AI_VALUE(Unit*, "current target") == taldaram)
+        return false;
+    return Attack(taldaram);
+}
+
 bool AttackJedogaWorshipperAction::Execute(Event /*event*/)
 {
     Unit* worshipper = NearestJedogaWorshipper(bot);

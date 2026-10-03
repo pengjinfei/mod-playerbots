@@ -10,6 +10,7 @@
 #include "ObjectAccessor.h"
 #include "Playerbots.h"
 #include "MoveSpline.h"
+#include "Spell.h"
 
 #include <algorithm>
 #include <array>
@@ -156,6 +157,31 @@ bool TaldaramFlameSphereTrigger::IsActive()
         return true;
     // The tank takes Taldaram there and melee go with him; casters only step out of a sphere's way and go on.
     return botAI->IsTank(bot) || botAI->IsMelee(bot) || OnFlameSpherePath(bot);
+}
+
+// Taldaram while he drains someone with the Embrace of the Vampyr (55959, heroic 59513): it breaks after 40k damage on
+// heroic. He vanishes into it, the bots lost him as a target and hit him for 3k in 5 s instead of 20-50k, and two of
+// the group were drained to death (run 2066). As players do: everyone on him at once.
+Unit* TaldaramEmbracing(Player* bot)
+{
+    Creature* taldaram = bot->FindNearestCreature(NPC_TALDARAM_OK, TALDARAM_SPHERE_SIGHT);
+    if (!taldaram || !taldaram->IsAlive())
+        return nullptr;
+    Spell* const channel = taldaram->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
+    Spell* const cast = taldaram->GetCurrentSpell(CURRENT_GENERIC_SPELL);
+    for (Spell* spell : {channel, cast})
+        if (spell && (spell->m_spellInfo->Id == SPELL_EMBRACE_OF_THE_VAMPYR_OK ||
+                      spell->m_spellInfo->Id == SPELL_EMBRACE_OF_THE_VAMPYR_H_OK))
+            return bot->IsValidAttackTarget(taldaram) ? taldaram : nullptr;
+    return nullptr;
+}
+
+bool TaldaramEmbraceTrigger::IsActive()
+{
+    if (botAI->IsHeal(bot))
+        return false;
+    Unit* taldaram = TaldaramEmbracing(bot);
+    return taldaram && AI_VALUE(Unit*, "current target") != taldaram;
 }
 
 Unit* NearestJedogaWorshipper(Player* bot)

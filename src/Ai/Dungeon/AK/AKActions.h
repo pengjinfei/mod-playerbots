@@ -27,6 +27,13 @@ public:
     bool Execute(Event event) override;
 };
 
+class AttackTaldaramEmbracingAction : public AttackAction
+{
+public:
+    AttackTaldaramEmbracingAction(PlayerbotAI* ai) : AttackAction(ai, "attack taldaram embracing") {}
+    bool Execute(Event event) override;
+};
+
 class AttackJedogaWorshipperAction : public AttackAction
 {
 public:
