@@ -7,12 +7,14 @@
 #ifndef PLAYERBOTS_DTKSTRATEGY_H
 #define PLAYERBOTS_DTKSTRATEGY_H
 
-#include "Strategy.h"
+#include "MarkRtiStrategy.h"
 
-class WotlkDungeonDTKStrategy : public Strategy
+// Inherits TrashCcPullStrategy like the other dungeon strategies: without it a dungeon-run leader's cc gate never
+// got a plan here ("no_plan") and pulled the first hall's undead uncontrolled (my-mac run100057).
+class WotlkDungeonDTKStrategy : public TrashCcPullStrategy
 {
 public:
-    WotlkDungeonDTKStrategy(PlayerbotAI* ai) : Strategy(ai) {}
+    WotlkDungeonDTKStrategy(PlayerbotAI* ai) : TrashCcPullStrategy(ai) {}
     std::string const getName() override { return "wotlk-dtk"; }
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
     void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
