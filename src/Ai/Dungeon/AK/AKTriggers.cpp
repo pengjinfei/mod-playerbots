@@ -54,13 +54,18 @@ static bool FlameSphereLayout(Player* bot, float& startX, float& startY, float& 
         return false;
     // The way as first seen, kept for the wave: worked out from where the tank stands, it turned with him as he
     // dodged, and the safe side flipped between opposite ends of the platform each tick until the spheres burnt
-    // the group (run 2023, the mage dead in the first wave). One map's bots share a thread.
+    // the group (run 2023, the mage dead in the first wave). One map's bots share a thread. A new instance numbers its
+    // creatures from the start again: a sphere of a later run took the way kept for an earlier one's under the same
+    // guid, the safe side came out where the group stood and nobody moved (run 2031) - kept per instance and spot.
     struct Seen
     {
+        uint32 instanceId;
         float x, y, way;
     };
     thread_local std::unordered_map<ObjectGuid, Seen> seen;
-    if (auto const itr = seen.find(first->GetGUID()); itr != seen.end())
+    if (auto const itr = seen.find(first->GetGUID());
+        itr != seen.end() && itr->second.instanceId == first->GetInstanceId() &&
+        first->GetExactDist2d(itr->second.x, itr->second.y) < 2.0f)
     {
         startX = itr->second.x;
         startY = itr->second.y;
@@ -80,7 +85,7 @@ static bool FlameSphereLayout(Player* bot, float& startX, float& startY, float& 
     way = first->GetAngle(victim);
     if (seen.size() > 64)
         seen.clear();
-    seen[first->GetGUID()] = {startX, startY, way};
+    seen[first->GetGUID()] = {first->GetInstanceId(), startX, startY, way};
     return true;
 }
 
