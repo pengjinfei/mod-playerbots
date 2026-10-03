@@ -200,5 +200,5 @@ boss 2509 519.9 -441.8 26.4 radius=0.0 entry=29311 spawns=132298 # 1xHerald Vola
 node 2509 519.9 -441.8 26.4
 object 709 692.5 -783.9 18.0 entry=193094  # ancient device 2
 object 714 655.7 -719.0 18.0 entry=193093  # ancient device 1
-summoned 1815 378.0 -708.0 -16.1 radius=20 entry=30114  # Jedoga's Twilight Initiates
+summoned 1815 378.0 -708.0 -16.1 radius=20 entry=30114 hold=366.2,-729.8,-16.2  # Jedoga's Twilight Initiates
 boss 1830 372.3 -705.3 -0.6 radius=0.0 entry=29310 spawns=131953 hold=366.2,-729.8,-16.2  # 1xJedoga Shadowseeker
