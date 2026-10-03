@@ -54,6 +54,9 @@ public:
 // first sphere's way is clear: everyone waits there until they are gone.
 constexpr float TALDARAM_SPHERE_SIGHT = 40.0f;
 constexpr uint32 SPELL_EMBRACE_OF_THE_VAMPYR_OK = 55959;
+constexpr uint32 SPELL_CONJURE_FLAME_SPHERE_OK = 55931;
+constexpr uint32 TALDARAM_SPHERE_CAST_SAME_MS = 5000;   // looks at his cast within this long are the same cast
+constexpr uint32 TALDARAM_SPHERE_CAST_VALID_MS = 10000; // a cast seen this long ago still gives the still spheres' way
 constexpr uint32 SPELL_EMBRACE_OF_THE_VAMPYR_H_OK = 59513;
 constexpr float JEDOGA_KNEELING_CLEARANCE = 25.0f;  // melee keep a target this far from a worshipper not yet fighting
 constexpr float TALDARAM_SPHERE_SAFE_DISTANCE = 20.0f;  // from where they spawned: their burn reached 16 yd (run 1983)

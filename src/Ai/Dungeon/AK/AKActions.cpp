@@ -51,7 +51,12 @@ bool AttackTaldaramEmbracingAction::Execute(Event /*event*/)
     Unit* taldaram = TaldaramEmbracing(bot);
     if (!taldaram || AI_VALUE(Unit*, "current target") == taldaram)
         return false;
-    return Attack(taldaram);
+    // Him as the target whether or not the attack starts this tick: refused out of sight, or as already fought, the
+    // trigger fired 28 times for one bot and none switched (run 2068). With him as the target the reach actions close
+    // in to sight.
+    context->GetValue<Unit*>("current target")->Set(taldaram);
+    Attack(taldaram);
+    return true;
 }
 
 bool AttackJedogaWorshipperAction::Execute(Event /*event*/)

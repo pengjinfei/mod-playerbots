@@ -11,6 +11,7 @@
 #include "Playerbots.h"
 #include "MoveSpline.h"
 #include "Spell.h"
+#include "Timer.h"
 
 #include <algorithm>
 #include <array>
@@ -49,6 +50,48 @@ static bool FlameSphereLayout(Player* bot, float& startX, float& startY, float& 
     return false;
 }
 
+// Where his victim stood as he began Conjure Flame Sphere: the first sphere walks straight there (the script keeps that
+// position, SetVictimPos), so the way is known before they move. One map's bots share a thread.
+struct SphereCast
+{
+    uint32 instanceId = 0;
+    ObjectGuid taldaram;
+    float x = 0.0f, y = 0.0f;
+    uint32 atMs = 0;
+};
+static thread_local SphereCast lastSphereCast;
+
+static void ObserveSphereCast(Player* bot)
+{
+    Creature* taldaram = bot->FindNearestCreature(NPC_TALDARAM_OK, TALDARAM_SPHERE_SIGHT);
+    if (!taldaram)
+        return;
+    Spell* const spell = taldaram->GetCurrentSpell(CURRENT_GENERIC_SPELL);
+    Unit* const victim = taldaram->GetVictim();
+    if (!spell || spell->m_spellInfo->Id != SPELL_CONJURE_FLAME_SPHERE_OK || !victim)
+        return;
+    uint32 const now = getMSTime();
+    // The first look at this cast: the victim may step away before it ends.
+    if (lastSphereCast.instanceId == taldaram->GetInstanceId() && lastSphereCast.taldaram == taldaram->GetGUID() &&
+        getMSTimeDiff(lastSphereCast.atMs, now) < TALDARAM_SPHERE_CAST_SAME_MS)
+        return;
+    lastSphereCast = {taldaram->GetInstanceId(), taldaram->GetGUID(), victim->GetPositionX(), victim->GetPositionY(), now};
+}
+
+// The way of still spheres from the cast seen: a way guessed from where the tank stands once they are out sent the
+// group to one side, then back through the burn when they set off the other way (runs 2023, 2061).
+static bool FlameSphereStillLayout(Player* bot, float& startX, float& startY, float& way)
+{
+    Creature* first = bot->FindNearestCreature(NPC_FLAME_SPHERE_1, TALDARAM_SPHERE_SIGHT);
+    if (!first || !first->movespline->Finalized() || lastSphereCast.instanceId != first->GetInstanceId() ||
+        getMSTimeDiff(lastSphereCast.atMs, getMSTime()) > TALDARAM_SPHERE_CAST_VALID_MS)
+        return false;
+    startX = first->GetPositionX();
+    startY = first->GetPositionY();
+    way = first->GetAngle(lastSphereCast.x, lastSphereCast.y);
+    return true;
+}
+
 // Still at their spawn: they sit there 3 s and burn everyone round them once they set off - the group by Taldaram took
 // 25k each in 2 s (run 1979). Which way the first one walks is not known yet: it heads for where his victim stood
 // when he cast them, and a way guessed from where the tank stands now sent the group to one side, then back through
@@ -63,15 +106,23 @@ static bool FlameSphereStillAway(Player* bot, float& x, float& y)
     if (distance >= TALDARAM_SPHERE_STILL_CLEARANCE)
         return false;
     float const angle = distance > 0.5f ? first->GetAngle(bot) : bot->GetOrientation() + float(M_PI);
-    x = first->GetPositionX() + TALDARAM_SPHERE_STILL_CLEARANCE * std::cos(angle);
-    y = first->GetPositionY() + TALDARAM_SPHERE_STILL_CLEARANCE * std::sin(angle);
+    // Not off the platform: straight out 30 yd took the mage over its edge to the floor below (run 2068).
+    for (float const reach : {TALDARAM_SPHERE_STILL_CLEARANCE, TALDARAM_SPHERE_SAFE_DISTANCE})
+    {
+        x = first->GetPositionX() + reach * std::cos(angle);
+        y = first->GetPositionY() + reach * std::sin(angle);
+        float const floor =
+            bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, bot->GetPositionZ() + 2.0f, true, 6.0f);
+        if (floor > INVALID_HEIGHT && std::fabs(floor - bot->GetPositionZ()) < 3.0f)
+            return true;
+    }
     return true;
 }
 
 bool FlameSphereSafePoint(Player* bot, float& x, float& y, float& z)
 {
     float startX, startY, way;
-    if (!FlameSphereLayout(bot, startX, startY, way))
+    if (!FlameSphereLayout(bot, startX, startY, way) && !FlameSphereStillLayout(bot, startX, startY, way))
     {
         if (!FlameSphereStillAway(bot, x, y))
             return false;
@@ -145,6 +196,7 @@ static bool OnFlameSpherePath(Player* bot)
 
 bool TaldaramFlameSphereTrigger::IsActive()
 {
+    ObserveSphereCast(bot);
     float x, y, z;
     if (!FlameSphereSafePoint(bot, x, y, z) || bot->GetExactDist2d(x, y) <= 3.0f)
         return false;
