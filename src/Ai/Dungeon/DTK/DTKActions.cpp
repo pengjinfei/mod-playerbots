@@ -28,6 +28,50 @@ bool CorpseExplodeSpreadAction::Execute(Event /*event*/)
     return false;
 }
 
+namespace
+{
+    // The fastest single-target heal per healing class.
+    std::string GrievousBiteHealSpell(Player* bot)
+    {
+        switch (bot->getClass())
+        {
+            case CLASS_PRIEST:  return "flash heal";
+            case CLASS_SHAMAN:  return "lesser healing wave";
+            case CLASS_PALADIN: return "flash of light";
+            case CLASS_DRUID:   return "regrowth";
+            default:            return "flash heal";
+        }
+    }
+}
+
+constexpr float GRIEVOUS_BITE_HEAL_RANGE = 36.0f;
+
+GrievousBiteHealAction::GrievousBiteHealAction(PlayerbotAI* ai)
+    : CastSpellAction(ai, GrievousBiteHealSpell(ai->GetBot()))
+{
+}
+
+bool GrievousBiteHealAction::isUseful()
+{
+    Unit* target = GetTarget();
+    return target && bot->GetExactDist(target) <= GRIEVOUS_BITE_HEAL_RANGE && bot->IsWithinLOSInMap(target) &&
+           CastSpellAction::isUseful();
+}
+
+bool GrievousBiteReachAction::isUseful()
+{
+    Player* target = FindGrievousBiteTarget(bot);
+    return target && (bot->GetExactDist(target) > GRIEVOUS_BITE_HEAL_RANGE || !bot->IsWithinLOSInMap(target));
+}
+
+bool GrievousBiteReachAction::Execute(Event /*event*/)
+{
+    Player* target = FindGrievousBiteTarget(bot);
+    if (!target)
+        return false;
+    return MoveTo(target, 10.0f, MovementPriority::MOVEMENT_COMBAT);
+}
+
 bool AvoidArcaneFieldAction::Execute(Event /*event*/)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "novos the summoner");

@@ -26,6 +26,9 @@ void WotlkDungeonDTKStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
     // King Dred
     // TODO: Fear ward / tremor totem, or general anti-fear strat development
+    // Grievous Bite bleeds until the target is at full health, in and out of combat: heal it up to full.
+    triggers.push_back(new TriggerNode("grievous bite",
+        { NextAction("grievous bite reach", ACTION_RAID + 2), NextAction("grievous bite heal", ACTION_RAID + 1) }));
 
     //The Prophet Tharon'ja
     triggers.push_back(new TriggerNode("gift of tharon'ja",
