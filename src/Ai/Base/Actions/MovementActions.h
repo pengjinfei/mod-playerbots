@@ -28,6 +28,7 @@ class MovementAction : public Action
     static constexpr float PATH_UNDER_MAP_DEPTH = 30.0f;  // a path ending this far below both ends is a fall
     static constexpr float OFF_NAVMESH_STEP = 6.0f;          // off the navmesh, a straight step this long...
     static constexpr float OFF_NAVMESH_STEP_HEIGHT = 4.0f;   // ...onto ground within this of the bot's height
+    static constexpr float OFF_NAVMESH_SEARCH = 20.0f;       // the nearest navmesh this far round is walked to first
 
 public:
     MovementAction(PlayerbotAI* botAI, std::string const name);

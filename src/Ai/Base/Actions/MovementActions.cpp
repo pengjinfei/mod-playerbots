@@ -89,6 +89,16 @@ bool MovementAction::StepTowardsNavmesh(float x, float y)
     dtPolyRef poly = 0;
     if (dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) && poly)
         return false;
+    // The nearest navmesh at about the bot's height first: from Taldaram's platform rim the hold point lay over the
+    // edge, every straight step towards it had no floor, and two of the group stood there ten minutes (run 2070).
+    float const wide[3] = {OFF_NAVMESH_SEARCH, OFF_NAVMESH_STEP_HEIGHT, OFF_NAVMESH_SEARCH};
+    if (dtStatusSucceed(query->findNearestPoly(point, wide, &filter, &poly, closest)) && poly &&
+        std::fabs(closest[1] - bot->GetPositionZ()) < OFF_NAVMESH_STEP_HEIGHT)
+    {
+        bot->GetMotionMaster()->MovePoint(0, closest[2], closest[0], closest[1], FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
+                                          false, true);
+        return true;
+    }
     float const angle = bot->GetAngle(x, y);
     float const step = std::min(OFF_NAVMESH_STEP, bot->GetExactDist2d(x, y));
     float const stepX = bot->GetPositionX() + step * std::cos(angle);
