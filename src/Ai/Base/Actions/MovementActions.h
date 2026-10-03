@@ -29,6 +29,7 @@ class MovementAction : public Action
     static constexpr float OFF_NAVMESH_STEP = 6.0f;          // off the navmesh, a straight step this long...
     static constexpr float OFF_NAVMESH_STEP_HEIGHT = 4.0f;   // ...onto ground within this of the bot's height
     static constexpr float OFF_NAVMESH_SEARCH = 40.0f;       // the nearest navmesh this far round is walked to first
+    static constexpr float OFF_NAVMESH_DROP = 10.0f;         // ...or dropped down to from no higher than this
 
 public:
     MovementAction(PlayerbotAI* botAI, std::string const name);

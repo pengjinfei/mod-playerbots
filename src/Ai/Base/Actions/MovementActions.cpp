@@ -98,8 +98,11 @@ bool MovementAction::StepTowardsNavmesh(float x, float y, float z)
             return false;
         G3D::Vector3 const& reach = back.GetPath().back();
         float const across = bot->GetExactDist2d(reach.x, reach.y);
-        if (across < 2.0f || across > OFF_NAVMESH_SEARCH ||
-            std::fabs(reach.z - bot->GetPositionZ()) >= OFF_NAVMESH_STEP_HEIGHT)
+        // Down a drop a player would jump: the floor under Taldaram's platform rim lies 9 yd below it, and four of the
+        // group stood on the rim ten minutes for want of a way at their own height (run 2100).
+        float const rise = reach.z - bot->GetPositionZ();
+        if (across < 2.0f || across > OFF_NAVMESH_SEARCH || rise >= OFF_NAVMESH_STEP_HEIGHT ||
+            rise <= -OFF_NAVMESH_DROP)
             return false;
         bot->GetMotionMaster()->MovePoint(0, reach.x, reach.y, reach.z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
         return true;
@@ -107,9 +110,10 @@ bool MovementAction::StepTowardsNavmesh(float x, float y, float z)
     // The nearest navmesh at about the bot's height first: from Taldaram's platform rim the hold point lay over the
     // edge, every straight step towards it had no floor, and two of the group stood there ten minutes (run 2070).
     // The platform's way down lies 30 yd from its rim (run 2080).
-    float const wide[3] = {OFF_NAVMESH_SEARCH, OFF_NAVMESH_STEP_HEIGHT, OFF_NAVMESH_SEARCH};
+    float const wide[3] = {OFF_NAVMESH_SEARCH, OFF_NAVMESH_DROP, OFF_NAVMESH_SEARCH};
     if (dtStatusSucceed(query->findNearestPoly(point, wide, &filter, &poly, closest)) && poly &&
-        std::fabs(closest[1] - bot->GetPositionZ()) < OFF_NAVMESH_STEP_HEIGHT)
+        closest[1] - bot->GetPositionZ() < OFF_NAVMESH_STEP_HEIGHT &&
+        closest[1] - bot->GetPositionZ() > -OFF_NAVMESH_DROP)
     {
         bot->GetMotionMaster()->MovePoint(0, closest[2], closest[0], closest[1], FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
                                           false, true);
