@@ -24,9 +24,9 @@ pack 229 528.4 -963.8 38.2 radius=7.7 side=1 elite=0 spawns=131972,131973,131974
 node 229 522.5 -1011.5 38.6
 node 245 538.5 -1012.1 38.6
 pack 245 550.1 -1000.5 38.0 radius=3.7 side=0 elite=3 spawns=131865,131881,131901 hold=490.0,-1032.0,30.3 pull=35 from=522.5,-1011.5,37.9 # 1xAhn'kahar Web Winder, 1xAhn'kahar Spell Flinger, 1xPlague Walker
-pack 262 550.8 -972.3 38.0 radius=5.2 side=0 elite=4 spawns=131867,131874,131883,131892 hold=490.0,-1032.0,30.3 pull=35 from=538.0,-1002.0,37.9 # 1xAhn'kahar Web Winder, 1xAhn'kahar Slasher, 1xAhn'kahar Spell Flinger, 1xDeep Crawler
+pack 262 550.8 -972.3 38.0 radius=5.2 side=0 elite=4 spawns=131867,131874,131883,131892 hold=512.0,-1013.0,37.9 pull=32 from=536.0,-993.0,37.9 # 1xAhn'kahar Web Winder, 1xAhn'kahar Slasher, 1xAhn'kahar Spell Flinger, 1xDeep Crawler
 node 265 558.3 -1014.9 38.6
-pack 273 569.9 -1013.6 38.0 radius=5.7 side=0 elite=4 spawns=131872,131879,131888,131899 hold=490.0,-1032.0,30.3 pull=35 from=538.0,-1002.0,37.9 # 1xAhn'kahar Web Winder, 1xAhn'kahar Slasher, 1xAhn'kahar Spell Flinger, 1xDeep Crawler
+pack 273 569.9 -1013.6 38.0 radius=5.7 side=0 elite=4 spawns=131872,131879,131888,131899 hold=512.0,-1013.0,37.9 pull=35 from=538.0,-1002.0,37.9 # 1xAhn'kahar Web Winder, 1xAhn'kahar Slasher, 1xAhn'kahar Spell Flinger, 1xDeep Crawler
 pack 273 565.9 -1040.7 38.0 radius=10.8 side=0 elite=0 spawns=131966,131967,131968,131969,131970,131971 # 6xAhn'kahar Swarmer
 node 281 574.1 -1017.6 38.7
 node 297 589.9 -1020.2 38.7
@@ -60,7 +60,6 @@ node 612 670.5 -866.3 12.7
 pack 621 905.7 -782.7 -59.2 radius=0.0 side=1 elite=1 spawns=131938 # 1xAhn'kahar Channeler
 node 629 670.5 -852.9 10.9
 node 644 665.7 -841.9 1.3
-pack 650 691.4 -783.9 18.0 radius=6.4 side=0 elite=4 spawns=131909,131910,131917,131918 # 2xEye of Taldaram, 2xFrostbringer
 pack 657 812.6 -707.8 -59.6 radius=0.0 side=1 elite=1 spawns=131936 # 1xAhn'kahar Channeler
 pack 657 884.3 -610.9 -59.2 radius=0.0 side=1 elite=1 spawns=131937 # 1xAhn'kahar Channeler
 node 665 652.9 -829.9 -2.5
@@ -68,8 +67,9 @@ pack 673 640.7 -839.4 -3.2 radius=4.8 side=0 elite=0 spawns=131931,131932,131933
 node 681 637.0 -828.0 -2.3
 pack 689 608.3 -847.4 -3.2 radius=5.4 side=0 elite=3 spawns=131911,131912,131919 # 2xEye of Taldaram, 1xFrostbringer
 node 697 624.1 -820.8 -1.8
-pack 700 654.7 -720.0 18.0 radius=6.5 side=0 elite=4 spawns=131907,131908,131915,131916 # 2xEye of Taldaram, 2xFrostbringer
 pack 705 620.5 -813.0 -3.2 radius=4.3 side=0 elite=0 spawns=131925,131926,131927,131928,131929 # 5xPlundering Geist
+pack 708 691.4 -783.9 18.0 radius=6.4 side=0 elite=4 spawns=131909,131910,131917,131918 hold=632.5,-796.0,-2.2 pull=35 from=665.0,-786.5,12.0 # 2xEye of Taldaram, 2xFrostbringer
+pack 712 654.7 -720.0 18.0 radius=6.5 side=0 elite=4 spawns=131907,131908,131915,131916 hold=621.3,-772.8,-2.7 pull=38 from=642.4,-746.2,12.1 # 2xEye of Taldaram, 2xFrostbringer
 node 720 607.1 -807.2 -2.7
 pack 728 591.5 -820.4 -3.1 radius=0.0 side=0 elite=1 spawns=131904 # 1xBonegrinder
 node 736 592.6 -800.4 -2.7
@@ -102,6 +102,7 @@ node 1122 506.9 -818.9 -23.8
 node 1138 497.3 -806.1 -23.5
 node 1154 487.7 -793.3 -23.2
 node 1173 478.0 -780.6 -29.5
+pack 1180 453.1 -792.7 -31.6 radius=1.5 side=0 elite=2 spawns=131939,132052 hold=497.3,-806.1,-23.5 pull=28 from=470.0,-800.0,-31.6 # 1xTwilight Darkcaster, 1xTwilight Apostle
 pack 1185 504.8 -765.2 -31.6 radius=5.7 side=0 elite=3 spawns=131944,131996,132060 hold=497.3,-806.1,-23.5 pull=30 from=486.0,-780.0,-30.5 # 1xTwilight Darkcaster, 1xTwilight Worshipper, 1xTwilight Apostle
 node 1193 474.6 -761.4 -31.0
 node 1209 473.5 -745.4 -30.5
@@ -109,7 +110,6 @@ node 1230 468.0 -756.4 -30.5
 pack 1238 462.7 -765.8 -31.6 radius=3.7 side=0 elite=3 spawns=131943,131995,132057 hold=497.3,-806.1,-23.5 pull=30 from=486.0,-780.0,-30.5 # 1xTwilight Darkcaster, 1xTwilight Worshipper, 1xTwilight Apostle
 node 1246 462.7 -771.5 -30.6
 node 1262 458.9 -787.1 -30.9
-pack 1270 453.1 -792.7 -31.6 radius=1.5 side=0 elite=2 spawns=131939,132052 hold=497.3,-806.1,-23.5 pull=30 # 1xTwilight Darkcaster, 1xTwilight Apostle
 node 1278 455.2 -802.6 -30.8
 pack 1280 468.1 -743.3 -31.6 radius=6.8 side=0 elite=4 spawns=131940,131990,131991,132053 hold=497.3,-806.1,-23.5 pull=30 # 1xTwilight Darkcaster, 2xTwilight Worshipper, 1xTwilight Apostle
 node 1298 453.9 -822.2 -31.0
@@ -198,7 +198,7 @@ node 2481 521.3 -469.8 27.7
 node 2497 520.5 -453.8 27.1
 boss 2509 519.9 -441.8 26.4 radius=0.0 entry=29311 spawns=132298 # 1xHerald Volazj
 node 2509 519.9 -441.8 26.4
-object 660 692.5 -783.9 18.0 entry=193094  # ancient device 2
-object 710 655.7 -719.0 18.0 entry=193093  # ancient device 1
+object 709 692.5 -783.9 18.0 entry=193094  # ancient device 2
+object 714 655.7 -719.0 18.0 entry=193093  # ancient device 1
 summoned 1815 378.0 -708.0 -16.1 radius=20 entry=30114  # Jedoga's Twilight Initiates
 boss 1830 372.3 -705.3 -0.6 radius=0.0 entry=29310 spawns=131953  # 1xJedoga Shadowseeker

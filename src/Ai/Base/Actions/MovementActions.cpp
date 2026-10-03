@@ -352,9 +352,13 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
         // -223 and stayed under the world (run 1967). No staircase drops 30 yd below both of its ends.
         // Only where the collision model has no floor at the destination: Utgarde Keep's portcullis before Ingvar
         // has a path ending 90 yd low that walks fine, and refusing it stalled the run there (run 2008, as 1850).
+        // A floor found far below the destination is none either: with no collision model the height search falls
+        // back to the terrain under the instance, and the tank walked from the ramp at z -6 to z -132 there
+        // (Ahn'kahet, run 2019).
+        float const destinationFloor =
+            bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, z + Z_OFFSET_FIND_HEIGHT, true, 10.0f);
         if (modifiedZ < z - PATH_UNDER_MAP_DEPTH && modifiedZ < bot->GetPositionZ() - PATH_UNDER_MAP_DEPTH &&
-            bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, z + Z_OFFSET_FIND_HEIGHT, true, 10.0f) <=
-                INVALID_HEIGHT)
+            (destinationFloor <= INVALID_HEIGHT || destinationFloor < z - PATH_UNDER_MAP_DEPTH))
         {
             if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
                 LOG_DEBUG("playerbots", "floor-guard bot={} action={} path under the map refused dest=({:.1f},{:.1f},"

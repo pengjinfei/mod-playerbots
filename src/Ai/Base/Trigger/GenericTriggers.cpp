@@ -630,6 +630,12 @@ bool IsNotFacingTargetTrigger::IsActive()
     if (botAI->HasStrategy("stay", botAI->GetState()))
         return false;
 
+    // A moving bot's orientation is rewritten by its movement spline every update, so turning it never sticks and
+    // "set facing" (above every heal) fired again each tick: a disc priest kiting melee mobs cast nothing for 13 s
+    // at full mana while the tank died (Ahn'kahet heroic, run 2017).
+    if (bot->isMoving())
+        return false;
+
     return !AI_VALUE2(bool, "facing", "current target");
 }
 
