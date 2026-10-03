@@ -6,6 +6,8 @@
 
 #include "AKTriggers.h"
 #include "AiObjectContext.h"
+#include "Group.h"
+#include "ObjectAccessor.h"
 #include "Playerbots.h"
 #include "MoveSpline.h"
 
@@ -49,6 +51,10 @@ static bool FlameSphereLayout(Player* bot, float& startX, float& startY, float& 
     Creature* first = bot->FindNearestCreature(NPC_FLAME_SPHERE_1, TALDARAM_SPHERE_SIGHT);
     Creature* taldaram = bot->FindNearestCreature(NPC_TALDARAM_OK, TALDARAM_SPHERE_SIGHT);
     Unit* victim = taldaram ? taldaram->GetVictim() : nullptr;
+    // No victim while he vanishes for the Embrace of the Vampyr: the spheres still walk to where his victim stood
+    // when he cast them, the tank holding him. Without a way nobody moved and all five took 12-25k in 3 s (run 2018).
+    if (!victim && bot->GetGroup())
+        victim = ObjectAccessor::FindPlayer(PlayerbotAI::GetMainTankGuid(bot->GetGroup()));
     if (!first || !victim)
         return false;
     startX = first->GetPositionX();
@@ -74,10 +80,17 @@ bool FlameSphereSafePoint(Player* bot, float& x, float& y, float& z)
                                                    {float(M_PI) / 4.0f, TALDARAM_SPHERE_DIAGONAL_DISTANCE},
                                                    {-float(M_PI) / 4.0f, TALDARAM_SPHERE_DIAGONAL_DISTANCE}}};
     float best = std::numeric_limits<float>::max();
+    float bestZ = bot->GetPositionZ();
     for (Spot const& spot : spots)
     {
         float const sx = startX + spot.distance * std::cos(way + spot.angle);
         float const sy = startY + spot.distance * std::sin(way + spot.angle);
+        // Only onto floor at the bot's height (the platform is a game object, which the height search sees): a spot
+        // past its edge took all five down to z 1 off the navmesh, and after Taldaram nobody could walk out of there
+        // (run 2020, stalled). A spot over no floor costs more than any other, so one is still picked.
+        float const floor =
+            bot->GetMap()->GetHeight(bot->GetPhaseMask(), sx, sy, bot->GetPositionZ() + 2.0f, true, 6.0f);
+        bool const onFloor = floor > INVALID_HEIGHT && std::fabs(floor - bot->GetPositionZ()) < 3.0f;
         // Closest approach of the straight way there to the spawn point.
         float const dx = sx - bot->GetPositionX(), dy = sy - bot->GetPositionY();
         float const length2 = dx * dx + dy * dy;
@@ -85,15 +98,17 @@ bool FlameSphereSafePoint(Player* bot, float& x, float& y, float& z)
                                  : 0.0f;
         t = std::clamp(t, 0.0f, 1.0f);
         float const pass = std::hypot(bot->GetPositionX() + t * dx - startX, bot->GetPositionY() + t * dy - startY);
-        float const cost = std::sqrt(length2) + (pass < TALDARAM_SPHERE_SPAWN_CLEARANCE ? 1000.0f : 0.0f);
+        float const cost = std::sqrt(length2) + (pass < TALDARAM_SPHERE_SPAWN_CLEARANCE ? 1000.0f : 0.0f) +
+                           (onFloor ? 0.0f : 2000.0f);
         if (cost < best)
         {
             best = cost;
             x = sx;
             y = sy;
+            bestZ = onFloor ? floor : bot->GetPositionZ();
         }
     }
-    z = bot->GetPositionZ();
+    z = bestZ;
     return true;
 }
 

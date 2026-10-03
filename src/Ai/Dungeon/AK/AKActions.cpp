@@ -67,7 +67,7 @@ bool AvoidFlameSphereAction::Execute(Event /*event*/)
     LOG_DEBUG("playerbots", "flame-sphere bot={} from=({:.1f},{:.1f}) to=({:.1f},{:.1f}) victim={} los={}",
               bot->GetName(), bot->GetPositionX(), bot->GetPositionY(), x, y, victim ? victim->GetName() : "-",
               bot->IsWithinLOS(x, y, z + 2.0f));
-    bot->GetMotionMaster()->MovePoint(0, x, y, bot->GetPositionZ(), FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
+    bot->GetMotionMaster()->MovePoint(0, x, y, z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
     return true;
 }
 
