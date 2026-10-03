@@ -58,7 +58,7 @@ private:
     static constexpr float HOLD_ARRIVED = 8.0f;           // a member this close to the hold point is there
     static constexpr float START_NODE_RANGE = 25.0f;      // a leader this close to a route node joins the route there
     static constexpr float START_AT_ENTRANCE = 30.0f;     // ... unless that node is this close to the entrance
-    static constexpr uint32 SPOT_WAIT_MS = 60000;         // at a pull spot, wait this long for a pack out of reach
+    static constexpr uint32 SPOT_WAIT_MS = 120000;        // at a pull spot, wait this long for a pack out of reach
     static constexpr float SPOT_HEIGHT_TOLERANCE = 8.0f;  // over a pull spot within this height counts as at it
     static constexpr uint32 STOP_LEVEL_TRIES = 3;        // a stop short of a pack whose path ends below it moves...
     static constexpr float STOP_LEVEL_STEP = 5.0f;       // ...this far towards the pack, at most that many times...
