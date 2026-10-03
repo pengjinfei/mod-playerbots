@@ -778,6 +778,19 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
                 index = i;
                 return &item;
             }
+            // Which boss the route takes for done, and how it stood: Jedoga was left at 53% mid-ritual and the leader
+            // walked on to the next pack (Ahn'kahet, run 2039).
+            if (item.boss)
+                for (uint32 spawnId : item.spawnIds)
+                {
+                    auto const bounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
+                    for (auto itr = bounds.first; itr != bounds.second; ++itr)
+                        if (Creature* creature = itr->second; creature && creature->IsAlive())
+                            LOG_DEBUG("playerbots", "dungeon-run bot={} boss item={} taken as done: {} entry={} alive={} "
+                                      "hp={:.0f}% attackable={}", bot->GetName(), i, creature->GetName(),
+                                      creature->GetEntry(), creature->IsAlive(), creature->GetHealthPct(),
+                                      bot->IsValidAttackTarget(creature));
+                }
             if (!item.summonEntries.empty())
                 _summonedDone.insert(i);
             continue;
