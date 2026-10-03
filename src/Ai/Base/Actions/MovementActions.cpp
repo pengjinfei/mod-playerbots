@@ -6,6 +6,7 @@
 
 #include "MovementActions.h"
 #include "Corpse.h"
+#include "DetourNavMeshQuery.h"
 #include "Event.h"
 #include "FleeManager.h"
 #include "GameObject.h"
@@ -70,6 +71,34 @@ void MovementAction::RecordLastMovement(uint32 mapId, float x, float y, float z,
     lastMove.Set(mapId, x, y, z, bot->GetOrientation(), delay, priority);
     lastMove.intent = GetMovementIntent();
     lastMove.issuer = getName();
+}
+
+// Off the navmesh no path starts: Taldaram's lowered platform is a game object, and after him four of the group stood on
+// it for ten minutes, every move to the hold point below refused (Ahn'kahet, run 2056; the leader's own way off it
+// since run 1981). A straight step towards where the move goes, only onto ground at the bot's own height - with no
+// collision floor most of Ahn'kahet put such steps on the void far below (run 2015).
+bool MovementAction::StepTowardsNavmesh(float x, float y)
+{
+    dtNavMeshQuery const* query = bot->GetMap()->GetMapCollisionData().GetMMapData().GetNavMeshQuery();
+    if (!query || !bot->movespline->Finalized())
+        return false;
+    float const point[3] = {bot->GetPositionY(), bot->GetPositionZ(), bot->GetPositionX()};
+    float const extents[3] = {2.0f, 4.0f, 2.0f};
+    float closest[3] = {0.0f, 0.0f, 0.0f};
+    dtQueryFilter const filter;
+    dtPolyRef poly = 0;
+    if (dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) && poly)
+        return false;
+    float const angle = bot->GetAngle(x, y);
+    float const step = std::min(OFF_NAVMESH_STEP, bot->GetExactDist2d(x, y));
+    float const stepX = bot->GetPositionX() + step * std::cos(angle);
+    float const stepY = bot->GetPositionY() + step * std::sin(angle);
+    float const ground =
+        bot->GetMap()->GetHeight(bot->GetPhaseMask(), stepX, stepY, bot->GetPositionZ() + 2.0f, true, 6.0f);
+    if (ground <= INVALID_HEIGHT || std::fabs(ground - bot->GetPositionZ()) >= OFF_NAVMESH_STEP_HEIGHT)
+        return false;
+    bot->GetMotionMaster()->MovePoint(0, stepX, stepY, ground, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
+    return true;
 }
 
 bool MovementAction::IsSameFloorDestination(float x, float y, float z)
@@ -279,7 +308,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
     // 5 yd away whose z came back 100+ yd lower. Real stairs within 30 yd rarely climb more than 0.8 yd per yd.
     LiftSunkenDestination(x, y, z);
     if (!IsSameFloorDestination(x, y, z))
-        return false;
+        return StepTowardsNavmesh(x, y);
 
     bool generatePath = !bot->IsFlying() && !bot->isSwimming();
     bool disableMoveSplinePath =

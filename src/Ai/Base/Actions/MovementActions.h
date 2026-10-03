@@ -26,6 +26,8 @@ struct Position;
 class MovementAction : public Action
 {
     static constexpr float PATH_UNDER_MAP_DEPTH = 30.0f;  // a path ending this far below both ends is a fall
+    static constexpr float OFF_NAVMESH_STEP = 6.0f;          // off the navmesh, a straight step this long...
+    static constexpr float OFF_NAVMESH_STEP_HEIGHT = 4.0f;   // ...onto ground within this of the bot's height
 
 public:
     MovementAction(PlayerbotAI* botAI, std::string const name);
@@ -39,6 +41,7 @@ protected:
     // Single place that records an issued point movement in the "last movement" value.
     void RecordLastMovement(uint32 mapId, float x, float y, float z, float delay, MovementPriority priority);
     // False when a short (<30 yd) destination is on another floor level (|dz| > max(6, 0.8*dist2d)).
+    bool StepTowardsNavmesh(float x, float y);
     bool IsSameFloorDestination(float x, float y, float z);
 
     bool JumpTo(uint32 mapId, float x, float y, float z, MovementPriority priority = MovementPriority::MOVEMENT_NORMAL);
