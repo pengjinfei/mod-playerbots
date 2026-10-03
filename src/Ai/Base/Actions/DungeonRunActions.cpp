@@ -612,8 +612,20 @@ bool DungeonRunAdvanceAction::CcGateOpen(DungeonRouteItem const& item, Unit* nea
     std::vector<Creature*> const pack = TrashCcCollectPack(botAI, bot, target);
     if (pack.empty())
     {
-        LOG_DEBUG("playerbots", "dungeon-run bot={} cc gate skipped: fewer than three around {}", bot->GetName(),
-                  target->GetName());
+        // Who the leader could count: the pack is built from "possible targets", which needs sight from the leader.
+        uint32 inSight = 0;
+        uint32 anySight = 0;
+        for (ObjectGuid const& guid : context->GetValue<GuidVector>("possible targets")->Get())
+            if (Unit* unit = botAI->GetUnit(guid))
+                if (unit != target && unit->GetDistance(target) <= 15.0f)
+                    ++inSight;
+        for (ObjectGuid const& guid : context->GetValue<GuidVector>("possible targets no los")->Get())
+            if (Unit* unit = botAI->GetUnit(guid))
+                if (unit != target && unit->GetDistance(target) <= 15.0f)
+                    ++anySight;
+        LOG_DEBUG("playerbots", "dungeon-run bot={} cc gate skipped: fewer than three around {} leader=({:.1f},{:.1f},"
+                  "{:.1f}) near_in_sight={} near_any={}", bot->GetName(), target->GetName(), bot->GetPositionX(),
+                  bot->GetPositionY(), bot->GetPositionZ(), inSight, anySight);
         return true;  // fewer than three: nothing to control
     }
 
