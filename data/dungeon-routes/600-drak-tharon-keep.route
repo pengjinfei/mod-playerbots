@@ -108,9 +108,9 @@ node 1014 -475.7 -652.2 62.1
 node 1030 -473.4 -640.4 72.6
 node 1046 -467.1 -625.8 73.2
 node 1066 -450.9 -615.4 73.2
-pack 1071 -445.0 -608.3 72.7 radius=6.2 side=0 elite=4 spawns=127438,127589,127590,127617 hold=-473.4,-640.4,72.6 pull=30 from=-467.1,-625.8,73.2 # 2xScourge Brute, 2xDrakkari Guardian
-pack 1075 -420.2 -594.2 72.7 radius=2.5 side=0 elite=3 spawns=127427,127428,127580 hold=-473.4,-640.4,72.6 pull=40 from=-450.9,-615.4,73.2 # 2xRisen Drakkari Warrior, 1xDrakkari Guardian
-pack 1077 -390.7 -608.3 72.6 radius=0.0 side=0 elite=1 spawns=127553 hold=-473.4,-640.4,72.6 pull=35 from=-450.9,-615.4,73.2 # 1xRisen Drakkari Death Knight
+pack 1071 -445.0 -608.3 72.7 radius=6.2 side=0 elite=4 spawns=127438,127589,127590,127617 hold=-467.1,-625.8,73.2 pull=30 from=-467.1,-625.8,73.2 # 2xScourge Brute, 2xDrakkari Guardian
+pack 1075 -420.2 -594.2 72.7 radius=2.5 side=0 elite=3 spawns=127427,127428,127580 hold=-450.9,-615.4,73.2 pull=40 from=-450.9,-615.4,73.2 # 2xRisen Drakkari Warrior, 1xDrakkari Guardian
+pack 1077 -390.7 -608.3 72.6 radius=0.0 side=0 elite=1 spawns=127553 hold=-450.9,-615.4,73.2 pull=35 from=-450.9,-615.4,73.2 # 1xRisen Drakkari Death Knight
 node 1083 -433.6 -613.8 73.2
 node 1099 -417.6 -613.2 73.2
 node 1115 -401.6 -612.7 73.2
