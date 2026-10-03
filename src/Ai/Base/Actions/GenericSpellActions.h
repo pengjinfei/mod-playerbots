@@ -222,6 +222,7 @@ public:
     ResurrectPartyMemberAction(PlayerbotAI* botAI, std::string const spell) : CastSpellAction(botAI, spell) {}
 
     std::string const GetTargetName() override { return "party member to resurrect"; }
+    bool isPossible() override;
     std::vector<NextAction> getPrerequisites() override
     {
         return NextAction::merge(

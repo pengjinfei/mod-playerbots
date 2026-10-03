@@ -89,6 +89,9 @@ public:
     // In range but out of sight is not reached: a corpse behind a platform rim (Ahn'kahet, run 2003).
     bool isUseful() override;
     bool Execute(Event event) override;
+
+private:
+    static constexpr float RESURRECT_SIGHT_NEAR = 4.0f;  // this close to a body out of sight, step round it
 };
 
 #endif

@@ -9,6 +9,7 @@
 #include "Group.h"
 #include "GroupReference.h"
 #include "Log.h"
+#include "Map.h"
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
@@ -176,7 +177,7 @@ std::string const ReachPartyMemberToResurrectAction::GetTargetName() { return "p
 bool ReachPartyMemberToResurrectAction::isUseful()
 {
     Unit* target = AI_VALUE(Unit*, GetTargetName());
-    if (target && !bot->IsWithinLOSInMap(target))
+    if (target && !bot->IsWithinLOSInMap(target, VMAP::ModelIgnoreFlags::M2))
         return true;
     return ReachTargetAction::isUseful();
 }
@@ -184,8 +185,30 @@ bool ReachPartyMemberToResurrectAction::isUseful()
 bool ReachPartyMemberToResurrectAction::Execute(Event event)
 {
     Unit* target = AI_VALUE(Unit*, GetTargetName());
-    if (target && !bot->IsWithinLOSInMap(target))
+    if (!target || bot->IsWithinLOSInMap(target, VMAP::ModelIgnoreFlags::M2))
+        return ReachTargetAction::Execute(event);
+    // Far off: walk to the body.
+    if (bot->GetExactDist2d(target) > RESURRECT_SIGHT_NEAR)
         return MoveTo(target->GetMapId(), target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(),
                       false, false, false, true, MovementPriority::MOVEMENT_NORMAL);
-    return ReachTargetAction::Execute(event);
+    // Beside it and still out of sight: a body on a rim is not seen from the floor just under it (Taldaram's
+    // platform, the healer 1.7 yd off, runs 2033, 2034). Step round it to floor that sees it, as a player would.
+    for (float const radius : {3.0f, 6.0f})
+        for (uint32 i = 0; i < 8; ++i)
+        {
+            float const angle = target->GetAngle(bot) + float(i) * float(M_PI) / 4.0f;
+            float const x = target->GetPositionX() + radius * std::cos(angle);
+            float const y = target->GetPositionY() + radius * std::sin(angle);
+            float const floor =
+                bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, target->GetPositionZ() + 3.0f, true, 6.0f);
+            if (floor <= INVALID_HEIGHT)
+                continue;
+            if (!bot->GetMap()->isInLineOfSight(x, y, floor + 2.0f, target->GetPositionX(), target->GetPositionY(),
+                                                target->GetPositionZ() + 1.0f, bot->GetPhaseMask(),
+                                                LINEOFSIGHT_ALL_CHECKS, VMAP::ModelIgnoreFlags::M2))
+                continue;
+            return MoveTo(target->GetMapId(), x, y, floor, false, false, false, true,
+                          MovementPriority::MOVEMENT_NORMAL);
+        }
+    return false;
 }

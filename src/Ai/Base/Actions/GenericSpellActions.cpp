@@ -207,6 +207,17 @@ bool CastSpellAction::isUseful()
            // && ServerFacade::instance().GetDistance2d(bot, target) <= (range + combatReach);
 }
 
+// A body out of sight is still to be raised: the cast check fails on sight, and an impossible action never pushes its
+// prerequisite, so the healer stood beside the mage's body on Taldaram's platform rim for nine minutes without
+// stepping to where it could be seen (Ahn'kahet, runs 2033, 2034). The walk to sight comes first; the cast follows.
+bool ResurrectPartyMemberAction::isPossible()
+{
+    Unit* target = GetTarget();
+    if (target && !bot->IsWithinLOSInMap(target, VMAP::ModelIgnoreFlags::M2))
+        return true;
+    return CastSpellAction::isPossible();
+}
+
 bool CastSpellAction::isPossible()
 {
     if (botAI->IsInVehicle() && !botAI->IsInVehicle(false, false, true))
