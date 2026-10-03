@@ -117,9 +117,9 @@ node 1314 457.0 -837.9 -31.3
 node 1330 460.1 -853.6 -34.2
 node 1350 463.2 -869.3 -44.7
 node 1365 454.8 -877.3 -54.3
-pack 1370 452.9 -880.7 -57.4 radius=0.0 side=0 elite=1 spawns=131950 # 1xSavage Cave Beast
+pack 1370 452.9 -880.7 -57.4 radius=0.0 side=0 elite=1 spawns=131950 hold=460.1,-853.6,-34.2 pull=25 from=463.2,-869.3,-44.7 # 1xSavage Cave Beast
 node 1383 439.1 -879.2 -61.5
-pack 1400 424.8 -878.8 -67.3 radius=0.0 side=0 elite=1 spawns=131947 # 1xSavage Cave Beast
+pack 1400 424.8 -878.8 -67.3 radius=0.0 side=0 elite=1 spawns=131947 hold=454.8,-877.3,-54.3 pull=25 from=439.1,-879.2,-61.5 # 1xSavage Cave Beast
 node 1400 423.1 -879.5 -66.8
 node 1417 407.7 -881.9 -72.6
 pack 1429 370.4 -846.9 -72.5 radius=0.0 side=0 elite=1 spawns=131948 # 1xSavage Cave Beast
