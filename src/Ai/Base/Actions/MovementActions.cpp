@@ -77,7 +77,7 @@ void MovementAction::RecordLastMovement(uint32 mapId, float x, float y, float z,
 // it for ten minutes, every move to the hold point below refused (Ahn'kahet, run 2056; the leader's own way off it
 // since run 1981). A straight step towards where the move goes, only onto ground at the bot's own height - with no
 // collision floor most of Ahn'kahet put such steps on the void far below (run 2015).
-bool MovementAction::StepTowardsNavmesh(float x, float y)
+bool MovementAction::StepTowardsNavmesh(float x, float y, float z)
 {
     dtNavMeshQuery const* query = bot->GetMap()->GetMapCollisionData().GetMMapData().GetNavMeshQuery();
     if (!query || !bot->movespline->Finalized())
@@ -88,7 +88,22 @@ bool MovementAction::StepTowardsNavmesh(float x, float y)
     dtQueryFilter const filter;
     dtPolyRef poly = 0;
     if (dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) && poly)
-        return false;
+    {
+        // On a patch of navmesh cut off from where the move goes: Taldaram's platform rim, where the healer stood
+        // eight minutes with the hold point below out of every path (run 2082). The path from there back towards
+        // the bot ends where the bot's patch comes closest; a straight step across to it, at the bot's height.
+        PathGenerator back(bot);
+        back.CalculatePath(x, y, z, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), false);
+        if (back.GetPath().empty())
+            return false;
+        G3D::Vector3 const& reach = back.GetPath().back();
+        float const across = bot->GetExactDist2d(reach.x, reach.y);
+        if (across < 2.0f || across > OFF_NAVMESH_SEARCH ||
+            std::fabs(reach.z - bot->GetPositionZ()) >= OFF_NAVMESH_STEP_HEIGHT)
+            return false;
+        bot->GetMotionMaster()->MovePoint(0, reach.x, reach.y, reach.z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
+        return true;
+    }
     // The nearest navmesh at about the bot's height first: from Taldaram's platform rim the hold point lay over the
     // edge, every straight step towards it had no floor, and two of the group stood there ten minutes (run 2070).
     // The platform's way down lies 30 yd from its rim (run 2080).
@@ -319,7 +334,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
     // 5 yd away whose z came back 100+ yd lower. Real stairs within 30 yd rarely climb more than 0.8 yd per yd.
     LiftSunkenDestination(x, y, z);
     if (!IsSameFloorDestination(x, y, z))
-        return StepTowardsNavmesh(x, y);
+        return StepTowardsNavmesh(x, y, z);
 
     bool generatePath = !bot->IsFlying() && !bot->isSwimming();
     bool disableMoveSplinePath =
