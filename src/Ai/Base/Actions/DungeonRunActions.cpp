@@ -771,7 +771,7 @@ bool DungeonRunAdvanceAction::GroupReady(std::string& reason, Player*& dead, Pla
                                              member->GetExactDist(_holdX, _holdY, _holdZ));
                 // Sent there again: a reset after a fight cleared its stay, and with the group not ready the hold
                 // was never set again - the shaman stood 40 yd off it in the first hall ten minutes (Ahn'kahet,
-                // run 2107).
+                // run 2107), and 56 yd off after a death (Drak'Tharon Keep, my-mac run100075).
                 if (PlayerbotAI* memberAI = GET_PLAYERBOT_AI(member))
                 {
                     if (!memberAI->HasStrategy("stay", BOT_STATE_NON_COMBAT) ||
