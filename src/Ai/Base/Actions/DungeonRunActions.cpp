@@ -210,7 +210,11 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     bool spotRefused = false;
     if (target && item->from)
     {
-        if (bot->GetExactDist(item->fromX, item->fromY, item->fromZ) > 3.0f)
+        // Over the spot counts as at it: a spot written at the floor's height under a ledge (z -31.6 for -25.1) kept
+        // the leader 6.5 yd "away" standing on it, the move went nowhere and the spot was taken as refused, and the
+        // leader walked at the patrol it was to wait for (Ahn'kahet, run 2025).
+        if (bot->GetExactDist2d(item->fromX, item->fromY) > 3.0f ||
+            std::fabs(bot->GetPositionZ() - item->fromZ) > SPOT_HEIGHT_TOLERANCE)
         {
             if (MoveTo(bot->GetMapId(), item->fromX, item->fromY, item->fromZ, false, false, false, false,
                        MovementPriority::MOVEMENT_NORMAL))

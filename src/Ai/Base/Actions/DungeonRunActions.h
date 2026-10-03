@@ -59,6 +59,7 @@ private:
     static constexpr float START_NODE_RANGE = 25.0f;      // a leader this close to a route node joins the route there
     static constexpr float START_AT_ENTRANCE = 30.0f;     // ... unless that node is this close to the entrance
     static constexpr uint32 SPOT_WAIT_MS = 60000;         // at a pull spot, wait this long for a pack out of reach
+    static constexpr float SPOT_HEIGHT_TOLERANCE = 8.0f;  // over a pull spot within this height counts as at it
     static constexpr float DROP_AT_RIM = 4.0f;            // this close to a drop's rim point, jump over the edge
     static constexpr float DROP_LEDGE_HEIGHT = 20.0f;     // a member this far above the leader below a drop is stuck
     static constexpr float DROP_LEDGE_RADIUS = 15.0f;     // ... when over the hole within this
