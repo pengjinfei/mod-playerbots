@@ -68,8 +68,8 @@ node 681 637.0 -828.0 -2.3
 pack 689 608.3 -847.4 -3.2 radius=5.4 side=0 elite=3 spawns=131911,131912,131919 # 2xEye of Taldaram, 1xFrostbringer
 node 697 624.1 -820.8 -1.8
 pack 705 620.5 -813.0 -3.2 radius=4.3 side=0 elite=0 spawns=131925,131926,131927,131928,131929 # 5xPlundering Geist
-pack 708 691.4 -783.9 18.0 radius=6.4 side=0 elite=4 spawns=131909,131910,131917,131918 hold=632.5,-796.0,-2.2 pull=35 from=665.0,-786.5,12.0 # 2xEye of Taldaram, 2xFrostbringer
-pack 712 654.7 -720.0 18.0 radius=6.5 side=0 elite=4 spawns=131907,131908,131915,131916 hold=621.3,-772.8,-2.7 pull=38 from=642.4,-746.2,12.1 # 2xEye of Taldaram, 2xFrostbringer
+pack 708 691.4 -783.9 18.0 radius=6.4 side=0 elite=4 spawns=131909,131910,131917,131918 hold=656.8,-787.6,8.5 pull=25 from=678.0,-785.4,17.7 # 2xEye of Taldaram, 2xFrostbringer
+pack 712 654.7 -720.0 18.0 radius=6.5 side=0 elite=4 spawns=131907,131908,131915,131916 hold=639.0,-749.0,9.9 pull=25 from=649.6,-732.0,17.7 # 2xEye of Taldaram, 2xFrostbringer
 node 720 607.1 -807.2 -2.7
 pack 728 591.5 -820.4 -3.1 radius=0.0 side=0 elite=1 spawns=131904 # 1xBonegrinder
 node 736 592.6 -800.4 -2.7
