@@ -291,6 +291,7 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
     static constexpr float FALL_SPEED = 40.0f;  // yd/s for a fall that ends on water
     static constexpr float NAVMESH_FLOOR_SEARCH = 4.0f;  // a navmesh floor this close below is ground, not air
     static constexpr float NAVMESH_FLOOR_UNDER = 0.3f;   // and this close sideways: the polygon is under the bot
+    static constexpr float NAVMESH_FLOOR_BESIDE = 2.0f;  // sideways, where the collision model has no floor at all
     _gravityCheckMs += elapsed;
     if (_gravityCheckMs < GRAVITY_CHECK_MS)
         return;
@@ -336,9 +337,14 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
         dtPolyRef poly = 0;
         // Straight under the bot only: the nearest polygon in a 2 yd box was a ledge on the wall of the shaft below
         // Hadronox, and the group hung in it at z 646 instead of falling to the pool (run 1952).
+        // With no collision floor below at all - the ground is the terrain under the instance - the navmesh edge
+        // beside the bot is the floor it stands on: the tank stopped on the inner corner of Gundrak's entrance
+        // spiral, 1 yd past the eroded navmesh edge, and fell from z 153 to the terrain at z 0 (run 2150).
+        float const terrain = bot->GetMap()->GetHeight(bot->GetPositionX(), bot->GetPositionY(),
+                                                       bot->GetPositionZ(), false, MAX_FALL_DISTANCE);
+        float const under = std::fabs(ground - terrain) < 0.1f ? NAVMESH_FLOOR_BESIDE : NAVMESH_FLOOR_UNDER;
         if (dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) && poly &&
-            closest[1] <= bot->GetPositionZ() + 0.5f &&
-            bot->GetExactDist2d(closest[2], closest[0]) < NAVMESH_FLOOR_UNDER)
+            closest[1] <= bot->GetPositionZ() + 0.5f && bot->GetExactDist2d(closest[2], closest[0]) < under)
             return;
     }
     // A floor just overhead means the bot sank into it, not that it stands in the air: put it back on top. The

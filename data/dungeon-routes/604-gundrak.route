@@ -16,7 +16,7 @@ node 156 1851.9 629.9 143.3
 node 174 1846.1 642.9 135.1
 node 191 1830.4 639.8 129.8
 node 207 1815.5 637.3 129.8
-pack 215 1803.4 633.9 129.1 radius=4.9 side=0 elite=3 spawns=127016,127026,127027 # 1xUnyielding Constrictor, 2xSpitting Cobra
+pack 215 1803.4 633.9 129.1 radius=4.9 side=0 elite=3 spawns=127016,127026,127027 hold=1846.1,642.9,135.1 pull=28 from=1830.0,632.0,129.3 # 1xUnyielding Constrictor, 2xSpitting Cobra
 node 223 1800.1 641.4 129.7
 pack 240 1781.4 640.7 124.4 radius=13.2 side=0 elite=3 spawns=127014,127015,127025 # 2xUnyielding Constrictor, 1xSpitting Cobra
 node 240 1785.6 647.9 125.0
