@@ -24,7 +24,7 @@ node 178 311.8 -17.5 23.6
 pack 186 362.3 -52.6 22.8 radius=0.0 side=1 elite=1 spawns=125898 # 1xDragonflayer Metalworker
 node 194 323.0 -6.0 23.4
 pack 196 349.6 -39.3 24.8 radius=0.0 side=0 elite=1 spawns=125904 # 1xDragonflayer Forge Master
-pack 205 385.8 -16.2 24.8 radius=0.0 side=0 elite=1 spawns=125905 # 1xDragonflayer Forge Master
+pack 205 385.8 -16.2 24.8 radius=0.0 side=0 elite=1 spawns=125905 pull=25 from=375.0,-28.0,24.7 # 1xDragonflayer Forge Master
 pack 206 331.6 0.8 22.8 radius=0.0 side=0 elite=1 spawns=125897 # 1xDragonflayer Metalworker
 pack 214 347.6 4.6 24.7 radius=0.0 side=0 elite=1 spawns=125903 # 1xDragonflayer Forge Master
 node 214 336.3 8.9 23.3
@@ -93,7 +93,7 @@ node 897 109.8 75.1 66.2
 pack 909 113.3 49.0 65.8 radius=12.3 side=0 elite=3 spawns=125875,125876,125995,126028,126035,126044 # 2xFrenzied Geist, 1xSavage Worg, 1xDragonflayer Strategist, 1xDragonflayer Runecaster, 1xDragonflayer Ironhelm
 node 917 101.0 69.7 67.8
 node 937 98.0 85.5 78.9
-pack 952 88.3 96.9 86.8 radius=1.9 side=0 elite=1 spawns=125998,126033 # 1xSavage Worg, 1xDragonflayer Strategist
+pack 952 88.3 96.9 86.8 radius=1.9 side=0 elite=1 spawns=125998,126033 pull=25 from=99.9,109.6,87.3 # 1xSavage Worg, 1xDragonflayer Strategist
 node 956 95.1 101.2 88.0
 node 973 101.5 110.4 88.1
 node 989 113.9 104.1 91.1
