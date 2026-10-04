@@ -122,4 +122,4 @@ object 272 1775.3 679.7 129.2 entry=192518  # Altar of Slad'ran
 object 592 1693.5 743.6 142.8 entry=192520  # Altar of the Drakkari Colossus
 object 990 1772.2 805.0 129.2 entry=192519  # Altar of Moorabi
 summoned 1050 1624.7 891.4 95.1 radius=15 entry=29932  # Eck the Ferocious
-cross 1140 1845.0 746.0 135.9 from=1704.5,748.0,139.3  # over the raised keystone to Gal'darah's door
+cross 1140 1803.0 746.0 119.3 from=1742.0,748.0,118.8  # over the keystone's bridges to Gal'darah's side
