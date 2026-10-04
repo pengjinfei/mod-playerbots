@@ -78,11 +78,11 @@ node 687 1595.3 828.2 151.6
 pack 699 1575.4 833.4 153.2 radius=6.0 side=0 elite=4 spawns=127052,127053,127057,127063 # 2xDrakkari Lancer, 1xDrakkari God Hunter, 1xDrakkari Fire Weaver
 node 703 1589.9 843.3 154.8
 node 723 1588.9 862.0 155.3
+pack 725 1631.7 893.7 144.9 radius=5.0 side=0 elite=2 spawns=127054,127064 hold=1589.9,843.3,154.8 pull=18 from=1586.0,855.0,155.2 cc=0 # 1xDrakkari God Hunter, 1xDrakkari Medicine Man
 pack 732 1584.9 883.4 151.9 radius=5.8 side=0 elite=4 spawns=127048,127055,127060,127066 # 1xDrakkari Lancer, 1xDrakkari God Hunter, 1xDrakkari Fire Weaver, 1xDrakkari Medicine Man
 node 740 1598.6 873.8 151.5
 node 760 1615.8 884.1 148.3
 node 776 1630.1 890.7 145.8
-pack 780 1631.7 893.7 144.9 radius=5.0 side=0 elite=2 spawns=127054,127064 # 1xDrakkari God Hunter, 1xDrakkari Medicine Man
 pack 792 1644.9 859.2 124.2 radius=5.5 side=1 elite=0 spawns=127083,127084 # 2xDrakkari Frenzy
 node 792 1646.0 892.2 143.7
 node 809 1662.0 891.3 141.5
