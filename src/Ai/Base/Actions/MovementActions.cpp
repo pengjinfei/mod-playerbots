@@ -171,6 +171,43 @@ bool MovementAction::IsSameFloorDestination(float x, float y, float z, bool path
     return false;
 }
 
+// Where the collision model has no floor, the ground search under a point falls back to the terrain over the dungeon:
+// follow and formation points in Utgarde Keep's forge room and the tunnels past it came back at z 173-185 for a floor
+// at z 25-50. Refused, the group stood 40 yd behind the leader (my-mac runs 100120, 100121); let through, the path
+// search sent the rogue up through the ceiling (run 100114). The navmesh has those floors: a destination far steeper
+// above or below the bot than across, with no collision floor at its height, is put on the navmesh nearest the bot's
+// own height there.
+void MovementAction::SnapFloatingDestination(float x, float y, float& z)
+{
+    if (bot->IsFlying() || bot->isSwimming() || bot->GetTransport() || bot->GetVehicle())
+        return;
+    float const dist2d = bot->GetExactDist2d(x, y);
+    if (std::fabs(z - bot->GetPositionZ()) <= std::max(6.0f, dist2d))
+        return;
+    // The collision model alone: Map::GetHeight also returns the terrain over the dungeon, which is the very height
+    // to be corrected here (none of these follows was snapped while it was asked, my-mac runs 100136-100141).
+    float const floor =
+        bot->GetMap()->GetMapCollisionData().GetStaticTree().getHeight(x, y, z + Z_OFFSET_FIND_HEIGHT, 10.0f);
+    if (floor > INVALID_HEIGHT && std::fabs(floor - z) < 3.0f)
+        return;
+    dtNavMeshQuery const* query = bot->GetMap()->GetMapCollisionData().GetMMapData().GetNavMeshQuery();
+    if (!query)
+        return;
+    float const point[3] = {y, bot->GetPositionZ(), x};
+    float const extents[3] = {3.0f, NAVMESH_SNAP_HEIGHT, 3.0f};
+    float closest[3] = {0.0f, 0.0f, 0.0f};
+    dtQueryFilter const filter;
+    dtPolyRef poly = 0;
+    if (!dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) || !poly)
+        return;
+    if (std::fabs(closest[1] - bot->GetPositionZ()) > std::max(6.0f, 0.8f * dist2d))
+        return;
+    if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && botAI->HasGameClientMaster()))
+        LOG_DEBUG("playerbots", "floor-guard bot={} action={} snapped dest=({:.1f},{:.1f}) z {:.1f}->{:.1f} (navmesh)",
+                  bot->GetName(), getName(), x, y, z, closest[1]);
+    z = closest[1];
+}
+
 // A destination z borrowed from a unit that stands inside the floor (Maexxna sits 3 yd under her web) sends the
 // core's ground search below the surface: GetMapHeight starts only a collision height above z, misses the web
 // at 302 and returns the pit floor 140 yd down, and the spline walks through the floor at run speed. When the
@@ -343,6 +380,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
     // navmesh/vmap snapping the point to another floor (a pit under a ledge, a ramp overhead): on heroic
     // Anub'arak six bots walked backwards off the platform at MOVE_RUN_BACK speed because "flee" asked for a point
     // 5 yd away whose z came back 100+ yd lower. Real stairs within 30 yd rarely climb more than 0.8 yd per yd.
+    SnapFloatingDestination(x, y, z);
     LiftSunkenDestination(x, y, z);
     if (!IsSameFloorDestination(x, y, z))
         return StepTowardsNavmesh(x, y, z);

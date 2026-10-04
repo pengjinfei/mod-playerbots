@@ -29,6 +29,7 @@ class MovementAction : public Action
     static constexpr float OFF_NAVMESH_STEP = 6.0f;          // off the navmesh, a straight step this long...
     static constexpr float OFF_NAVMESH_STEP_HEIGHT = 4.0f;   // ...onto ground within this of the bot's height
     static constexpr float OFF_NAVMESH_SEARCH = 40.0f;       // the nearest navmesh this far round is walked to first
+    static constexpr float NAVMESH_SNAP_HEIGHT = 15.0f;     // a floating destination is put on navmesh this near the bot's height
     static constexpr float OFF_NAVMESH_DROP = 10.0f;         // ...or dropped down to from no higher than this
 
 public:
@@ -99,6 +100,7 @@ private:
     bool wasMovementRestricted = false;
     void DoMovePoint(Unit* unit, float x, float y, float z, bool generatePath, bool backwards);
     void LiftSunkenDestination(float x, float y, float& z);
+    void SnapFloatingDestination(float x, float y, float& z);
 };
 
 class FleeAction : public MovementAction
