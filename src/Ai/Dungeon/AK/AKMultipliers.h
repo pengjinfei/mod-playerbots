@@ -36,6 +36,15 @@ class JedogaKneelingWorshippersMultiplier : public Multiplier
         float GetValue(Action* action) override;
 };
 
+class TwilightLedgeMultiplier : public Multiplier
+{
+    public:
+        TwilightLedgeMultiplier(PlayerbotAI* ai) : Multiplier(ai, "twilight ledge") {}
+
+    public:
+        float GetValue(Action* action) override;
+};
+
 class ForgottenOneMultiplier : public Multiplier
 {
     public:

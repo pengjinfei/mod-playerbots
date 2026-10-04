@@ -144,7 +144,7 @@ node 1665 455.6 -837.7 -31.3
 node 1681 449.3 -822.9 -31.0
 node 1697 440.7 -809.7 -31.0
 node 1713 429.8 -797.9 -31.0
-pack 1721 417.3 -801.8 -31.6 radius=5.8 side=0 elite=4 spawns=131942,131993,131994,132056 # 1xTwilight Darkcaster, 2xTwilight Worshipper, 1xTwilight Apostle
+pack 1721 417.3 -801.8 -31.6 radius=5.8 side=0 elite=4 spawns=131942,131993,131994,132056 hold=449.3,-822.9,-31.0 pull=25 from=440.7,-809.7,-31.0 # 1xTwilight Darkcaster, 2xTwilight Worshipper, 1xTwilight Apostle
 node 1729 419.0 -786.2 -30.9
 pack 1745 405.6 -780.3 -30.9 radius=6.6 side=0 elite=4 spawns=132015,132020,132025,132058 # 1xBound Fire Elemental, 1xBound Air Elemental, 1xBound Water Elemental, 1xTwilight Apostle
 node 1745 408.2 -774.4 -30.2

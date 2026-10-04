@@ -49,6 +49,25 @@ float JedogaKneelingWorshippersMultiplier::GetValue(Action* action)
     return 1.0f;
 }
 
+// The ledge over the Twilight floor below Taldaram's ramp, where the group waits while the tank pulls: the casters below
+// see no one there and have to come up. The healer, assisting while there was nothing to heal, walked down to the
+// west pack's casters for sight and the rogue after them, and the four elites behind came (run 2105, wipe). As players
+// do: no one but the tank goes down; what is pulled comes up.
+float TwilightLedgeMultiplier::GetValue(Action* action)
+{
+    ReachTargetAction* reach = dynamic_cast<ReachTargetAction*>(action);
+    if (!reach || !reach->ChasesEnemy() || botAI->IsTank(bot))
+        return 1.0f;
+    float const x = bot->GetPositionX(), y = bot->GetPositionY(), z = bot->GetPositionZ();
+    if (x < TWILIGHT_LEDGE_MIN_X || x > TWILIGHT_LEDGE_MAX_X || y < TWILIGHT_LEDGE_MIN_Y || y > TWILIGHT_LEDGE_MAX_Y ||
+        z < TWILIGHT_LEDGE_MIN_Z)
+        return 1.0f;
+    Unit* target = AI_VALUE(Unit*, "current target");
+    if (!target || target->GetPositionZ() > z - TWILIGHT_LEDGE_DROP)
+        return 1.0f;
+    return 0.0f;
+}
+
 float JedogaShadowseekerMultiplier::GetValue(Action* action)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "jedoga shadowseeker");
