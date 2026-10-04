@@ -44,7 +44,7 @@ protected:
     void RecordLastMovement(uint32 mapId, float x, float y, float z, float delay, MovementPriority priority);
     // False when a short (<30 yd) destination is on another floor level (|dz| > max(6, 0.8*dist2d)).
     bool StepTowardsNavmesh(float x, float y, float z);
-    bool IsSameFloorDestination(float x, float y, float z);
+    bool IsSameFloorDestination(float x, float y, float z, bool pathEnd = false);
 
     bool JumpTo(uint32 mapId, float x, float y, float z, MovementPriority priority = MovementPriority::MOVEMENT_NORMAL);
     bool MoveNear(uint32 mapId, float x, float y, float z, float distance = sPlayerbotAIConfig.contactDistance,

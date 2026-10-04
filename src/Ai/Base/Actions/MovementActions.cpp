@@ -132,7 +132,7 @@ bool MovementAction::StepTowardsNavmesh(float x, float y, float z)
     return true;
 }
 
-bool MovementAction::IsSameFloorDestination(float x, float y, float z)
+bool MovementAction::IsSameFloorDestination(float x, float y, float z, bool pathEnd)
 {
     if (bot->IsFlying() || bot->isSwimming())
         return true;
@@ -141,9 +141,15 @@ bool MovementAction::IsSameFloorDestination(float x, float y, float z)
         if (vehicleBase->CanFly())
             return true;
     float const dist2d = bot->GetExactDist2d(x, y);
-    if (dist2d >= 30.0f)
-        return true;  // long moves legitimately change floors; the path search owns those
     float const dz = std::fabs(z - bot->GetPositionZ());
+    // Long moves legitimately change floors and the path search owns those - unless the path search itself ends
+    // steeper above or below than the way across. Where the collision model has no floor, the ground under a point is
+    // the terrain over the dungeon: in Utgarde Keep's forge room a follow 49 yd away came back from the path search at
+    // z 173 for a floor at z 25, and the rogue flew straight up through the ceiling and hung there until the run was
+    // stopped (my-mac run 100114). The requested z alone says nothing: follows asked for z 180 over the tunnels past
+    // the forges, the path search put them on the floor, and refusing them left the group 40 yd behind (run 100120).
+    if (dist2d >= 30.0f && (!pathEnd || dz <= dist2d))
+        return true;
     if (dz <= std::max(6.0f, 0.8f * dist2d))
         return true;
     // A real way up or down - stairs, a ramp - is a complete navmesh path that ends at the destination and is longer
@@ -458,7 +464,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
                 }
             }
         }
-        if (!IsSameFloorDestination(x, y, modifiedZ))
+        if (!IsSameFloorDestination(x, y, modifiedZ, true))
             return false;
         float distance = bot->GetExactDist(x, y, modifiedZ);
         if (distance > 0.01f)
