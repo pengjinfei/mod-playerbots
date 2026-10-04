@@ -79,6 +79,12 @@ bool ReachTargetAction::IsChaseLeashed(Unit* target) const
     if (PlayerbotAI::IsTank(bot) && !target->GetVictim())
         return false;
 
+    // An enemy that cannot move never comes to the tank's fight: the tank goes to it, and the others follow the tank.
+    // A Chaotic Rift 43 yd from the healer kept the whole group in combat, nobody allowed to reach it, until the stall
+    // watchdog stopped the run (the Nexus, my-mac run 100107).
+    if (PlayerbotAI::IsTank(bot) && target->HasUnitFlag(UNIT_FLAG_DISABLE_MOVE))
+        return false;
+
     Unit* anchor = ChaseAnchor();
     if (!anchor || anchor == bot || !anchor->IsAlive() || anchor->GetMapId() != bot->GetMapId())
         return false;
