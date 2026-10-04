@@ -80,6 +80,10 @@ void MovementAction::RecordLastMovement(uint32 mapId, float x, float y, float z,
 // collision floor most of Ahn'kahet put such steps on the void far below (run 2015).
 bool MovementAction::StepTowardsNavmesh(float x, float y, float z)
 {
+    // Never in water: the nearest navmesh under a pool is its floor, and the step took two of the group down to drown
+    // in Anub'arak's pool after the drop (Azjol-Nerub, run 2136).
+    if (bot->IsInWater() || bot->isSwimming() || bot->IsFalling())
+        return false;
     dtNavMeshQuery const* query = bot->GetMap()->GetMapCollisionData().GetMMapData().GetNavMeshQuery();
     if (!query || !bot->movespline->Finalized())
         return false;
