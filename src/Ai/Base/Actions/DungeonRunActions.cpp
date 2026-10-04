@@ -850,11 +850,26 @@ bool DungeonRunAdvanceAction::GroupReady(std::string& reason, Player*& dead, Pla
     if (!group)
         return true;
 
+    // In a pass stretch only the dead and the far behind are waited for: a member fighting what keeps respawning
+    // there, or sitting down to drink, would hold the group in it for good.
+    DungeonRoute const* route = DungeonRouteMgr::instance().Get(bot->GetMapId());
+    DungeonRoutePass const* pass = route ? route->PassAt(AI_VALUE(float, "dungeon run progress")) : nullptr;
+
     for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
     {
         Player* member = ref->GetSource();
         if (!member || !member->IsInWorld() || member->GetMapId() != bot->GetMapId())
             continue;
+        if (pass && member->IsAlive())
+        {
+            if (member != bot && bot->GetDistance(member) > GROUP_RANGE)
+            {
+                reason = Acore::StringFormat("{} {:.0f} yd away", member->GetName(), bot->GetDistance(member));
+                return false;
+            }
+            if (!member->IsInCombat() || OnlyPassAttackers(*pass, member))
+                continue;
+        }
         // "In combat" only counts while something actually attacks the member: a combat flag that lingers with no
         // attacker kept the leader waiting for five minutes on Utgarde Keep's stairs (run 1806).
         if (!member->IsAlive() || (member->IsInCombat() && !member->getAttackers().empty()))

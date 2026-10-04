@@ -12,7 +12,14 @@
 
 bool DungeonRunTrigger::IsActive()
 {
-    return (!bot->IsInCombat() || bot->getAttackers().empty()) && DungeonRouteMgr::instance().Get(bot->GetMapId());
+    DungeonRoute const* route = DungeonRouteMgr::instance().Get(bot->GetMapId());
+    if (!route)
+        return false;
+    if (!bot->IsInCombat() || bot->getAttackers().empty())
+        return true;
+    // Walking on through a pass stretch, fighting on the way: what attacks there keeps coming back.
+    DungeonRoutePass const* pass = route->PassAt(AI_VALUE(float, "dungeon run progress"));
+    return pass && OnlyPassAttackers(*pass, bot);
 }
 
 bool DungeonRunGroupHeldTrigger::IsActive()

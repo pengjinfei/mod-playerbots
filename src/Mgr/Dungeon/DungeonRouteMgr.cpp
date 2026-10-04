@@ -119,6 +119,15 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
             route.nodes.push_back({*along, *x, *y, *z});
             continue;
         }
+        if (tokens[0] == "pass")
+        {
+            DungeonRoutePass pass;
+            pass.from = *along;
+            pass.to = Acore::StringTo<float>(Field(tokens, "to")).value_or(*along);
+            pass.entries = ParseIdList(Field(tokens, "entry"));
+            route.passes.push_back(pass);
+            continue;
+        }
         if (tokens[0] != "pack" && tokens[0] != "boss" && tokens[0] != "object" && tokens[0] != "summoned" &&
             tokens[0] != "drop" && tokens[0] != "cross")
         {

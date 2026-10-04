@@ -13,6 +13,9 @@
 #include <vector>
 
 #include "Define.h"
+#include "Unit.h"
+
+#include <algorithm>
 
 // A dungeon route drafted by tools/route-gen (management repo) and hand-tuned: skeleton nodes in walking order and
 // the packs / boss encounters met along them. Loaded once at startup on the world thread; read-only afterwards, so
@@ -51,13 +54,42 @@ struct DungeonRouteItem
     std::vector<uint32> summonEntries; // creature entries within radius of the position (script-summoned packs)
 };
 
+// pass <from> 0 0 0 to=<along> entry=<entry,...>: a stretch walked through while fighting creatures that come back as
+// fast as they die. Halls of Lightning's only way to Volkhan crosses the slag pit, whose fourteen Slags respawn 20 s
+// after death: cleared as a pack, 621 of them came in 50 minutes and the run never left the pit (my-mac run 100148).
+struct DungeonRoutePass
+{
+    float from = 0.0f;
+    float to = 0.0f;
+    std::vector<uint32> entries;
+};
+
 struct DungeonRoute
 {
     uint32 mapId = 0;
     std::string name;
     std::vector<DungeonRouteNode> nodes;
     std::vector<DungeonRouteItem> items;
+    std::vector<DungeonRoutePass> passes;
+
+    // The pass stretch at this progress, or nullptr.
+    DungeonRoutePass const* PassAt(float progress) const
+    {
+        for (DungeonRoutePass const& pass : passes)
+            if (progress >= pass.from && progress < pass.to)
+                return &pass;
+        return nullptr;
+    }
 };
+
+// True when everything attacking the unit is a creature the pass stretch walks through.
+inline bool OnlyPassAttackers(DungeonRoutePass const& pass, Unit* unit)
+{
+    for (Unit* attacker : unit->getAttackers())
+        if (std::find(pass.entries.begin(), pass.entries.end(), attacker->GetEntry()) == pass.entries.end())
+            return false;
+    return true;
+}
 
 class DungeonRouteMgr
 {
