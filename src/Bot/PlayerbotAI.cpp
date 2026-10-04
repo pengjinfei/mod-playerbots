@@ -292,6 +292,7 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
     static constexpr float NAVMESH_FLOOR_SEARCH = 4.0f;  // a navmesh floor this close below is ground, not air
     static constexpr float NAVMESH_FLOOR_UNDER = 0.3f;   // and this close sideways: the polygon is under the bot
     static constexpr float NAVMESH_FLOOR_BESIDE = 2.0f;  // sideways, where the collision model has no floor at all
+    static constexpr float NAVMESH_FLOOR_RETURN = 6.0f;  // and a polygon this far is walked back to instead of falling
     _gravityCheckMs += elapsed;
     if (_gravityCheckMs < GRAVITY_CHECK_MS)
         return;
@@ -346,6 +347,21 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
         if (dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) && poly &&
             closest[1] <= bot->GetPositionZ() + 0.5f && bot->GetExactDist2d(closest[2], closest[0]) < under)
             return;
+        // Off the navmesh with no collision floor, the navmesh a few yards off at the bot's height: back onto it,
+        // not down to the terrain. A straight step away from Slad'ran's Poison Nova ended 1 yd off his dais and
+        // the hunter fell from z 128 to z 0 and followed the group under the map (Gundrak, run 2157).
+        float const wide[3] = {NAVMESH_FLOOR_RETURN, NAVMESH_FLOOR_SEARCH, NAVMESH_FLOOR_RETURN};
+        if (std::fabs(ground - terrain) < 0.1f &&
+            dtStatusSucceed(query->findNearestPoly(point, wide, &filter, &poly, closest)) && poly &&
+            std::fabs(closest[1] - bot->GetPositionZ()) < NAVMESH_FLOOR_SEARCH)
+        {
+            LOG_DEBUG("playerbots", "gravity bot={} no floor at ({:.1f},{:.1f},{:.1f}), back to the navmesh at "
+                      "({:.1f},{:.1f},{:.1f})", bot->GetName(), bot->GetPositionX(), bot->GetPositionY(),
+                      bot->GetPositionZ(), closest[2], closest[0], closest[1]);
+            bot->GetMotionMaster()->MovePoint(0, closest[2], closest[0], closest[1], FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
+                                              false, true, MOTION_SLOT_CONTROLLED);
+            return;
+        }
     }
     // A floor just overhead means the bot sank into it, not that it stands in the air: put it back on top. The
     // tank swam to a pack whose centre lay under the pool floor and gravity then dropped it to z 0 (run 1866).
