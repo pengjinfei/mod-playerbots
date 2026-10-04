@@ -16,12 +16,12 @@ node 156 1851.9 629.9 143.3
 node 174 1846.1 642.9 135.1
 node 191 1830.4 639.8 129.8
 node 207 1815.5 637.3 129.8
-pack 215 1803.4 633.9 129.1 radius=4.9 side=0 elite=3 spawns=127016,127026,127027 pull=30 from=1830.4,639.8,129.8 # 1xUnyielding Constrictor, 2xSpitting Cobra
+pack 215 1803.4 633.9 129.1 radius=4.9 side=0 elite=3 spawns=127016,127026,127027 # 1xUnyielding Constrictor, 2xSpitting Cobra
 node 223 1800.1 641.4 129.7
 pack 240 1781.4 640.7 124.4 radius=13.2 side=0 elite=3 spawns=127014,127015,127025 # 2xUnyielding Constrictor, 1xSpitting Cobra
 node 240 1785.6 647.9 125.0
 node 257 1779.6 662.7 129.7
-pack 260 1771.2 623.1 124.3 radius=16.5 side=0 elite=3 spawns=127017,127028,127029 # 1xUnyielding Constrictor, 2xSpitting Cobra
+pack 260 1771.2 623.1 124.3 radius=16.5 side=0 elite=3 spawns=127017,127028,127029 pull=25 from=1790.0,632.0,124.4 # 1xUnyielding Constrictor, 2xSpitting Cobra
 boss 270 1775.1 675.0 129.3 radius=0.0 entry=29304 spawns=127042 hold=1775.0,621.0,124.3 from=1775.0,660.0,129.2 # 1xSlad'ran
 pack 270 1816.4 689.5 109.9 radius=0.0 side=1 elite=0 spawns=127085 # 1xDrakkari Frenzy
 pack 270 1835.2 716.7 110.4 radius=0.0 side=1 elite=0 spawns=127086 # 1xDrakkari Frenzy
