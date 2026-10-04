@@ -127,14 +127,24 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // A pack the route fights at a hold point: the group waits there and the leader pulls alone, as players stand
     // round the corner while the tank goes for the pull. Following the leader to the pull, the others were caught in
     // the pack (Kolurg, Nexus run 1963; Ahn'kahet's crawlers, run 1972).
-    // Only once the leader is near it: from Amanitar's cave the hold point of the next pack lay 157 yd off, the mage's
-    // move there found no path and the group waited ten minutes (Ahn'kahet, run 2118). Until then they follow.
-    // Not while any of the group still fights: the tank out of combat with the Nexus rift's surges on the others, the
-    // group was held again out of sight of the rift, it was never killed and kept summoning them for seven minutes
-    // (run 2124).
-    if (item && item->hold && target &&
-        bot->GetExactDist(item->holdX, item->holdY, item->holdZ) <= HOLD_SEND_RANGE && !GroupFighting())
+    // The leader walks to the hold point first and the group follows it there; only then are they held. Sent there
+    // ahead, members took their own ways: from Amanitar's cave the next hold point lay 157 yd off and the mage's move
+    // found no path (Ahn'kahet, run 2118); from Taldaram's room the mage stood over the ledge 23 yd above it, its way
+    // down the ramp the leader's (run 2127). Not while any of the group still fights: the tank out of combat with the
+    // Nexus rift's surges on the others, the group was held again out of sight of the rift, which was never killed and
+    // kept summoning them for seven minutes (run 2124).
+    if (item && item->hold && target && !GroupFighting())
     {
+        bool const heldHere =
+            !_held.empty() && _holdX == item->holdX && _holdY == item->holdY && _holdZ == item->holdZ;
+        if (!heldHere && bot->GetExactDist(item->holdX, item->holdY, item->holdZ) > HOLD_ARRIVED)
+        {
+            if (TraceDue())
+                LOG_DEBUG("playerbots", "dungeon-run bot={} leading the group to the hold point of item={}",
+                          bot->GetName(), index);
+            return MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
+                          MovementPriority::MOVEMENT_NORMAL);
+        }
         if (!HoldGroupAt(*item))
         {
             if (TraceDue())
