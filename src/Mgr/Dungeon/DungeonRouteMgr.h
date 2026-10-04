@@ -34,6 +34,7 @@ struct DungeonRouteItem
     bool sent = false;                 // the encounter sends this pack to the group: wait for it, do not pull it
     bool drop = false;                 // a hole to jump down: the group walks to its rim and steps over (x, y, z)
     float rimX = 0.0f, rimY = 0.0f, rimZ = 0.0f;  // drop: a point on the floor at the hole's edge, walked to first
+    bool cross = false;                // a walkway the navmesh lacks (a game object floor): from= to (x, y, z) straight
     float pullDistance = 0.0f;         // pull=<yd>: engage from this far instead of the default
     bool noCc = false;                 // cc=0: no crowd control before the pull (a stealthed sapper is seen first)
     uint32 awaySpawn = 0;              // away=<spawnId>:<yd>: go to the pull spot only while that unit (a patrol)...

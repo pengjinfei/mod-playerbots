@@ -64,6 +64,8 @@ private:
     static constexpr float STOP_LEVEL_STEP = 5.0f;       // ...this far towards the pack, at most that many times...
     static constexpr float STOP_LEVEL_DROP = 6.0f;       // ...while the path ends this far below the pack
     static constexpr float DROP_AT_RIM = 4.0f;            // this close to a drop's rim point, jump over the edge
+    static constexpr float CROSS_AT_START = 4.0f;         // this close to a walkway's start, walk over it
+    static constexpr float CROSS_ARRIVED = 6.0f;          // this close to its end, across
     static constexpr float DROP_LEDGE_HEIGHT = 20.0f;     // a member this far above the leader below a drop is stuck
     static constexpr float DROP_LEDGE_RADIUS = 15.0f;     // ... when over the hole within this
     static constexpr float DROP_JUMP_HEIGHT = 2.0f;       // the jump lands this far above the hole's centre...
@@ -82,6 +84,7 @@ private:
     bool UseObject(DungeonRouteItem const& item, uint32 index, GameObject* object);
     // Send the group's bots still above the hole to it, and over the rim once they stand at it; true if any is above.
     bool PushOverDrop(DungeonRouteItem const& item, float range);
+    bool CrossOver(DungeonRouteItem const& item, uint32 index);  // true once the whole group is across
     void StepOverDrop(DungeonRouteItem const& item);  // the leader itself, over the rim
     // An object item still to be used: in sight and usable (selectable, not yet activated), or too far away to tell.
     bool PendingObject(DungeonRouteItem const& item, GameObject*& object) const;
@@ -104,6 +107,7 @@ private:
 
     std::unordered_map<uint32, uint32> _pullAttempts;  // route item index -> pulls issued
     mutable std::unordered_set<uint32> _summonedDone;  // summoned packs seen cleared
+    std::unordered_set<uint32> _crossesDone;           // walkways the group is over
     mutable std::unordered_set<uint32> _objectsDone;   // objects seen used
     uint32 _lastWaitLogMs = 0;
     uint32 _approachItem = UINT32_MAX;  // item being walked to, best distance reached, since when
@@ -112,6 +116,7 @@ private:
     uint32 _lastApproachTickMs = 0;
     uint32 _lastTraceMs = 0;
     uint32 _dropItem = UINT32_MAX;  // hole the leader jumped down while members may still be above
+    uint32 _crossItem = UINT32_MAX;  // walkway the group is walking over
     std::unordered_set<ObjectGuid> _held;  // members waiting at the hold point
     float _holdX = 0.0f, _holdY = 0.0f, _holdZ = 0.0f;
     bool _started = false;          // the first tick of the run has been seen

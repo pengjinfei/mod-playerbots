@@ -70,6 +70,15 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             return false;
         _dropItem = UINT32_MAX;
     }
+    // Over a walkway ahead of the group: bring everyone over before anything else (on the far side the navmesh has no
+    // way back to them).
+    if (_crossItem < route->items.size())
+    {
+        if (!CrossOver(route->items[_crossItem], _crossItem))
+            return true;
+        _crossesDone.insert(_crossItem);
+        _crossItem = UINT32_MAX;
+    }
     // Waiting yields the tick: eating, drinking, resurrecting and rebuffing are other actions.
     std::string waitReason;
     Player* dead = nullptr;
@@ -166,7 +175,7 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
                       index);
         return false;
     }
-    if (!item || (!target && !item->object && !item->drop && item->summonEntries.empty()))
+    if (!item || (!target && !item->object && !item->drop && !item->cross && item->summonEntries.empty()))
     {
         if (TraceDue())
             LOG_DEBUG("playerbots", "dungeon-run bot={} route cleared progress={:.0f}", bot->GetName(),
@@ -193,6 +202,18 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         LOG_DEBUG("playerbots", "dungeon-run bot={} drop item={} along={:.0f} at ({:.1f},{:.1f},{:.1f})",
                   bot->GetName(), index, item->along, item->x, item->y, item->z);
         return true;
+    }
+
+    // A walkway the navmesh does not have: Gundrak's way to Gal'darah is the centre's keystone, raised once the three
+    // altars are used - a game object. The path went down into the pit under it instead, ended under his room and
+    // the tank fell through the map (run 2159). The group gathers at its start and walks straight over it together.
+    if (item->cross)
+    {
+        if (!CrossOver(*item, index))
+            return true;
+        _crossesDone.insert(index);
+        _crossItem = UINT32_MAX;
+        return false;
     }
 
     // A pack the encounter sends by itself: stand and wait for it. Krik'thir sends his watchers one at a time once
@@ -514,6 +535,47 @@ void DungeonRunAdvanceAction::StepOverDrop(DungeonRouteItem const& item)
         // Jump, as a player does: a straight walk to the hole stopped at the web's edge for all five (run 1875).
         bot->GetMotionMaster()->MoveJump(item.x, item.y, item.z + DROP_JUMP_HEIGHT, DROP_JUMP_SPEED_XY,
                                          DROP_JUMP_SPEED_Z);
+}
+
+bool DungeonRunAdvanceAction::CrossOver(DungeonRouteItem const& item, uint32 index)
+{
+    // To the start on the navmesh first, as the group follows.
+    if (_crossItem != index)
+    {
+        if (bot->GetExactDist(item.fromX, item.fromY, item.fromZ) > CROSS_AT_START)
+        {
+            MoveTo(bot->GetMapId(), item.fromX, item.fromY, item.fromZ, false, false, false, false,
+                   MovementPriority::MOVEMENT_NORMAL);
+            return false;
+        }
+        _crossItem = index;
+        LOG_DEBUG("playerbots", "dungeon-run bot={} cross item={} along={:.0f} to ({:.1f},{:.1f},{:.1f})",
+                  bot->GetName(), index, item.along, item.x, item.y, item.z);
+    }
+    Group* group = bot->GetGroup();
+    if (!group)
+        return true;
+    bool across = true;
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+    {
+        Player* member = ref->GetSource();
+        if (!member || !member->IsAlive() || member->GetMapId() != bot->GetMapId() ||
+            (member != bot && !GET_PLAYERBOT_AI(member)))
+            continue;
+        if (member->GetExactDist(item.x, item.y, item.z) <= CROSS_ARRIVED)
+            continue;
+        across = false;
+        // Mid-walk: let it finish; a new order every tick restarted it.
+        if (!member->movespline->Finalized())
+            continue;
+        // At the start: straight over, no path (there is none). Elsewhere: to the start on the navmesh. In the
+        // controlled slot, so the member's own follow movement does not replace it.
+        bool const atStart = member->GetExactDist(item.fromX, item.fromY, item.fromZ) <= CROSS_AT_START;
+        member->GetMotionMaster()->MovePoint(0, atStart ? item.x : item.fromX, atStart ? item.y : item.fromY,
+                                             atStart ? item.z : item.fromZ, FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
+                                             !atStart, true, MOTION_SLOT_CONTROLLED);
+    }
+    return across;
 }
 
 bool DungeonRunAdvanceAction::PushOverDrop(DungeonRouteItem const& item, float range)
@@ -870,6 +932,14 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
                     _objectsDone.insert(i);
                 continue;
             }
+            index = i;
+            return &item;
+        }
+        if (item.cross)
+        {
+            if (_crossesDone.count(i))
+                continue;
+            target = nullptr;
             index = i;
             return &item;
         }

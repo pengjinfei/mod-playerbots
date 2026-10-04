@@ -120,7 +120,7 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
             continue;
         }
         if (tokens[0] != "pack" && tokens[0] != "boss" && tokens[0] != "object" && tokens[0] != "summoned" &&
-            tokens[0] != "drop")
+            tokens[0] != "drop" && tokens[0] != "cross")
         {
             LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: unknown kind '{}'", path, lineNumber, tokens[0]);
             return false;
@@ -166,13 +166,21 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
         }
         item.hold = ParsePoint(Field(tokens, "hold"), item.holdX, item.holdY, item.holdZ);
         item.from = ParsePoint(Field(tokens, "from"), item.fromX, item.fromY, item.fromZ);
+        item.cross = tokens[0] == "cross";
+        // from=<x>,<y>,<z>: where the walkway starts, on the navmesh; the group gathers there and walks over together.
+        if (item.cross && !item.from)
+        {
+            LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: cross without from=<x>,<y>,<z>", path,
+                      lineNumber);
+            return false;
+        }
         bool const summoned = tokens[0] == "summoned";
         (item.object ? item.objectEntries : summoned ? item.summonEntries : item.bossEntries) =
             ParseIdList(Field(tokens, "entry"));
         if (summoned && item.radius <= 0.0f)
             item.radius = 20.0f;
-        if (!item.drop && item.spawnIds.empty() && item.bossEntries.empty() && item.objectEntries.empty() &&
-            item.summonEntries.empty())
+        if (!item.drop && !item.cross && item.spawnIds.empty() && item.bossEntries.empty() &&
+            item.objectEntries.empty() && item.summonEntries.empty())
         {
             LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: pack without spawns= / boss or object without "
                       "entry=", path, lineNumber);
