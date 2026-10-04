@@ -127,7 +127,10 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // A pack the route fights at a hold point: the group waits there and the leader pulls alone, as players stand
     // round the corner while the tank goes for the pull. Following the leader to the pull, the others were caught in
     // the pack (Kolurg, Nexus run 1963; Ahn'kahet's crawlers, run 1972).
-    if (item && item->hold && target)
+    // Only once the leader is near it: from Amanitar's cave the hold point of the next pack lay 157 yd off, the mage's
+    // move there found no path and the group waited ten minutes (Ahn'kahet, run 2118). Until then they follow.
+    if (item && item->hold && target &&
+        bot->GetExactDist(item->holdX, item->holdY, item->holdZ) <= HOLD_SEND_RANGE)
     {
         if (!HoldGroupAt(*item))
         {
