@@ -350,10 +350,12 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
         // Off the navmesh with no collision floor, the navmesh a few yards off at the bot's height: back onto it,
         // not down to the terrain. A straight step away from Slad'ran's Poison Nova ended 1 yd off his dais and
         // the hunter fell from z 128 to z 0 and followed the group under the map (Gundrak, run 2157).
-        float const wide[3] = {NAVMESH_FLOOR_RETURN, NAVMESH_FLOOR_SEARCH, NAVMESH_FLOOR_RETURN};
+        // Above it as well: the tank stopped 4-5 yd under the ramp up to the Colossus, sunk along a path point the
+        // collision model had no floor for, and fell from there (run 2167).
+        float const wide[3] = {NAVMESH_FLOOR_RETURN, NAVMESH_FLOOR_RETURN, NAVMESH_FLOOR_RETURN};
         if (std::fabs(ground - terrain) < 0.1f &&
             dtStatusSucceed(query->findNearestPoly(point, wide, &filter, &poly, closest)) && poly &&
-            std::fabs(closest[1] - bot->GetPositionZ()) < NAVMESH_FLOOR_SEARCH)
+            std::fabs(closest[1] - bot->GetPositionZ()) < NAVMESH_FLOOR_RETURN)
         {
             LOG_DEBUG("playerbots", "gravity bot={} no floor at ({:.1f},{:.1f},{:.1f}), back to the navmesh at "
                       "({:.1f},{:.1f},{:.1f})", bot->GetName(), bot->GetPositionX(), bot->GetPositionY(),
