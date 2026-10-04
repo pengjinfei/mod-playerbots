@@ -129,8 +129,11 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // the pack (Kolurg, Nexus run 1963; Ahn'kahet's crawlers, run 1972).
     // Only once the leader is near it: from Amanitar's cave the hold point of the next pack lay 157 yd off, the mage's
     // move there found no path and the group waited ten minutes (Ahn'kahet, run 2118). Until then they follow.
+    // Not while any of the group still fights: the tank out of combat with the Nexus rift's surges on the others, the
+    // group was held again out of sight of the rift, it was never killed and kept summoning them for seven minutes
+    // (run 2124).
     if (item && item->hold && target &&
-        bot->GetExactDist(item->holdX, item->holdY, item->holdZ) <= HOLD_SEND_RANGE)
+        bot->GetExactDist(item->holdX, item->holdY, item->holdZ) <= HOLD_SEND_RANGE && !GroupFighting())
     {
         if (!HoldGroupAt(*item))
         {
@@ -967,6 +970,18 @@ bool DungeonRunAdvanceAction::OnNavmesh() const
     dtQueryFilter const filter;
     dtPolyRef poly = 0;
     return dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) && poly;
+}
+
+bool DungeonRunAdvanceAction::GroupFighting() const
+{
+    Group* group = bot->GetGroup();
+    if (!group)
+        return false;
+    for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        if (Player* member = ref->GetSource())
+            if (member->IsAlive() && member->IsInCombat() && !member->getAttackers().empty())
+                return true;
+    return false;
 }
 
 bool DungeonRunAdvanceAction::HoldGroupAt(DungeonRouteItem const& item)

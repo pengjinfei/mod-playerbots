@@ -95,6 +95,7 @@ private:
     bool ApproachTimedOut(uint32 index, float distance);
     bool TraceDue();  // throttles the debug trace to one line per WAIT_LOG_INTERVAL_MS
     bool GroupReady(std::string& reason, Player*& dead, Player*& fighting) const;
+    bool GroupFighting() const;
     // First item on the path (not a side pack, not skipped) with a living, attackable member, or an object still to
     // be used; sets the member nearest to the bot, or the object when it is in sight.
     DungeonRouteItem const* NextItem(DungeonRoute const& route, Unit*& target, GameObject*& object,
