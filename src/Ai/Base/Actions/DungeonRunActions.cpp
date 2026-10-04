@@ -899,9 +899,11 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
             // A boss alive but out of reach for now (evading home, resetting) is not cleared: Hadronox evaded, the
             // next item was the hole in her pit, and the leader walked down into the tunnel her adds pour out of
             // (run 1955).
+            // Or one a creature of its own starts: the Drakkari Colossus stands frozen until a player engages one of
+            // the Living Mojos he summons round him, which do not attack (Gundrak, run 2153 waited 7 minutes).
             if (item.boss && BossAlive(item))
             {
-                target = nullptr;
+                target = BossSummon(item);
                 index = i;
                 return &item;
             }
@@ -1072,6 +1074,39 @@ bool DungeonRunAdvanceAction::BossAlive(DungeonRouteItem const& item) const
         }
     }
     return false;
+}
+
+Unit* DungeonRunAdvanceAction::BossSummon(DungeonRouteItem const& item) const
+{
+    Map* map = bot->GetMap();
+    if (!map)
+        return nullptr;
+    Creature* boss = nullptr;
+    for (uint32 spawnId : item.spawnIds)
+    {
+        auto const bounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
+        for (auto itr = bounds.first; itr != bounds.second && !boss; ++itr)
+        {
+            Creature* creature = itr->second;
+            if (creature && creature->IsAlive() && std::find(item.bossEntries.begin(), item.bossEntries.end(),
+                                                             creature->GetEntry()) != item.bossEntries.end())
+                boss = creature;
+        }
+    }
+    if (!boss)
+        return nullptr;
+    Unit* best = nullptr;
+    for (ObjectGuid const& guid : context->GetValue<GuidVector>("possible targets no los")->Get())
+    {
+        Creature* creature = ObjectAccessor::GetCreature(*bot, guid);
+        if (!creature || !creature->IsAlive() || !creature->IsSummon() ||
+            creature->ToTempSummon()->GetSummonerGUID() != boss->GetGUID() ||
+            creature->GetExactDist(boss) > BOSS_SUMMON_RANGE || !bot->IsValidAttackTarget(creature))
+            continue;
+        if (!best || bot->GetExactDist(creature) < bot->GetExactDist(best))
+            best = creature;
+    }
+    return best;
 }
 
 Unit* DungeonRunAdvanceAction::NearestLivingMember(DungeonRouteItem const& item) const

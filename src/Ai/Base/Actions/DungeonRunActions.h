@@ -71,6 +71,7 @@ private:
     static constexpr float DROP_JUMP_SPEED_Z = 8.0f;
     static constexpr float BOSS_AREA_MIN_RADIUS = 35.0f;  // packs between this far from a boss...
     static constexpr float BOSS_AREA_RADIUS = 70.0f;      // ...and this far are cleared before it...
+    static constexpr float BOSS_SUMMON_RANGE = 40.0f;     // a creature the boss summoned this close starts it
     static constexpr float BOSS_AREA_AHEAD = 150.0f;      // ...when the route reaches them at most this far after it
     static constexpr uint8 TRASH_CC_SKULL_ICON = 7;
     static constexpr uint8 TRASH_CC_ICONS[] = { 3, 4, 5, 6 };  // triangle, moon, square, cross
@@ -86,6 +87,7 @@ private:
     bool PendingObject(DungeonRouteItem const& item, GameObject*& object) const;
     bool ItemOpen(DungeonRoute const& route, uint32 index) const;  // on the path and not given up on
     bool BossAlive(DungeonRouteItem const& item) const;  // the boss creature alive, attackable or not
+    Unit* BossSummon(DungeonRouteItem const& item) const;  // a creature of the boss's own to engage it by
     float StartAlong(DungeonRoute const& route) const;
     bool OnNavmesh() const;
     bool InItem(DungeonRouteItem const& item, Unit* unit) const;  // one of the item's pack  // a navmesh polygon under the leader
