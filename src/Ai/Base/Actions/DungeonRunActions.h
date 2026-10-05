@@ -109,6 +109,9 @@ private:
     mutable std::unordered_set<uint32> _summonedDone;  // summoned packs seen cleared
     std::unordered_set<uint32> _crossesDone;           // walkways the group is over
     mutable std::unordered_set<uint32> _objectsDone;   // objects seen used
+    std::unordered_set<uint32> _waitsDone;             // waits stood out
+    uint32 _waitItem = UINT32_MAX;                     // wait being stood, and since when
+    uint32 _waitSinceMs = 0;
     uint32 _lastWaitLogMs = 0;
     uint32 _approachItem = UINT32_MAX;  // item being walked to, best distance reached, since when
     float _approachBest = 0.0f;

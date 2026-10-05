@@ -129,7 +129,7 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
             continue;
         }
         if (tokens[0] != "pack" && tokens[0] != "boss" && tokens[0] != "object" && tokens[0] != "summoned" &&
-            tokens[0] != "drop" && tokens[0] != "cross")
+            tokens[0] != "drop" && tokens[0] != "cross" && tokens[0] != "wait")
         {
             LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: unknown kind '{}'", path, lineNumber, tokens[0]);
             return false;
@@ -166,6 +166,8 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
         item.spawnIds = ParseIdList(Field(tokens, "spawns"));
         item.object = tokens[0] == "object";
         item.drop = tokens[0] == "drop";
+        if (tokens[0] == "wait")
+            item.waitMs = Acore::StringTo<uint32>(Field(tokens, "ms")).value_or(0);
         // rim=<x>,<y>,<z>: the navmesh has no floor over a hole, so a drop's approach aims at its edge.
         if (item.drop && !ParsePoint(Field(tokens, "rim"), item.rimX, item.rimY, item.rimZ))
         {
@@ -188,7 +190,7 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
             ParseIdList(Field(tokens, "entry"));
         if (summoned && item.radius <= 0.0f)
             item.radius = 20.0f;
-        if (!item.drop && !item.cross && item.spawnIds.empty() && item.bossEntries.empty() &&
+        if (!item.drop && !item.cross && !item.waitMs && item.spawnIds.empty() && item.bossEntries.empty() &&
             item.objectEntries.empty() && item.summonEntries.empty())
         {
             LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: pack without spawns= / boss or object without "

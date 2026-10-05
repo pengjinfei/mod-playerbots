@@ -175,7 +175,7 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
                       index);
         return false;
     }
-    if (!item || (!target && !item->object && !item->drop && !item->cross && item->summonEntries.empty()))
+    if (!item || (!target && !item->object && !item->drop && !item->cross && !item->waitMs && item->summonEntries.empty()))
     {
         if (TraceDue())
             LOG_DEBUG("playerbots", "dungeon-run bot={} route cleared progress={:.0f}", bot->GetName(),
@@ -186,6 +186,24 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     float const progress = AI_VALUE(float, "dungeon run progress");
     if (object && bot->IsWithinDistInMap(object, object->GetInteractionDistance() - 1.0f))
         return UseObject(*item, index, object);
+
+    if (item->waitMs)
+    {
+        if (bot->GetExactDist(item->x, item->y, item->z) > 3.0f)
+            return MoveTo(bot->GetMapId(), item->x, item->y, item->z, false, false, false, false,
+                          MovementPriority::MOVEMENT_NORMAL);
+        uint32 const now = getMSTime();
+        if (_waitItem != index)
+        {
+            _waitItem = index;
+            _waitSinceMs = now;
+        }
+        if (getMSTimeDiff(_waitSinceMs, now) < item->waitMs)
+            return false;
+        _waitsDone.insert(index);
+        LOG_DEBUG("playerbots", "dungeon-run bot={} waited item={} along={:.0f}", bot->GetName(), index, item->along);
+        return false;
+    }
 
     // A hole to jump down (Azjol-Nerub: from Hadronox's pit into the pool of Anub'arak's cavern, 360 yd below; the
     // water takes the fall as it does for a player). Walk to the rim, then everyone steps over; gravity does the rest.
@@ -947,6 +965,17 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
                     _objectsDone.insert(i);
                 continue;
             }
+            index = i;
+            return &item;
+        }
+        // A wait stands once at its point: Halls of Lightning's Hall of Watchers wakes two to four Titanium statues at
+        // each of three trigger lines 5 s after the leader crosses one; walking on through the next lines woke six
+        // to eight at once and killed the shaman in four full runs of six (my-mac runs 100150-100157).
+        if (item.waitMs)
+        {
+            if (_waitsDone.count(i))
+                continue;
+            target = nullptr;
             index = i;
             return &item;
         }
