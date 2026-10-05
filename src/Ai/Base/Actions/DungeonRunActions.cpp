@@ -447,8 +447,11 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             for (uint32 spawnId : item->spawnIds)
             {
                 auto const bounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
+                // Not one that cannot be fought yet: the frozen Drakkari Colossus kept the stop at the leader's
+                // own spot, and it stood there out of sight of the Living Mojo it was to pull (Gundrak, runs 2203,
+                // 2205).
                 for (auto itr = bounds.first; itr != bounds.second; ++itr)
-                    if (itr->second && itr->second->IsAlive())
+                    if (itr->second && itr->second->IsAlive() && bot->IsValidAttackTarget(itr->second))
                         deficit = std::max(deficit, shortOf - itr->second->GetExactDist2d(x, y));
             }
         x += deficit * std::cos(angle);
@@ -472,6 +475,9 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             approach.Relocate(approach.GetPositionX() - STOP_LEVEL_STEP * std::cos(angle),
                               approach.GetPositionY() - STOP_LEVEL_STEP * std::sin(angle), target->GetPositionZ());
         }
+        // Already at the stop and still out of reach: on at the member, as out of sight there.
+        if (bot->GetExactDist2d(approach.GetPositionX(), approach.GetPositionY()) < STOP_REACHED)
+            approach = destination;
     }
     bool moved = toTarget ? MoveTo(bot->GetMapId(), approach.GetPositionX(), approach.GetPositionY(),
                                    approach.GetPositionZ(), false, false, false, false,
