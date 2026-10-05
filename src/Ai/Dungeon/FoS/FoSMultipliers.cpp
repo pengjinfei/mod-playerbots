@@ -16,8 +16,11 @@ float BronjahmMultiplier::GetValue(Action* action) {
     if (!boss)
         return 1.0f;
 
+    // Kept on Bronjahm, not off to a fragment - but only once he is the target: with none (the group came to him off
+    // the trash, no scripted pull) the tank never chose him and did 1.5k damage in a five-minute fight he won by
+    // eating the fragments (Forge of Souls full run, runs 2213, 2214).
     if (dynamic_cast<TankAssistAction*>(action))
-        return 0.0f;
+        return AI_VALUE(Unit*, "current target") == boss ? 0.0f : 1.0f;
 
     if (bot->HasAura(SPELL_CORRUPT_SOUL))
     {
