@@ -37,7 +37,7 @@ node 328 1739.9 638.5 129.8
 pack 344 1719.9 693.3 108.0 radius=0.0 side=1 elite=0 spawns=127089 # 1xDrakkari Frenzy
 node 344 1724.0 637.8 129.8
 node 365 1704.0 638.6 130.6
-pack 377 1692.4 633.1 127.5 radius=7.1 side=0 elite=3 spawns=127009,127010,127018 # 2xUnyielding Constrictor, 1xSpitting Cobra
+pack 377 1692.4 633.1 127.5 radius=7.1 side=0 elite=3 spawns=127009,127010,127018 hold=1735.0,638.5,129.6 pull=26 from=1716.7,635.4,129.2 clear=127045:40 # 2xUnyielding Constrictor, 1xSpitting Cobra
 pack 377 1695.6 673.4 120.3 radius=0.0 side=1 elite=1 spawns=127019 # 1xSpitting Cobra
 node 381 1688.0 639.5 126.5
 pack 394 1668.2 588.2 113.6 radius=0.0 side=1 elite=1 spawns=127007 # 1xUnyielding Constrictor
