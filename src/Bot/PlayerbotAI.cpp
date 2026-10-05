@@ -348,9 +348,15 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
         // A hole down to a floor far below counts the same for a bot standing, not one already falling (a drop the
         // route takes): the Nexus has one at (602,-101) past Telestra, its floor at z -268 under the corridor at
         // -25, and a member stood off the navmesh edge there and fell (run 2193).
-        bool const noFloor = std::fabs(ground - terrain) < 0.1f ||
-                             (bot->GetPositionZ() - ground > NAVMESH_HOLE_DEPTH &&
-                              !bot->HasUnitMovementFlag(MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR));
+        // Not a hole over water: the shaft below Hadronox ends in the pool of Anub'arak's cavern, and the group that
+        // jumped into it was held at its rim (Azjol-Nerub, run 2198).
+        bool const deepHole = bot->GetPositionZ() - ground > NAVMESH_HOLE_DEPTH &&
+                              !bot->HasUnitMovementFlag(MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR) &&
+                              bot->GetMap()->GetLiquidData(bot->GetPhaseMask(), bot->GetPositionX(),
+                                                           bot->GetPositionY(), ground + 1.0f,
+                                                           bot->GetCollisionHeight(), {}).Status ==
+                                  LIQUID_MAP_NO_WATER;
+        bool const noFloor = std::fabs(ground - terrain) < 0.1f || deepHole;
         float const under = noFloor ? NAVMESH_FLOOR_BESIDE : NAVMESH_FLOOR_UNDER;
         if (dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) && poly &&
             closest[1] <= bot->GetPositionZ() + 0.5f && bot->GetExactDist2d(closest[2], closest[0]) < under)
