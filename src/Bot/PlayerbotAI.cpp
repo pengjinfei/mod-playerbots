@@ -294,6 +294,7 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
     static constexpr float NAVMESH_FLOOR_BESIDE = 2.0f;  // sideways, where the collision model has no floor at all
     static constexpr float NAVMESH_FLOOR_RETURN = 6.0f;  // and a polygon this far is walked back to instead of falling
     static constexpr float NAVMESH_FLOOR_SUNK = 12.0f;   // ...this far above or below
+    static constexpr float NAVMESH_HOLE_DEPTH = 30.0f;   // a floor this far below a standing bot is a hole's bottom
     _gravityCheckMs += elapsed;
     if (_gravityCheckMs < GRAVITY_CHECK_MS)
         return;
@@ -344,7 +345,13 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
         // spiral, 1 yd past the eroded navmesh edge, and fell from z 153 to the terrain at z 0 (run 2150).
         float const terrain = bot->GetMap()->GetHeight(bot->GetPositionX(), bot->GetPositionY(),
                                                        bot->GetPositionZ(), false, MAX_FALL_DISTANCE);
-        float const under = std::fabs(ground - terrain) < 0.1f ? NAVMESH_FLOOR_BESIDE : NAVMESH_FLOOR_UNDER;
+        // A hole down to a floor far below counts the same for a bot standing, not one already falling (a drop the
+        // route takes): the Nexus has one at (602,-101) past Telestra, its floor at z -268 under the corridor at
+        // -25, and a member stood off the navmesh edge there and fell (run 2193).
+        bool const noFloor = std::fabs(ground - terrain) < 0.1f ||
+                             (bot->GetPositionZ() - ground > NAVMESH_HOLE_DEPTH &&
+                              !bot->HasUnitMovementFlag(MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR));
+        float const under = noFloor ? NAVMESH_FLOOR_BESIDE : NAVMESH_FLOOR_UNDER;
         if (dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) && poly &&
             closest[1] <= bot->GetPositionZ() + 0.5f && bot->GetExactDist2d(closest[2], closest[0]) < under)
             return;
@@ -354,8 +361,7 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
         // Above it as well: the tank stopped 4-5 yd under the ramp up to the Colossus, sunk along a path point the
         // collision model had no floor for, and fell from there (run 2167); 9 yd under Moorabi's hall (run 2174).
         float const wide[3] = {NAVMESH_FLOOR_RETURN, NAVMESH_FLOOR_SUNK, NAVMESH_FLOOR_RETURN};
-        if (std::fabs(ground - terrain) < 0.1f &&
-            dtStatusSucceed(query->findNearestPoly(point, wide, &filter, &poly, closest)) && poly &&
+        if (noFloor && dtStatusSucceed(query->findNearestPoly(point, wide, &filter, &poly, closest)) && poly &&
             std::fabs(closest[1] - bot->GetPositionZ()) < NAVMESH_FLOOR_SUNK)
         {
             LOG_DEBUG("playerbots", "gravity bot={} no floor at ({:.1f},{:.1f},{:.1f}), back to the navmesh at "
