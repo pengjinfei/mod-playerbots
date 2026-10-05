@@ -55,7 +55,7 @@ pack 598 554.0 116.9 -16.6 radius=4.9 side=0 elite=3 spawns=126459,126467,126472
 node 598 542.2 117.9 -16.1
 node 614 545.1 102.1 -15.5
 node 630 534.3 90.2 -15.5
-pack 644 518.9 88.8 -16.0 radius=4.8 side=0 elite=4 spawns=126456,126464,126465,126470 hold=542.2,117.9,-16.6 pull=35 from=544.0,96.0,-16.4 # 1xMage Hunter Ascendant, 2xMage Hunter Initiate, 1xSteward
+pack 644 518.9 88.8 -16.0 radius=4.8 side=0 elite=4 spawns=126456,126464,126465,126470 hold=542.2,117.9,-16.6 pull=35 from=548.0,90.0,-16.6 # 1xMage Hunter Ascendant, 2xMage Hunter Initiate, 1xSteward
 node 652 513.3 89.1 -15.5
 node 668 497.3 89.1 -15.5
 boss 670 494.7 89.1 -16.0 radius=0.0 entry=26731 spawns=126480 # 1xGrand Magus Telestra
