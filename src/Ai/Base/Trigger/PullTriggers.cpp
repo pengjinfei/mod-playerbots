@@ -66,6 +66,11 @@ bool ReturnToPullPositionTrigger::IsActive()
         return false;
 
     PositionInfo pullPosition = AI_VALUE(PositionMap&, "position")["pull"];
-    return pullPosition.isSet() && pullPosition.mapId == bot->GetMapId() &&
-           bot->GetDistance(pullPosition.x, pullPosition.y, pullPosition.z) > sPlayerbotAIConfig.followDistance;
+    if (!pullPosition.isSet() || pullPosition.mapId != bot->GetMapId())
+        return false;
+    float const distance = bot->GetDistance(pullPosition.x, pullPosition.y, pullPosition.z);
+    // A pull back is a few steps from where the pull was cast. A pull position far away is from a pull long over whose
+    // target never left combat: the tank on Volkhan's ring ran 340 yd back to the entrance, through the side packs
+    // there, and the group followed it to a wipe (Halls of Lightning, my-mac run 100154).
+    return distance > sPlayerbotAIConfig.followDistance && distance <= PULL_BACK_MAX_DISTANCE;
 }

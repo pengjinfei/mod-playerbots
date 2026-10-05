@@ -24,6 +24,9 @@ class Unit;
 
 class PlayerbotAI;
 
+// How far a pulling tank walks back to where it cast the pull; farther, the pull position is stale.
+static constexpr float PULL_BACK_MAX_DISTANCE = 50.0f;
+
 class PullStrategy : public Strategy
 {
 public:
