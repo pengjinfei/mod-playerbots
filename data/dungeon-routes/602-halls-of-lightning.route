@@ -73,12 +73,12 @@ node 655 1350.6 -158.1 52.7
 pack 671 1366.3 -140.2 53.7 radius=6.5 side=0 elite=3 spawns=126949,126950,126960 # 2xBlistering Steamrager, 1xUnbound Firestorm
 node 671 1345.7 -142.8 52.9
 node 688 1340.7 -127.6 57.5
+pack 700 1299.6 -140.5 53.0 radius=6.7 side=0 elite=3 spawns=126947,126948,126959 hold=1340.7,-127.6,57.5 pull=42 from=1340.7,-127.6,57.5 # 2xBlistering Steamrager, 1xUnbound Firestorm
 node 704 1335.8 -112.4 57.4
 boss 715 1332.4 -102.1 56.8 radius=0.0 entry=28587 spawns=126982 # 1xVolkhan
 node 719 1329.7 -105.1 57.5
 node 735 1319.0 -117.0 57.4
 node 751 1308.4 -128.9 55.0
-pack 767 1299.6 -140.5 53.0 radius=6.7 side=0 elite=3 spawns=126947,126948,126959 # 2xBlistering Steamrager, 1xUnbound Firestorm
 node 767 1297.7 -140.8 53.2
 node 783 1287.1 -152.8 52.7
 pack 787 1297.4 -184.6 52.1 radius=7.0 side=1 elite=3 spawns=126951,126952,126962 # 2xBlistering Steamrager, 1xUnbound Firestorm
@@ -112,16 +112,16 @@ node 1051 1130.4 -258.9 57.5
 pack 1071 1113.6 -262.6 57.0 radius=6.4 side=0 elite=3 spawns=126874,126876,126877 # 1xStorming Vortex, 2xStormfury Revenant
 node 1071 1110.6 -256.5 57.5
 node 1087 1094.7 -254.6 57.5
-boss 1091 1082.0 -261.8 61.3 radius=0.0 entry=28546 spawns=126873 # 1xIonar
+boss 1091 1082.0 -261.8 61.3 radius=0.0 entry=28546 spawns=126873 hold=1110.0,-261.8,56.9 pull=30 from=1110.0,-261.8,56.9 # 1xIonar
 node 1103 1084.9 -241.9 61.8
 node 1119 1075.9 -228.7 61.7
 node 1135 1066.9 -215.5 61.7
 pack 1143 1065.9 -209.2 61.3 radius=0.0 side=0 elite=1 spawns=126893 # 1xStormforged Construct
 pack 1143 1081.4 -209.6 61.3 radius=0.0 side=0 elite=1 spawns=126894 # 1xStormforged Construct
 node 1151 1065.0 -199.6 62.1
+pack 1160 1092.8 -156.8 59.9 radius=10.2 side=0 elite=2 spawns=126937,126938 pull=10 from=1065.0,-199.6,62.1 # 2xTitanium Vanguard
+pack 1165 1059.2 -171.8 56.7 radius=4.3 side=0 elite=3 spawns=126907,126908,126927 clear=126938:20 # 2xStormforged Runeshaper, 1xStormforged Sentinel
 node 1168 1063.1 -183.7 57.6
-pack 1170 1092.8 -156.8 59.9 radius=10.2 side=0 elite=2 spawns=126937,126938 pull=30 from=1065.0,-199.6,62.1 # 2xTitanium Vanguard
-pack 1180 1059.2 -171.8 56.7 radius=4.3 side=0 elite=3 spawns=126907,126908,126927 # 2xStormforged Runeshaper, 1xStormforged Sentinel
 pack 1180 1087.0 -171.9 56.7 radius=4.3 side=0 elite=3 spawns=126911,126928,126929 # 1xStormforged Runeshaper, 1xStormforged Sentinel, 1xStormforged Tactician
 node 1188 1062.2 -163.7 57.6
 pack 1205 1040.7 -146.9 61.3 radius=5.1 side=0 elite=2 spawns=126913,126944 # 1xStormforged Runeshaper, 1xTitanium Vanguard
@@ -129,11 +129,11 @@ node 1205 1062.2 -147.7 61.6
 pack 1213 1102.6 -140.3 61.3 radius=9.8 side=1 elite=3 spawns=126912,126930,126931 # 1xStormforged Runeshaper, 1xStormforged Sentinel, 1xStormforged Tactician
 pack 1221 1049.8 -134.0 61.3 radius=0.0 side=0 elite=1 spawns=126932 # 1xStormforged Sentinel
 node 1221 1062.3 -131.7 61.9
-pack 1222 1048.2 -103.6 60.3 radius=4.5 side=0 elite=2 spawns=126935,126936 pull=30 from=1062.3,-131.7,61.9 # 2xTitanium Vanguard
-pack 1237 1033.0 -115.8 61.3 radius=8.8 side=0 elite=3 spawns=126902,126920,126934 # 1xStormforged Runeshaper, 1xStormforged Sentinel, 1xTitanium Vanguard
+pack 1230 1048.2 -103.6 60.3 radius=4.5 side=0 elite=2 spawns=126935,126936 pull=14 from=1062.3,-131.7,61.9 # 2xTitanium Vanguard
+pack 1237 1033.0 -115.8 61.3 radius=8.8 side=0 elite=3 spawns=126902,126920,126934 clear=126935:20 # 1xStormforged Runeshaper, 1xStormforged Sentinel, 1xTitanium Vanguard
 pack 1237 1113.8 -116.2 61.3 radius=6.2 side=1 elite=3 spawns=126909,126910,126943 # 2xStormforged Runeshaper, 1xTitanium Vanguard
 node 1237 1062.3 -115.7 61.7
-pack 1249 1073.4 -104.8 56.8 radius=4.9 side=0 elite=3 spawns=126903,126904,126921 # 2xStormforged Runeshaper, 1xStormforged Sentinel
+pack 1249 1073.4 -104.8 56.8 radius=4.9 side=0 elite=3 spawns=126903,126904,126921 clear=126935:20 # 2xStormforged Runeshaper, 1xStormforged Sentinel
 node 1253 1062.4 -99.7 57.6
 node 1269 1062.7 -83.8 57.6
 node 1286 1063.3 -67.8 60.9
