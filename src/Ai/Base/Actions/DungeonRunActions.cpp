@@ -309,6 +309,28 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     float const pullDistance = item->pullDistance > 0.0f ? item->pullDistance
                                : atSpot                  ? PULL_FROM_SPOT_DISTANCE
                                                          : PULL_DISTANCE;
+    // At the spot, any member of the pack in reach and in sight is the one pulled, not only the nearest: from
+    // Drak'Tharon's spot over the Scourge Brutes the nearest was out of sight, the leader waited two minutes there and
+    // then walked into the four of them, wipe in 12 s (run 2216); the Nexus squad before Telestra the same (runs 2188,
+    // 2192).
+    if (atSpot && !(bot->GetDistance(target) <= pullDistance && bot->IsWithinLOSInMap(target)))
+        if (Map* map = bot->GetMap())
+            for (uint32 spawnId : item->spawnIds)
+            {
+                auto const bounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
+                for (auto itr = bounds.first; itr != bounds.second; ++itr)
+                {
+                    Creature* member = itr->second;
+                    if (member && member->IsAlive() && bot->IsValidAttackTarget(member) &&
+                        bot->GetDistance(member) <= pullDistance && bot->IsWithinLOSInMap(member))
+                    {
+                        target = member;
+                        break;
+                    }
+                }
+                if (bot->GetDistance(target) <= pullDistance && bot->IsWithinLOSInMap(target))
+                    break;
+            }
     // At the spot with the pack out of reach: wait there, as players wait in a doorway for a patrol to come by. Walking
     // after it took the tank past the next squad (Ahn'kahet's first hall, run 1965), and a step off the spot sent the
     // leader straight back to it. A pack that never comes is walked to after a while.
