@@ -465,12 +465,17 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         // led back up, and the run stood still (Ahn'kahet, run 2050). Above it alike: a stop over the cave tunnel
         // before Amanitar took the tank along a ledge 20 yd over the beasts it was to pull (run 2073). Step towards
         // the pack until the path ends on its level.
+        // Off the navmesh alike: the stop short of the first Soulguard pair of the Forge of Souls lay over the
+        // chasm in the entrance hall, the path search gave a straight line to it, and the tank walked into the air
+        // and fell 213 yd (run 2206).
         for (uint32 step = 0; step < STOP_LEVEL_TRIES; ++step)
         {
             PathGenerator path(bot);
             if (!path.CalculatePath(approach.GetPositionX(), approach.GetPositionY(), approach.GetPositionZ(), false) ||
-                path.GetPath().empty() ||
-                std::fabs(path.GetPath().back().z - target->GetPositionZ()) <= STOP_LEVEL_DROP)
+                path.GetPath().empty())
+                break;
+            bool const offNavmesh = path.GetPathType() & (PATHFIND_NOT_USING_PATH | PATHFIND_SHORTCUT);
+            if (!offNavmesh && std::fabs(path.GetPath().back().z - target->GetPositionZ()) <= STOP_LEVEL_DROP)
                 break;
             approach.Relocate(approach.GetPositionX() - STOP_LEVEL_STEP * std::cos(angle),
                               approach.GetPositionY() - STOP_LEVEL_STEP * std::sin(angle), target->GetPositionZ());
