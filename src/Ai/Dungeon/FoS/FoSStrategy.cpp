@@ -9,6 +9,7 @@
 
 void WotlkDungeonFoSStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
+    TrashCcPullStrategy::InitTriggers(triggers);
     triggers.push_back(new TriggerNode("move from bronjahm",
         { NextAction("move from bronjahm", ACTION_MOVE + 5) }));
     triggers.push_back(new TriggerNode("switch to soul fragment",

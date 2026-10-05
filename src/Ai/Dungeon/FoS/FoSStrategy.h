@@ -7,12 +7,15 @@
 #ifndef PLAYERBOTS_FOSSTRATEGY_H
 #define PLAYERBOTS_FOSSTRATEGY_H
 
-#include "Strategy.h"
+#include "MarkRtiStrategy.h"
 
-class WotlkDungeonFoSStrategy : public Strategy
+// Inherits TrashCcPullStrategy, the shared trash crowd-control chain: the Soulguards come four at a time, reapers and
+// adepts humanoid, bonecasters undead, and fought uncontrolled the four on the ramp before Bronjahm took the group
+// down three runs in a row with the damage spread over all of them (full run, runs 2218-2220).
+class WotlkDungeonFoSStrategy : public TrashCcPullStrategy
 {
 public:
-    WotlkDungeonFoSStrategy(PlayerbotAI* ai) : Strategy(ai) {}
+    WotlkDungeonFoSStrategy(PlayerbotAI* ai) : TrashCcPullStrategy(ai) {}
     std::string const getName() override { return "wotlk-fos"; }
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
     void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
