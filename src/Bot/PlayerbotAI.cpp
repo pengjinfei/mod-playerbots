@@ -293,6 +293,7 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
     static constexpr float NAVMESH_FLOOR_UNDER = 0.3f;   // and this close sideways: the polygon is under the bot
     static constexpr float NAVMESH_FLOOR_BESIDE = 2.0f;  // sideways, where the collision model has no floor at all
     static constexpr float NAVMESH_FLOOR_RETURN = 6.0f;  // and a polygon this far is walked back to instead of falling
+    static constexpr float NAVMESH_FLOOR_SUNK = 12.0f;   // ...this far above or below
     _gravityCheckMs += elapsed;
     if (_gravityCheckMs < GRAVITY_CHECK_MS)
         return;
@@ -351,11 +352,11 @@ void PlayerbotAI::UpdateGravity(uint32 elapsed)
         // not down to the terrain. A straight step away from Slad'ran's Poison Nova ended 1 yd off his dais and
         // the hunter fell from z 128 to z 0 and followed the group under the map (Gundrak, run 2157).
         // Above it as well: the tank stopped 4-5 yd under the ramp up to the Colossus, sunk along a path point the
-        // collision model had no floor for, and fell from there (run 2167).
-        float const wide[3] = {NAVMESH_FLOOR_RETURN, NAVMESH_FLOOR_RETURN, NAVMESH_FLOOR_RETURN};
+        // collision model had no floor for, and fell from there (run 2167); 9 yd under Moorabi's hall (run 2174).
+        float const wide[3] = {NAVMESH_FLOOR_RETURN, NAVMESH_FLOOR_SUNK, NAVMESH_FLOOR_RETURN};
         if (std::fabs(ground - terrain) < 0.1f &&
             dtStatusSucceed(query->findNearestPoly(point, wide, &filter, &poly, closest)) && poly &&
-            std::fabs(closest[1] - bot->GetPositionZ()) < NAVMESH_FLOOR_RETURN)
+            std::fabs(closest[1] - bot->GetPositionZ()) < NAVMESH_FLOOR_SUNK)
         {
             LOG_DEBUG("playerbots", "gravity bot={} no floor at ({:.1f},{:.1f},{:.1f}), back to the navmesh at "
                       "({:.1f},{:.1f},{:.1f})", bot->GetName(), bot->GetPositionX(), bot->GetPositionY(),
