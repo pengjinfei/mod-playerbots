@@ -64,6 +64,7 @@ private:
     static constexpr float STOP_LEVEL_STEP = 5.0f;       // ...this far towards the pack, at most that many times...
     static constexpr float STOP_LEVEL_DROP = 6.0f;       // ...while the path ends this far below the pack
     static constexpr float DROP_AT_RIM = 4.0f;            // this close to a drop's rim point, jump over the edge
+    static constexpr float NEAR_TARGET = 40.0f;           // a pack this near and nearer than the next node: at it
     static constexpr float STOP_REACHED = 3.0f;           // this close to the stop short of a pack, walk on at it
     static constexpr float CROSS_AT_START = 4.0f;         // this close to a walkway's start, walk over it
     static constexpr float CROSS_ARRIVED = 6.0f;          // this close to its end, across

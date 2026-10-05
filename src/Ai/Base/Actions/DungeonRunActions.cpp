@@ -440,8 +440,12 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // pack itself on the navmesh. MoveNear only picks points in sight and fails for a target behind a wall.
     // A node already inside pull range of the pack is walked at as the pack itself, so the stop short below holds:
     // node 630 lies 16 yd from Telestra's first mage-hunter group and the leader walked into it (run 1927).
+    // A pack nearer than the next node is walked at too: the leader reached the Twilight hall by its pull spots, the
+    // route behind it, and walked back and forth to the nodes under Taldaram's platform for half an hour while the
+    // last Twilight Apostle stood 24 yd off (Ahn'kahet, run 2223).
     bool const toTarget = !next || next->along > item->along || bot->GetDistance(next->x, next->y, next->z) < 3.0f ||
-                          (target && target->GetExactDist(next->x, next->y, next->z) < pullDistance);
+                          (target && target->GetExactDist(next->x, next->y, next->z) < pullDistance) ||
+                          (target && distance < NEAR_TARGET && distance < bot->GetDistance(next->x, next->y, next->z));
     // Give up on a pack (never a boss) the leader cannot get closer to while walking straight at it - an unreachable
     // ledge: 45 s of continuous walking without gaining 2 yd. Walking the route nodes does not count; a leader that
     // cannot follow the route is a route problem and the stall watchdog reports it (run 1784 skipped Skarvald).
