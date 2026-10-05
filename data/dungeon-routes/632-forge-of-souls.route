@@ -54,7 +54,7 @@ node 672 5215.6 2369.6 668.7
 node 692 5221.3 2388.7 668.7
 node 708 5227.6 2403.4 671.5
 node 724 5236.5 2416.6 672.4
-pack 732 5232.8 2425.2 671.8 radius=11.1 side=0 elite=4 spawns=201686,201734,201758,201776 # 1xSoulguard Bonecaster, 1xSoulguard Adept, 2xSoulguard Reaper
+pack 732 5232.8 2425.2 671.8 radius=11.1 side=0 elite=4 spawns=201686,201734,201758,201776 hold=5193.2,2355.2,668.2 pull=30 from=5222.0,2395.0,668.7 # 1xSoulguard Bonecaster, 1xSoulguard Adept, 2xSoulguard Reaper
 node 740 5246.1 2429.4 672.4
 node 761 5250.8 2448.5 674.8
 node 781 5253.6 2468.3 678.6
