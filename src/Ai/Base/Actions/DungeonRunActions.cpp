@@ -278,7 +278,10 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             _sentItem = index;
             _sentSinceMs = now;
         }
-        if (getMSTimeDiff(_sentSinceMs, now) < SENT_WAIT_MS)
+        // Summoned, arrived and standing: it is not coming. Pit of Saron's ambushers walk to their marks on the ramp to
+        // the tunnel and wait there; they are pulled down from below once in place.
+        bool const settled = target && !item->summonEntries.empty() && !target->isMoving() && !target->IsInCombat();
+        if (!settled && getMSTimeDiff(_sentSinceMs, now) < SENT_WAIT_MS)
         {
             if (TraceDue())
                 LOG_DEBUG("playerbots", "dungeon-run bot={} holding for sent item={} target={} waited={}ms",
@@ -1094,6 +1097,19 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
             return &item;
         }
         Unit* nearest = NearestLivingMember(item);
+        // A pack the encounter sends and summons is not cleared before it was ever there: Pit of Saron's ambushes on
+        // the way to the tunnel appear only when the freed slaves' leader reaches his marks, after the group got close.
+        if (!item.summonEntries.empty() && item.sent)
+        {
+            if (nearest)
+                _summonedSeen.insert(i);
+            else if (!_summonedSeen.count(i))
+            {
+                target = nullptr;
+                index = i;
+                return &item;
+            }
+        }
         if (!nearest)
         {
             // A boss alive but out of reach for now (evading home, resetting) is not cleared: Hadronox evaded, the
