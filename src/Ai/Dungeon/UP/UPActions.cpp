@@ -88,17 +88,14 @@ bool AvoidSkadiWhirlwindAction::Execute(Event /*event*/)
     float radius = 5.0f;
     float distanceExtra = 2.0f;
 
+    // Not the tank: it takes the whirlwind and keeps Skadi where he is. Stepping away it dragged him off the group,
+    // and one step at the launchers took it over the edge of the platform to the ramp below, where it fell through
+    // to z -192 (my-mac run 100218).
+    if (botAI->IsTank(bot))
+        return false;
+
     if (distance < radius + distanceExtra)
-    {
-        if (botAI->IsTank(bot))
-        {
-            // The boss chases tank during this, leads to jittery stutter-stepping
-            // by the tank if we don't pre-move additional range. 2*radius seems ok
-            return MoveAway(boss, (2.0f * radius) + distanceExtra - distance);
-        }
-        // else
         return MoveAway(boss, radius + distanceExtra - distance);
-    }
 
     return false;
 }
@@ -113,6 +110,23 @@ bool SkadiTankPullNextAction::Execute(Event /*event*/)
         LOG_DEBUG("playerbots", "skadi-pull bot={} add={} dist={:.1f} x={:.1f}", bot->GetName(), add->GetEntry(),
                   bot->GetExactDist2d(add), add->GetPositionX());
     return Attack(add);
+}
+
+bool SkadiTankLandedAction::Execute(Event /*event*/)
+{
+    Unit* skadi = SkadiOnGround(bot);
+    if (!skadi)
+        return false;
+    if (!sPlayerbotAIConfig.logInGroupOnly)
+        LOG_DEBUG("playerbots", "skadi-landed bot={} dist={:.1f} skadi_victim={}", bot->GetName(),
+                  bot->GetExactDist2d(skadi), skadi->GetVictim() ? skadi->GetVictim()->GetName() : "-");
+    // Taunted from range when he is on someone else: he landed 31 yd off the tank and whirlwinded the mage to death
+    // before it got there (my-mac run 100221).
+    if (skadi->GetVictim() != bot)
+        for (char const* taunt : { "hand of reckoning", "taunt", "dark command", "growl" })
+            if (botAI->CanCastSpell(taunt, skadi) && botAI->CastSpell(taunt, skadi))
+                break;
+    return Attack(skadi);
 }
 
 bool SkadiBreathSideAction::Execute(Event /*event*/)

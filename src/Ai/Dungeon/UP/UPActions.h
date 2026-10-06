@@ -56,6 +56,13 @@ public:
     bool Execute(Event event) override;
 };
 
+class SkadiTankLandedAction : public AttackAction
+{
+public:
+    SkadiTankLandedAction(PlayerbotAI* ai) : AttackAction(ai, "skadi tank landed") {}
+    bool Execute(Event event) override;
+};
+
 class YmironBaneStopAttackAction : public Action
 {
 public:

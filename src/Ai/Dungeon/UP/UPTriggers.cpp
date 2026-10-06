@@ -102,6 +102,24 @@ Unit* SkadiNextGauntletAdd(Player* bot)
     return nearest;
 }
 
+Unit* SkadiOnGround(Player* bot)
+{
+    Creature* skadi = bot->FindNearestCreature(NPC_SKADI_THE_RUTHLESS, 150.0f, true);
+    if (!skadi || skadi->GetVehicle() || !skadi->IsInCombat() || !skadi->isTargetableForAttack(true, bot))
+        return nullptr;
+    return skadi;
+}
+
+// Held at the Harpoon Launchers, the group has Skadi land among it when Grauf falls: the tank was still out of combat
+// and he whirlwinded the healer to death in 30 s, the wipe followed (my-mac run 100215).
+bool SkadiLandedTrigger::IsActive()
+{
+    if (!botAI->IsTank(bot))
+        return false;
+    Unit* skadi = SkadiOnGround(bot);
+    return skadi && AI_VALUE(Unit*, "current target") != skadi;
+}
+
 bool SkadiTankPullNextTrigger::IsActive()
 {
     if (!botAI->IsTank(bot) || !bot->FindNearestCreature(NPC_GRAUF, 250.0f, true))

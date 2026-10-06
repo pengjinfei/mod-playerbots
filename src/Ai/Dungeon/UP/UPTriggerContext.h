@@ -20,11 +20,13 @@ class WotlkDungeonUPTriggerContext : public NamedObjectContext<Trigger>
             creators["skadi whirlwind"] = &WotlkDungeonUPTriggerContext::whirlwind;
             creators["ymiron bane"] = &WotlkDungeonUPTriggerContext::bane;
             creators["skadi tank pull next"] = &WotlkDungeonUPTriggerContext::skadi_tank_pull_next;
+            creators["skadi landed"] = &WotlkDungeonUPTriggerContext::skadi_landed;
             creators["skadi harpoon pickup"] = &WotlkDungeonUPTriggerContext::skadi_harpoon_pickup;
             creators["skadi harpoon launch"] = &WotlkDungeonUPTriggerContext::skadi_harpoon_launch;
         }
     private:
         static Trigger* skadi_tank_pull_next(PlayerbotAI* ai) { return new SkadiTankPullNextTrigger(ai); }
+        static Trigger* skadi_landed(PlayerbotAI* ai) { return new SkadiLandedTrigger(ai); }
         static Trigger* skadi_harpoon_pickup(PlayerbotAI* ai) { return new SkadiHarpoonPickupTrigger(ai); }
         static Trigger* skadi_harpoon_launch(PlayerbotAI* ai) { return new SkadiHarpoonLaunchTrigger(ai); }
         static Trigger* skadi_breath_side(PlayerbotAI* ai) { return new SkadiBreathSideTrigger(ai); }

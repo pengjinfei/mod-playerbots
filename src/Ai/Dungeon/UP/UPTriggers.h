@@ -23,6 +23,7 @@ enum UtgardePinnacleIDs
     SPELL_FREEZING_CLOUD_BREATH_LEFT  = 47590,
     NPC_BREATH_TRIGGER              = 28351,
     NPC_GRAUF                       = 26893,
+    NPC_SKADI_THE_RUTHLESS          = 26693,
     NPC_YMIRJAR_WARRIOR             = 26690,
     NPC_YMIRJAR_WITCH_DOCTOR        = 26691,
     NPC_YMIRJAR_HARPOONER           = 26692,
@@ -84,6 +85,16 @@ class SkadiTankPullNextTrigger : public Trigger
 {
 public:
     SkadiTankPullNextTrigger(PlayerbotAI* ai) : Trigger(ai, "skadi tank pull next") {}
+    bool IsActive() override;
+};
+
+// Skadi off his drake and fighting: the tank is on him at once.
+Unit* SkadiOnGround(Player* bot);
+
+class SkadiLandedTrigger : public Trigger
+{
+public:
+    SkadiLandedTrigger(PlayerbotAI* ai) : Trigger(ai, "skadi landed") {}
     bool IsActive() override;
 };
 
