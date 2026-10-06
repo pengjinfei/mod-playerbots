@@ -35,6 +35,13 @@ public:
     bool Execute(Event event) override;
 };
 
+class FreezingCircleAction : public MovementAction
+{
+public:
+    FreezingCircleAction(PlayerbotAI* ai) : MovementAction(ai, "freezing circle") {}
+    bool Execute(Event event) override;
+};
+
 class TyrannusAction : public AttackAction
 {
 public:

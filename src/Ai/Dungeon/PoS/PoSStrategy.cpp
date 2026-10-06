@@ -16,6 +16,9 @@ void WotlkDungeonPoSStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     triggers.push_back(new TriggerNode("garfrost permafrost",
         { NextAction("garfrost hide behind rock", ACTION_RAID + 1) }));
 
+    triggers.push_back(new TriggerNode("freezing circle",
+        { NextAction("freezing circle", ACTION_RAID + 6) }));
+
     triggers.push_back(new TriggerNode("tyrannus",
         { NextAction("tyrannus", ACTION_RAID + 5) }));
 }

@@ -196,7 +196,7 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // The boss is there but cannot be attacked yet: wait for it where the route says.
     if (item && item->boss && !target)
     {
-        if (item->hold && bot->GetExactDist(item->holdX, item->holdY, item->holdZ) > 5.0f)
+        if (item->hold && !AtHold(*item))
             return MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
                           MovementPriority::MOVEMENT_NORMAL);
         if (TraceDue())
@@ -267,11 +267,6 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // the first is engaged; the leader pulling the next one as well brought two groups at once and wiped (run 1856).
     if (item->sent)
     {
-        // Wait where the route says: Hadronox has to be met on the upper platform, where she webs the tunnel doors
-        // shut; met halfway down the ramp she kept eating the crypt fiends that poured out and never died (run 1868).
-        if (item->hold && bot->GetExactDist(item->holdX, item->holdY, item->holdZ) > 5.0f)
-            return MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
-                          MovementPriority::MOVEMENT_NORMAL);
         uint32 const now = getMSTime();
         if (_sentItem != index)
         {
@@ -283,6 +278,13 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         bool const settled = target && !item->summonEntries.empty() && !target->isMoving() && !target->IsInCombat();
         if (!settled && getMSTimeDiff(_sentSinceMs, now) < SENT_WAIT_MS)
         {
+            // Wait where the route says: Hadronox has to be met on the upper platform, where she webs the tunnel doors
+            // shut; met halfway down the ramp she kept eating the crypt fiends that poured out and never died (run
+            // 1868). Only while waiting: once the pack stands, the pull spot is the place, and sent back to the hold
+            // from it every tick the leader stood under Pit of Saron's first ambush and never pulled (run 2270).
+            if (item->hold && !AtHold(*item))
+                return MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
+                              MovementPriority::MOVEMENT_NORMAL);
             if (TraceDue())
                 LOG_DEBUG("playerbots", "dungeon-run bot={} holding for sent item={} target={} waited={}ms",
                           bot->GetName(), index, target ? target->GetName() : "-",
@@ -326,6 +328,12 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             if (MoveTo(bot->GetMapId(), item->fromX, item->fromY, item->fromZ, false, false, false, false,
                        MovementPriority::MOVEMENT_NORMAL))
                 return true;
+            // Not refused, only not yet: the move there under way, or another one still running out. Walking at the
+            // pack instead started a move of its own every tick, the spot was "refused" again for waiting on it, and
+            // the leader stood under Pit of Saron's first ambush for ten minutes (runs 2259, 2264).
+            if (IsDuplicateMove(item->fromX, item->fromY, item->fromZ) ||
+                IsWaitingForLastMove(MovementPriority::MOVEMENT_NORMAL))
+                return false;
             // Refused (another floor from where the leader stands): walk the route on towards it instead. On a ledge
             // over Ahn'kahet's lower room the spot 18 yd below was refused every tick and the run stood still
             // (run 2013).
@@ -1323,6 +1331,15 @@ Unit* DungeonRunAdvanceAction::BossSummon(DungeonRouteItem const& item) const
             best = creature;
     }
     return best;
+}
+
+// Over the hold counts as at it, as over a pull spot: Pit of Saron's ambush hold written at z 516 lies in a hole of the
+// collision model, the move was lifted to the navmesh at 521.8, and the leader stood 5.8 yd "away" on it, moving to it
+// every tick and never waiting for the ambush (run 2258).
+bool DungeonRunAdvanceAction::AtHold(DungeonRouteItem const& item) const
+{
+    return bot->GetExactDist2d(item.holdX, item.holdY) <= 5.0f &&
+           std::fabs(bot->GetPositionZ() - item.holdZ) <= SPOT_HEIGHT_TOLERANCE;
 }
 
 Unit* DungeonRunAdvanceAction::NearestLivingMember(DungeonRouteItem const& item) const

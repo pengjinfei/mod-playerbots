@@ -369,3 +369,24 @@ bool GarfrostHideBehindRockAction::Execute(Event /*event*/)
     return MoveTo(bot->GetMapId(), bestSpot.GetPositionX(), bestSpot.GetPositionY(), bestSpot.GetPositionZ(), false,
                   false, false, true, MovementPriority::MOVEMENT_COMBAT);
 }
+
+bool FreezingCircleAction::Execute(Event /*event*/)
+{
+    Creature* stalker = bot->FindNearestCreature(NPC_FROSTBITE_STALKER, FREEZING_CIRCLE_DANGER);
+    if (!stalker)
+        return false;
+
+    // Straight out from the stalker; standing on it, out the way the bot faces. Other directions round it when the
+    // first is refused (a wall, a ledge).
+    float const away = bot->GetExactDist2d(stalker) > 0.5f ? stalker->GetAngle(bot) : bot->GetOrientation();
+    for (float turn : {0.0f, 0.785f, -0.785f, 1.571f, -1.571f, 2.356f, -2.356f, 3.142f})
+    {
+        float const angle = away + turn;
+        float const x = stalker->GetPositionX() + FREEZING_CIRCLE_SAFE * std::cos(angle);
+        float const y = stalker->GetPositionY() + FREEZING_CIRCLE_SAFE * std::sin(angle);
+        if (MoveTo(bot->GetMapId(), x, y, bot->GetPositionZ(), false, false, false, false,
+                   MovementPriority::MOVEMENT_COMBAT))
+            return true;
+    }
+    return false;
+}

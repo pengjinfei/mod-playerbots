@@ -18,12 +18,14 @@ public:
         creators["ick and krick"] = &WotlkDungeonPoSTriggerContext::ick_and_krick;
         creators["tyrannus"] = &WotlkDungeonPoSTriggerContext::tyrannus;
         creators["garfrost permafrost"] = &WotlkDungeonPoSTriggerContext::garfrost_permafrost;
+        creators["freezing circle"] = &WotlkDungeonPoSTriggerContext::freezing_circle;
     }
 
 private:
     static Trigger* ick_and_krick(PlayerbotAI* ai) { return new IckAndKrickTrigger(ai); }
     static Trigger* tyrannus(PlayerbotAI* ai) { return new TyrannusTrigger(ai); }
     static Trigger* garfrost_permafrost(PlayerbotAI* ai) { return new GarfrostPermafrostTrigger(ai); }
+    static Trigger* freezing_circle(PlayerbotAI* ai) { return new FreezingCircleTrigger(ai); }
 };
 
 #endif

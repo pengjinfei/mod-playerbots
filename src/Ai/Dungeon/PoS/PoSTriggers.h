@@ -12,6 +12,9 @@
 #include "PlayerbotAIConfig.h"
 #include "Trigger.h"
 
+constexpr float FREEZING_CIRCLE_DANGER = 11.0f;  // inside this of the stalker, step out
+constexpr float FREEZING_CIRCLE_SAFE = 14.0f;    // and stop this far from it
+
 enum PitOfSaronIDs
 {
     //NPCs
@@ -20,6 +23,7 @@ enum PitOfSaronIDs
     NPC_ICK                             = 36476,
     NPC_TYRANNUS                        = 36658,
     NPC_RIMEFANG                        = 36661,
+    NPC_FROSTBITE_STALKER               = 20061,  // Wrathbone Coldwraith's Freezing Circle
 
     //GameObjects
     GO_SARONITE_ROCK                    = 196485,
@@ -52,6 +56,16 @@ class GarfrostPermafrostTrigger : public Trigger
 {
 public:
     GarfrostPermafrostTrigger(PlayerbotAI* ai) : Trigger(ai, "garfrost permafrost") {}
+
+    bool IsActive() override;
+};
+
+// The tunnel's Wrathbone Coldwraiths summon an invisible stalker under the group (Freezing Circle, 69574); five
+// seconds later it bursts (34779) for 9-14k on everyone round it. Three of five died to one in the ambush (run 2283).
+class FreezingCircleTrigger : public Trigger
+{
+public:
+    FreezingCircleTrigger(PlayerbotAI* ai) : Trigger(ai, "freezing circle") {}
 
     bool IsActive() override;
 };

@@ -117,7 +117,21 @@ namespace
         if (!creature || !creature->IsAlive() || creature->IsDungeonBoss() || creature->isWorldBoss())
             return false;
 
-        if (creature->IsPet() || creature->IsTotem() || creature->IsSummon())
+        if (creature->IsPet() || creature->IsTotem())
+            return false;
+
+        // A summon is an encounter's add or someone's minion - except trash a script sends: Pit of Saron's ambushes
+        // are summoned by an event creature standing out of combat, six elites at a time, and none was ever
+        // controlled (run 2276, wipe).
+        if (TempSummon const* summon = creature->ToTempSummon())
+        {
+            Unit* summoner = summon->GetSummonerUnit();
+            Creature* summonerCreature = summoner ? summoner->ToCreature() : nullptr;
+            if (!summonerCreature || summonerCreature->IsInCombat() || summonerCreature->IsDungeonBoss() ||
+                summonerCreature->isWorldBoss())
+                return false;
+        }
+        else if (creature->IsSummon())
             return false;
 
         return AttackersValue::IsPossibleTarget(creature, bot);

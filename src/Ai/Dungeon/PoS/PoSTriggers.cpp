@@ -44,6 +44,14 @@ bool GarfrostPermafrostTrigger::IsActive()
     return bot->FindNearestGameObject(GO_SARONITE_ROCK, 80.0f) != nullptr;
 }
 
+bool FreezingCircleTrigger::IsActive()
+{
+    if (!bot->IsInCombat())
+        return false;
+    Creature* stalker = bot->FindNearestCreature(NPC_FROSTBITE_STALKER, FREEZING_CIRCLE_DANGER);
+    return stalker && stalker->IsAlive();
+}
+
 bool TyrannusTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "scourgelord tyrannus");
