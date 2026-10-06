@@ -515,6 +515,11 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
                                    MovementPriority::MOVEMENT_NORMAL)
                           : MoveTo(bot->GetMapId(), next->x, next->y, next->z, false, false, false, false,
                                    MovementPriority::MOVEMENT_NORMAL);
+    // The stop short refused, the member itself: a stop by a wandering Tunneling Ghoul in Utgarde Keep was refused
+    // every tick and the leader stood ten minutes (run 2230).
+    if (!moved && toTarget && target && approach.GetExactDist(destination) > 0.5f)
+        moved = MoveTo(bot->GetMapId(), destination.GetPositionX(), destination.GetPositionY(),
+                       destination.GetPositionZ(), false, false, false, false, MovementPriority::MOVEMENT_NORMAL);
     // The node a step ahead refused, the nearest one ahead instead: up the ramp from Jedoga's room the path to the
     // node 36 yd on dived to a level 60 yd below and the leader stood at the ramp's middle ten minutes (Ahn'kahet,
     // run 2088); the node 18 yd on is reached straight up the ramp.
