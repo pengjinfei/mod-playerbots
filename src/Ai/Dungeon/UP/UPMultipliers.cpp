@@ -5,6 +5,8 @@
  */
 
 #include "UPMultipliers.h"
+
+#include <string>
 #include "ChooseTargetActions.h"
 #include "GenericSpellActions.h"
 #include "MovementActions.h"
@@ -107,11 +109,25 @@ float YmironMultiplier::GetValue(Action* action)
         {
             return 0.0f;
         }
+        // Nor what hits him without being aimed at him: in the 1.5 s before each Bane reflect the tank's Consecration
+        // (22 of 51), Holy Shield and Seal of Vengeance, the shaman's Flame Shock, the mage's Living Bomb and
+        // Flamestrike, the priest's wand and the rogue's poison - three full-group wipes at Ymiron (my-mac runs 100220,
+        // 100224; 100223 lost three).
+        static char const* const BANE_REFLECTED[] = { "consecration", "holy shield", "shoot", "flame shock",
+            "living bomb", "flamestrike", "blizzard", "fan of knives", "arcane explosion", "holy nova", "fire nova",
+            "searing totem", "magma totem", "seal of vengeance", "seal of corruption", "hammer of wrath" };
+        std::string const name = action->getName();
+        for (char const* reflected : BANE_REFLECTED)
+            if (name == reflected)
+                return 0.0f;
         // Bane reflects every hit on Ymiron, not just melee: spells cast on him (tank judgements, priest smites,
         // rogue/mage abilities) made Bane (59302) over half of all damage taken on heroic.
+        // Whatever the spell is aimed at Ymiron through: the tank's Hammer of the Righteous and Judgement still went
+        // to him under Bane with its current target cleared (20 of 39 reflects, my-mac run 100229).
         if (CastSpellAction* spell = dynamic_cast<CastSpellAction*>(action))
         {
-            if (spell->GetTargetName() == "current target" && AI_VALUE(Unit*, "current target") == boss)
+            if (spell->GetTarget() == boss ||
+                (spell->GetTargetName() == "current target" && AI_VALUE(Unit*, "current target") == boss))
             {
                 return 0.0f;
             }
