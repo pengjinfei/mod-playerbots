@@ -80,17 +80,17 @@ pack 790 843.5 -24.4 509.4 radius=0.0 side=1 elite=1 spawns=202097 # 1xWrathbone
 node 798 805.3 9.8 510.5
 node 814 812.0 24.3 510.3
 node 830 818.5 38.9 510.1
+pack 840 805.9 73.9 510.0 radius=0.0 side=0 elite=1 spawns=201981 # 1xPlagueborn Horror
+pack 842 777.2 88.1 512.5 radius=0.0 side=0 elite=1 spawns=201833 # 1xPlagueborn Horror
+pack 844 790.2 132.3 509.7 radius=0.0 side=0 elite=1 spawns=201903 # 1xPlagueborn Horror
 node 846 824.9 53.6 510.8
-pack 854 805.9 73.9 510.0 radius=0.0 side=0 elite=1 spawns=201981 # 1xPlagueborn Horror
-pack 862 777.2 88.1 512.5 radius=0.0 side=1 elite=1 spawns=201833 # 1xPlagueborn Horror
 node 862 831.3 68.2 511.0
 node 878 837.7 82.9 511.4
 node 894 843.6 97.8 511.0
+pack 900 826.3 117.0 509.5 radius=0.0 side=0 elite=1 spawns=202236 hold=780.0,100.0,510.0 pull=33 from=795.0,110.0,509.8 # 1xPlagueborn Horror
 node 910 849.0 112.8 510.7
 boss 918 856.7 120.0 510.0 radius=5.2 entry=36476 spawns=202042,202156 # 1xIck, 1xPlagueborn Horror
 node 925 851.6 120.2 510.6
-pack 933 790.2 132.3 509.7 radius=0.0 side=1 elite=1 spawns=201903 # 1xPlagueborn Horror
-pack 941 826.3 117.0 509.5 radius=0.0 side=0 elite=1 spawns=202236 # 1xPlagueborn Horror
 node 941 845.8 105.3 510.6
 node 957 847.7 91.5 510.6
 node 974 839.1 77.2 512.6
