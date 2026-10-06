@@ -59,14 +59,14 @@ node 740 5246.1 2429.4 672.4
 node 761 5250.8 2448.5 674.8
 node 781 5253.6 2468.3 678.6
 node 801 5256.5 2488.1 678.5
-pack 814 5251.2 2529.7 676.6 radius=2.0 side=1 elite=2 spawns=201706,201764 # 2xSoulguard Watchman
-pack 818 5255.9 2552.7 675.3 radius=16.8 side=1 elite=3 spawns=201695,201698,201762 # 1xSoul Horror, 2xSoulguard Animator
 node 818 5264.6 2499.3 683.0
 node 839 5284.2 2503.6 686.8
+pack 840 5251.2 2529.7 676.6 radius=2.0 side=0 elite=2 spawns=201706,201764 # 2xSoulguard Watchman
+pack 842 5255.9 2552.7 675.3 radius=16.8 side=0 elite=3 spawns=201695,201698,201762 # 1xSoul Horror, 2xSoulguard Animator
+pack 844 5322.6 2562.5 675.3 radius=14.7 side=0 elite=3 spawns=201732,201748,201790 # 1xSoul Horror, 2xSoulguard Animator
 boss 853 5297.3 2506.5 686.2 radius=0.0 entry=36497 spawns=201707 # 1xBronjahm
 node 857 5301.3 2506.4 686.8
 node 873 5317.3 2506.4 686.8
-pack 881 5322.6 2562.5 675.3 radius=14.7 side=1 elite=3 spawns=201732,201748,201790 # 1xSoul Horror, 2xSoulguard Animator
 node 890 5333.3 2506.4 680.4
 node 911 5351.0 2498.2 678.5
 node 927 5351.2 2484.6 681.1
