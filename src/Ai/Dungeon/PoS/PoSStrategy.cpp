@@ -9,6 +9,7 @@
 
 void WotlkDungeonPoSStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
+    TrashCcPullStrategy::InitTriggers(triggers);
     triggers.push_back(new TriggerNode("ick and krick",
         { NextAction("ick and krick", ACTION_RAID + 5) }));
 
