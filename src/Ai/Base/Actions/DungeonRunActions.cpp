@@ -493,19 +493,32 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         // the pack until the path ends on its level.
         // Off the navmesh alike: the stop short of the first Soulguard pair of the Forge of Souls lay over the
         // chasm in the entrance hall, the path search gave a straight line to it, and the tank walked into the air
-        // and fell 213 yd (run 2206).
+        // and fell 213 yd (run 2206). Inside a floor as well: the stop short of a Scourge Hulk in Svala's hall lay in
+        // the floor of the walkway 18 yd over it, and the tank sank into it and fell to z -176 (Utgarde Pinnacle,
+        // my-mac run 100192).
+        bool onLevel = false;
         for (uint32 step = 0; step < STOP_LEVEL_TRIES; ++step)
         {
             PathGenerator path(bot);
             if (!path.CalculatePath(approach.GetPositionX(), approach.GetPositionY(), approach.GetPositionZ(), false) ||
                 path.GetPath().empty())
+            {
+                onLevel = true;
                 break;
+            }
             bool const offNavmesh = path.GetPathType() & (PATHFIND_NOT_USING_PATH | PATHFIND_SHORTCUT);
             if (!offNavmesh && std::fabs(path.GetPath().back().z - target->GetPositionZ()) <= STOP_LEVEL_DROP)
+            {
+                onLevel = true;
                 break;
+            }
             approach.Relocate(approach.GetPositionX() - STOP_LEVEL_STEP * std::cos(angle),
                               approach.GetPositionY() - STOP_LEVEL_STEP * std::sin(angle), target->GetPositionZ());
         }
+        // No stop on the pack's level within the tries: the pack itself is walked at, the path search finds the way
+        // down (Utgarde Pinnacle, my-mac run 100192).
+        if (!onLevel)
+            approach.Relocate(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ());
         // Already at the stop and still out of reach: on at the member, as out of sight there.
         if (bot->GetExactDist2d(approach.GetPositionX(), approach.GetPositionY()) < STOP_REACHED)
             approach = destination;
