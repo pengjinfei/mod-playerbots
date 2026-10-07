@@ -66,14 +66,14 @@ pack 579 1363.8 -239.0 37.9 radius=6.2 side=0 elite=3 spawns=126945,126946,12695
 node 583 1348.6 -226.0 39.6
 node 602 1349.2 -210.0 48.8
 node 619 1349.8 -194.0 52.7
-pack 627 1366.6 -183.4 52.1 radius=6.6 side=0 elite=3 spawns=126953,126963,126964 # 1xBlistering Steamrager, 2xUnbound Firestorm
+pack 627 1366.6 -183.4 52.1 radius=6.6 side=0 elite=3 spawns=126953,126963,126964 hold=1349.2,-210.0,48.0 pull=35 from=1349.2,-210.0,48.0 # 1xBlistering Steamrager, 2xUnbound Firestorm
 node 635 1350.3 -178.0 52.7
 pack 655 1332.8 -160.7 52.1 radius=21.6 side=0 elite=2 spawns=126954,126955 # 2xBlistering Steamrager
 node 655 1350.6 -158.1 52.7
 pack 671 1366.3 -140.2 53.7 radius=6.5 side=0 elite=3 spawns=126949,126950,126960 # 2xBlistering Steamrager, 1xUnbound Firestorm
 node 671 1345.7 -142.8 52.9
 node 688 1340.7 -127.6 57.5
-pack 700 1299.6 -140.5 53.0 radius=6.7 side=0 elite=3 spawns=126947,126948,126959 hold=1340.7,-127.6,57.5 pull=42 from=1340.7,-127.6,57.5 # 2xBlistering Steamrager, 1xUnbound Firestorm
+pack 700 1299.6 -140.5 53.0 radius=6.7 side=0 elite=3 spawns=126947,126948,126959 hold=1350.6,-158.1,52.7 pull=42 from=1340.7,-127.6,57.5 # 2xBlistering Steamrager, 1xUnbound Firestorm
 node 704 1335.8 -112.4 57.4
 boss 715 1332.4 -102.1 56.8 radius=0.0 entry=28587 spawns=126982 # 1xVolkhan
 node 719 1329.7 -105.1 57.5
@@ -119,7 +119,7 @@ node 1135 1066.9 -215.5 61.7
 pack 1143 1065.9 -209.2 61.3 radius=0.0 side=0 elite=1 spawns=126893 # 1xStormforged Construct
 pack 1143 1081.4 -209.6 61.3 radius=0.0 side=0 elite=1 spawns=126894 # 1xStormforged Construct
 node 1151 1065.0 -199.6 62.1
-pack 1160 1092.8 -156.8 59.9 radius=10.2 side=0 elite=2 spawns=126937,126938 pull=10 from=1065.0,-199.6,62.1 # 2xTitanium Vanguard
+pack 1160 1092.8 -156.8 59.9 radius=10.2 side=0 elite=2 spawns=126937,126938 hold=1070.0,-225.0,61.2 pull=10 from=1065.0,-199.6,62.1 spotwait=180 # 2xTitanium Vanguard
 pack 1165 1059.2 -171.8 56.7 radius=4.3 side=0 elite=3 spawns=126907,126908,126927 clear=126938:20 # 2xStormforged Runeshaper, 1xStormforged Sentinel
 node 1168 1063.1 -183.7 57.6
 pack 1180 1087.0 -171.9 56.7 radius=4.3 side=0 elite=3 spawns=126911,126928,126929 # 1xStormforged Runeshaper, 1xStormforged Sentinel, 1xStormforged Tactician
