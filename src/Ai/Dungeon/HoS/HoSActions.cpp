@@ -5,6 +5,10 @@
  */
 
 #include "HoSActions.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include "Group.h"
 #include "Log.h"
 #include "Playerbots.h"
@@ -32,15 +36,44 @@ bool ShatterSpreadAction::Execute(Event /*event*/)
         }
     }
 
-    if (closestMember && bot->GetExactDist2d(closestMember) < radius)
-    {
-        // Move in small increments so course can be corrected, otherwise two bots may
-        // run in the same direction and not adjust until they reach the destination
-        // return MoveAway(closestMember, radius - bot->GetExactDist2d(closestMember));
-        return MoveAway(closestMember, 5.0f);
-    }
+    if (!closestMember || bot->GetExactDist2d(closestMember) >= radius)
+        return false;
 
-    return false;
+    // Spread on Krystallus' platform only: stepping away from the nearest member without bounds took bots over its
+    // edge, they fell among the Crystalline Shardlings below and died where the group could not reach them (full
+    // runs 2333, 2334). Of the points a step away, the one farthest from every member, within 16 yd of the boss and
+    // on his level.
+    constexpr float SPREAD_STEP = 5.0f;
+    constexpr float SPREAD_BOSS_RANGE = 16.0f;
+    float bestScore = -1.0f;
+    float bestX = 0.0f;
+    float bestY = 0.0f;
+    for (int i = 0; i < 12; ++i)
+    {
+        float const angle = i * float(M_PI) / 6.0f;
+        float const x = bot->GetPositionX() + SPREAD_STEP * std::cos(angle);
+        float const y = bot->GetPositionY() + SPREAD_STEP * std::sin(angle);
+        if (boss->GetExactDist2d(x, y) > SPREAD_BOSS_RANGE)
+            continue;
+        float const ground = bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, bot->GetPositionZ() + 2.0f, true, 6.0f);
+        if (ground <= INVALID_HEIGHT || std::fabs(ground - boss->GetPositionZ()) > 3.0f)
+            continue;
+        float nearest = std::numeric_limits<float>::max();
+        for (auto& member : members)
+            if (Unit* unit = botAI->GetUnit(member))
+                if (unit != bot)
+                    nearest = std::min(nearest, unit->GetExactDist2d(x, y));
+        if (nearest > bestScore)
+        {
+            bestScore = nearest;
+            bestX = x;
+            bestY = y;
+        }
+    }
+    if (bestScore <= bot->GetExactDist2d(closestMember))
+        return false;
+    return MoveTo(bot->GetMapId(), bestX, bestY, boss->GetPositionZ(), false, false, false, false,
+                  MovementPriority::MOVEMENT_COMBAT);
 }
 
 bool AvoidLightningRingAction::Execute(Event /*event*/)

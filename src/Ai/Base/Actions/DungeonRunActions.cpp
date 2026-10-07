@@ -255,12 +255,24 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     if (item->gossipEntry)
     {
         Creature* npc = bot->FindNearestCreature(item->gossipEntry, SUMMON_SIGHT);
+        if (!npc && TraceDue())
+            LOG_DEBUG("playerbots", "dungeon-run bot={} gossip item={} entry={} not within {:.0f} yd (alive)",
+                      bot->GetName(), index, item->gossipEntry, SUMMON_SIGHT);
         if (!npc || bot->GetExactDist(npc) > GOSSIP_DISTANCE)
         {
             float const x = npc ? npc->GetPositionX() : item->x;
             float const y = npc ? npc->GetPositionY() : item->y;
             float const z = npc ? npc->GetPositionZ() : item->z;
             return MoveTo(bot->GetMapId(), x, y, z, false, false, false, false, MovementPriority::MOVEMENT_NORMAL);
+        }
+        // Not offering it yet (walking an escort, a fight still on): wait by it, as a player waits for the "!" to
+        // come back. Brann Bronzebeard offers the Tribunal of Ages only once his escort reaches it.
+        if (!npc->HasNpcFlag(UNIT_NPC_FLAG_GOSSIP))
+        {
+            if (TraceDue())
+                LOG_DEBUG("playerbots", "dungeon-run bot={} gossip item={} waiting for {} to offer it", bot->GetName(),
+                          index, npc->GetName());
+            return false;
         }
         if (!sScriptMgr->OnGossipSelect(bot, npc, item->gossipMenu, item->gossipOption) && npc->AI())
             npc->AI()->sGossipSelect(bot, item->gossipMenu, item->gossipOption);
