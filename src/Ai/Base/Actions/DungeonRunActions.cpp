@@ -16,6 +16,7 @@
 #include "PositionValue.h"
 #include "PullStrategy.h"
 #include "RtiTargetValue.h"
+#include "ScriptMgr.h"
 #include "Playerbots.h"
 
 bool DungeonRunAdvanceAction::isUseful()
@@ -204,7 +205,8 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
                       index);
         return false;
     }
-    if (!item || (!target && !item->object && !item->drop && !item->cross && !item->waitMs && item->summonEntries.empty()))
+    if (!item || (!target && !item->object && !item->drop && !item->cross && !item->waitMs && !item->gossipEntry &&
+                  item->summonEntries.empty()))
     {
         if (TraceDue())
             LOG_DEBUG("playerbots", "dungeon-run bot={} route cleared progress={:.0f}", bot->GetName(),
@@ -231,6 +233,49 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             return false;
         _waitsDone.insert(index);
         LOG_DEBUG("playerbots", "dungeon-run bot={} waited item={} along={:.0f}", bot->GetName(), index, item->along);
+        return false;
+    }
+
+    // Talk to an event's starter, as a player clicks the gossip option: Lieutenant Sinclari opens the Violet Hold.
+    if (item->gossipEntry)
+    {
+        Creature* npc = bot->FindNearestCreature(item->gossipEntry, SUMMON_SIGHT);
+        if (!npc || bot->GetExactDist(npc) > GOSSIP_DISTANCE)
+        {
+            float const x = npc ? npc->GetPositionX() : item->x;
+            float const y = npc ? npc->GetPositionY() : item->y;
+            float const z = npc ? npc->GetPositionZ() : item->z;
+            return MoveTo(bot->GetMapId(), x, y, z, false, false, false, false, MovementPriority::MOVEMENT_NORMAL);
+        }
+        if (!sScriptMgr->OnGossipSelect(bot, npc, item->gossipMenu, item->gossipOption) && npc->AI())
+            npc->AI()->sGossipSelect(bot, item->gossipMenu, item->gossipOption);
+        _gossipsDone.insert(index);
+        LOG_DEBUG("playerbots", "dungeon-run bot={} gossip item={} {} menu={} option={}", bot->GetName(), index,
+                  npc->GetName(), item->gossipMenu, item->gossipOption);
+        return true;
+    }
+
+    // Waves with none in the room: wait at the hold point for the next.
+    if (item->repeat && !target)
+    {
+        if (!AtHold(*item))
+            return MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
+                          MovementPriority::MOVEMENT_NORMAL);
+        if (TraceDue())
+        {
+            LOG_DEBUG("playerbots", "dungeon-run bot={} waiting for the next wave of item={}", bot->GetName(), index);
+            // What of the wave is still about but cannot be fought: a wave that never ends holds the next one back.
+            std::list<Creature*> left;
+            bot->GetCreatureListWithEntryInGrid(left, item->summonEntries, SUMMON_SIGHT + item->radius);
+            for (Creature* creature : left)
+                if (creature->IsAlive())
+                    LOG_DEBUG("playerbots", "dungeon-run bot={} wave item={} left: {} entry={} at ({:.1f},{:.1f},{:.1f}) "
+                              "dist={:.1f} seen={} attackable={} combat={}", bot->GetName(), index,
+                              creature->GetName(), creature->GetEntry(), creature->GetPositionX(),
+                              creature->GetPositionY(), creature->GetPositionZ(), bot->GetExactDist(creature),
+                              bot->CanSeeOrDetect(creature), bot->IsValidAttackTarget(creature),
+                              creature->IsInCombat());
+        }
         return false;
     }
 
@@ -493,6 +538,15 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // cannot follow the route is a route problem and the stall watchdog reports it (run 1784 skipped Skarvald).
     if (toTarget && !item->boss && ApproachTimedOut(index, distance))
     {
+        // A wave's member out of reach from here: back to the hold point and on from there. The Violet Hold leader
+        // walked into Ichoron's pool after a Portal Guardian on the ledge above, the move up was refused from the pool
+        // and the guardians of every later wave were given up with the item; the portal never closed (run 2288).
+        if (item->repeat && item->hold)
+        {
+            _approachSinceMs = getMSTime();
+            return MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
+                          MovementPriority::MOVEMENT_NORMAL);
+        }
         _pullAttempts[index] = MAX_PULL_ATTEMPTS;
         LOG_DEBUG("playerbots", "dungeon-run bot={} skip item={} along={:.0f} target={} - no closer than {:.0f} yd",
                   bot->GetName(), index, item->along, name, _approachBest);
@@ -575,6 +629,11 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     if (!moved && toTarget && target && approach.GetExactDist(destination) > 0.5f)
         moved = MoveTo(bot->GetMapId(), destination.GetPositionX(), destination.GetPositionY(),
                        destination.GetPositionZ(), false, false, false, false, MovementPriority::MOVEMENT_NORMAL);
+    // A wave's member refused from where the leader stands (a pool below its ledge): back to the hold point, from
+    // where the room's ways lead everywhere.
+    if (!moved && item->repeat && item->hold && !AtHold(*item))
+        moved = MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
+                       MovementPriority::MOVEMENT_NORMAL);
     // The node a step ahead refused, the nearest one ahead instead: up the ramp from Jedoga's room the path to the
     // node 36 yd on dived to a level 60 yd below and the leader stood at the ramp's middle ten minutes (Ahn'kahet,
     // run 2088); the node 18 yd on is reached straight up the ramp.
@@ -1045,6 +1104,7 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
     if (!map)
         return nullptr;
 
+    uint32 idle = UINT32_MAX;  // a wave item with none there, to wait at if nothing else is open
     for (uint32 i = 0; i < route.items.size(); ++i)
     {
         DungeonRouteItem const& item = route.items[i];
@@ -1083,6 +1143,29 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
             target = nullptr;
             index = i;
             return &item;
+        }
+        if (item.gossipEntry)
+        {
+            if (_gossipsDone.count(i))
+                continue;
+            target = nullptr;
+            index = i;
+            return &item;
+        }
+        // Waves: the Violet Hold's portals open one after another until Cyanigosa; whatever of them is in the room
+        // is fought, and with none there the group waits at the hold point for the next.
+        if (item.repeat && !item.summonEntries.empty())
+        {
+            if (Unit* member = NearestLivingMember(item))
+            {
+                target = member;
+                index = i;
+                return &item;
+            }
+            // None of this one there: the next wave item may have some; with none at all, wait at the first's hold.
+            if (item.hold && idle == UINT32_MAX)
+                idle = i;
+            continue;
         }
         if (item.drop)
         {
@@ -1174,6 +1257,12 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
         index = i;
         return &item;
     }
+    if (idle != UINT32_MAX)
+    {
+        target = nullptr;
+        index = idle;
+        return &route.items[idle];
+    }
     return nullptr;
 }
 
@@ -1181,6 +1270,9 @@ bool DungeonRunAdvanceAction::ItemOpen(DungeonRoute const& route, uint32 index) 
 {
     if (route.items[index].side)
         return false;
+    // Waves are never given up: each is a new pack, and a wave left standing holds back the next.
+    if (route.items[index].repeat)
+        return true;
     auto const attempts = _pullAttempts.find(index);
     return attempts == _pullAttempts.end() || attempts->second < MAX_PULL_ATTEMPTS;
 }

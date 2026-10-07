@@ -47,6 +47,7 @@ private:
     static constexpr uint32 CC_WAIT_MS = 25000;           // longest wait for the crowd control to land
     static constexpr uint32 CC_NO_PLAN_MS = 10000;        // no crowd-control icon after this long: pull anyway
     static constexpr float OBJECT_SIGHT = 80.0f;          // closer than this, an object item is judged by its state
+    static constexpr float GOSSIP_DISTANCE = 4.0f;        // close enough to talk to a creature
     static constexpr float SUMMON_SIGHT = 80.0f;          // closer than this, a summoned pack is judged by what stands
     static constexpr uint32 MAX_USE_ATTEMPTS = 5;         // uses of one object before it is skipped
     static constexpr uint32 HELD_IN_COMBAT_MS = 15000;    // a member in combat this long: go to what holds it
@@ -115,6 +116,7 @@ private:
     std::unordered_set<uint32> _crossesDone;           // walkways the group is over
     mutable std::unordered_set<uint32> _objectsDone;   // objects seen used
     std::unordered_set<uint32> _waitsDone;             // waits stood out
+    std::unordered_set<uint32> _gossipsDone;           // event starters talked to
     uint32 _waitItem = UINT32_MAX;                     // wait being stood, and since when
     uint32 _waitSinceMs = 0;
     uint32 _lastWaitLogMs = 0;

@@ -40,6 +40,10 @@ struct DungeonRouteItem
     bool drop = false;                 // a hole to jump down: the group walks to its rim and steps over (x, y, z)
     float rimX = 0.0f, rimY = 0.0f, rimZ = 0.0f;  // drop: a point on the floor at the hole's edge, walked to first
     bool cross = false;                // a walkway the navmesh lacks (a game object floor): from= to (x, y, z) straight
+    uint32 gossipEntry = 0;            // gossip: the creature the leader talks to once (an event's starter)...
+    uint32 gossipMenu = 0;             // ...menu=<id> and...
+    uint32 gossipOption = 0;           // ...option=<n> it picks
+    bool repeat = false;               // repeat=1 (summoned): waves - never done; none there, wait at hold= or go on
     float pullDistance = 0.0f;         // pull=<yd>: engage from this far instead of the default
     bool noCc = false;                 // cc=0: no crowd control before the pull (a stealthed sapper is seen first)
     uint32 awaySpawn = 0;              // away=<spawnId>:<yd>: go to the pull spot only while that unit (a patrol)...

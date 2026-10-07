@@ -129,7 +129,7 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
             continue;
         }
         if (tokens[0] != "pack" && tokens[0] != "boss" && tokens[0] != "object" && tokens[0] != "summoned" &&
-            tokens[0] != "drop" && tokens[0] != "cross" && tokens[0] != "wait")
+            tokens[0] != "drop" && tokens[0] != "cross" && tokens[0] != "wait" && tokens[0] != "gossip")
         {
             LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: unknown kind '{}'", path, lineNumber, tokens[0]);
             return false;
@@ -186,6 +186,20 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
                       lineNumber);
             return false;
         }
+        if (tokens[0] == "gossip")
+        {
+            item.gossipEntry = Acore::StringTo<uint32>(Field(tokens, "entry")).value_or(0);
+            item.gossipMenu = Acore::StringTo<uint32>(Field(tokens, "menu")).value_or(0);
+            item.gossipOption = Acore::StringTo<uint32>(Field(tokens, "option")).value_or(0);
+            if (!item.gossipEntry)
+            {
+                LOG_ERROR("server.loading", "Dungeon routes: '{}' line {}: gossip without entry=", path, lineNumber);
+                return false;
+            }
+            route.items.push_back(std::move(item));
+            continue;
+        }
+        item.repeat = Field(tokens, "repeat") == "1";
         bool const summoned = tokens[0] == "summoned";
         (item.object ? item.objectEntries : summoned ? item.summonEntries : item.bossEntries) =
             ParseIdList(Field(tokens, "entry"));

@@ -1,0 +1,16 @@
+# Route for map 608, written by hand: the Violet Hold is one room and its fights come to it.
+# Lieutenant Sinclari (gossip menu 9998 option 0) starts the event; the guards leave, the seal at the door (1822,804)
+# closes, and portals open round the room one after another (each 3 s after the last is defeated) - eighteen waves,
+# a cell boss released by an Azure Saboteur at waves 6 and 12, Cyanigosa at 18 (instance_violet_hold.cpp).
+# node <along_yd> <x> <y> <z>
+node 0 1808.8 803.9 44.4
+node 22 1830.0 803.5 44.4
+node 46 1854.0 804.0 44.0
+node 84 1892.3 805.7 38.4
+gossip 25 1830.9 799.5 44.4 entry=30658 menu=9998 option=0 # Lieutenant Sinclari: start
+# A portal held open by a Portal Guardian or Keeper sends three or four Azure invaders every 20 s until it dies: it
+# goes first, wherever it stands round the room.
+summoned 90 1892.3 805.7 38.4 radius=70 repeat=1 hold=1892.3,805.7,38.4 entry=30660,30695,30893 # Portal Guardian / Keepers
+# The rest of each wave - the invaders walking to the seal, the elite portals' two or three elites, the released cell
+# boss (and Erekem's guards), Cyanigosa - fought as it comes; none there, the group waits in the middle of the room.
+summoned 91 1892.3 805.7 38.4 radius=70 repeat=1 hold=1892.3,805.7,38.4 entry=30661,30961,30662,30962,30663,30918,30664,30963,30666,30667,30668,32191,29316,29315,29395,29313,29312,29266,29314,31134 # waves
