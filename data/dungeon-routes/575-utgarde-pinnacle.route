@@ -69,7 +69,7 @@ boss 777 320.8 -453.1 104.8 radius=0.0 entry=26687 spawns=126102 # 1xGortok Pale
 node 789 311.4 -479.7 104.7
 node 805 313.1 -495.6 104.7
 node 821 326.0 -505.1 104.4
-boss 838 343.0 -507.3 104.6 radius=0.0 entry=26693 spawns=126103 hold=465.0,-512.0,104.7 from=465.0,-512.0,104.7 # 1xSkadi the Ruthless
+boss 838 343.0 -507.3 104.6 radius=0.0 entry=26693 spawns=126103 hold=330.9,-508.4,104.3 from=330.9,-508.4,104.3 # 1xSkadi the Ruthless
 node 838 342.0 -508.2 104.4
 node 854 358.0 -508.5 104.7
 node 870 374.0 -508.7 104.8
