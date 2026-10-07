@@ -6,7 +6,7 @@
 node 0 1153.2 806.2 195.9
 node 16 1151.6 790.3 195.7
 node 32 1149.9 774.3 195.9
-pack 40 1153.2 765.9 195.9 radius=3.0 side=0 elite=3 spawns=126692,126693,126709 # 2xDark Rune Warrior, 1xDark Rune Theurgist
+pack 40 1153.2 765.9 195.9 radius=3.0 side=0 elite=3 spawns=126692,126693,126709 pull=36 from=1153.2,800.0,195.9 clear=126710:25 # 2xDark Rune Warrior, 1xDark Rune Theurgist
 node 48 1148.2 758.4 196.8
 pack 64 1135.3 743.4 195.3 radius=0.0 side=0 elite=1 spawns=126710 # 1xDark Rune Theurgist
 node 64 1146.5 742.5 196.0

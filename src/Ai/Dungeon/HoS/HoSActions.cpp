@@ -41,10 +41,12 @@ bool ShatterSpreadAction::Execute(Event /*event*/)
 
     // Spread on Krystallus' platform only: stepping away from the nearest member without bounds took bots over its
     // edge, they fell among the Crystalline Shardlings below and died where the group could not reach them (full
-    // runs 2333, 2334). Of the points a step away, the one farthest from every member, within 16 yd of the boss and
-    // on his level.
+    // runs 2333, 2334). Of the points a step away, the one farthest from every member, within reach of the boss and
+    // on the bot's own level (no drop). Bound to his level instead, bots standing 30 yd down the slope had no point to
+    // go to, stood together and four died to one Shatter (run 2341).
     constexpr float SPREAD_STEP = 5.0f;
-    constexpr float SPREAD_BOSS_RANGE = 16.0f;
+    constexpr float SPREAD_BOSS_RANGE = 35.0f;
+    constexpr float SPREAD_MAX_DROP = 1.0f;
     float bestScore = -1.0f;
     float bestX = 0.0f;
     float bestY = 0.0f;
@@ -56,7 +58,8 @@ bool ShatterSpreadAction::Execute(Event /*event*/)
         if (boss->GetExactDist2d(x, y) > SPREAD_BOSS_RANGE)
             continue;
         float const ground = bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, bot->GetPositionZ() + 2.0f, true, 6.0f);
-        if (ground <= INVALID_HEIGHT || std::fabs(ground - boss->GetPositionZ()) > 3.0f)
+        // Never lower than where the bot stands: step by step down the slope leads to the Shardlings below.
+        if (ground <= INVALID_HEIGHT || ground < std::min(bot->GetPositionZ(), boss->GetPositionZ()) - SPREAD_MAX_DROP)
             continue;
         float nearest = std::numeric_limits<float>::max();
         for (auto& member : members)
@@ -72,7 +75,7 @@ bool ShatterSpreadAction::Execute(Event /*event*/)
     }
     if (bestScore <= bot->GetExactDist2d(closestMember))
         return false;
-    return MoveTo(bot->GetMapId(), bestX, bestY, boss->GetPositionZ(), false, false, false, false,
+    return MoveTo(bot->GetMapId(), bestX, bestY, bot->GetPositionZ(), false, false, false, false,
                   MovementPriority::MOVEMENT_COMBAT);
 }
 
