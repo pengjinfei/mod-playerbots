@@ -5,6 +5,9 @@
  */
 
 #include "HoSMultipliers.h"
+
+#include <set>
+#include <string>
 #include "Action.h"
 #include "ChooseTargetActions.h"
 #include "GenericSpellActions.h"
@@ -19,8 +22,11 @@ float KrystallusMultiplier::GetValue(Action* action)
 
     // No elemental beside the group: a Greater Fire Elemental is stoned by Ground Slam like a player and its Shatter
     // hit every member for 8-12k on top of theirs - three died to one Shatter that they would have lived through
-    // without it (Halls of Stone full run 2347).
-    if (action->getName() == "fire elemental totem" || action->getName() == "earth elemental totem")
+    // without it (Halls of Stone full run 2347). Mirror images alike: each Shattered for 25k on every member (2351,
+    // 2352). No summoned helpers at all.
+    static std::set<std::string> const summons = {"fire elemental totem", "earth elemental totem", "mirror image",
+                                                  "shadowfiend", "feral spirit", "army of the dead", "summon gargoyle"};
+    if (summons.count(action->getName()))
         return 0.0f;
 
     // Check both of these... the spell is applied first, debuff later.

@@ -18,6 +18,9 @@ bool ShatterSpreadAction::Execute(Event /*event*/)
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "krystallus");
     if (!boss) { return false; }
+    // The tank keeps him where he is; the others spread round them.
+    if (boss->GetVictim() == bot)
+        return false;
 
     float radius = 40.0f;
     Unit* closestMember = nullptr;
@@ -47,6 +50,7 @@ bool ShatterSpreadAction::Execute(Event /*event*/)
     constexpr float SPREAD_STEP = 5.0f;
     constexpr float SPREAD_BOSS_RANGE = 35.0f;
     constexpr float SPREAD_MAX_DROP = 1.0f;
+    constexpr float SPREAD_MAX_CLIMB = 2.0f;
     float bestScore = -1.0f;
     float bestX = 0.0f;
     float bestY = 0.0f;
@@ -58,8 +62,11 @@ bool ShatterSpreadAction::Execute(Event /*event*/)
         if (boss->GetExactDist2d(x, y) > SPREAD_BOSS_RANGE)
             continue;
         float const ground = bot->GetMap()->GetHeight(bot->GetPhaseMask(), x, y, bot->GetPositionZ() + 2.0f, true, 6.0f);
-        // Never lower than where the bot stands: step by step down the slope leads to the Shardlings below.
-        if (ground <= INVALID_HEIGHT || ground < std::min(bot->GetPositionZ(), boss->GetPositionZ()) - SPREAD_MAX_DROP)
+        // Never lower than where the bot stands: step by step down the slope leads to the Shardlings below. Nor up:
+        // climbing the rocks round his room the tank reached ground the collision model lacks and fell from z 221
+        // through the map (runs 2334, 2343, 2350).
+        if (ground <= INVALID_HEIGHT || ground < std::min(bot->GetPositionZ(), boss->GetPositionZ()) - SPREAD_MAX_DROP ||
+            ground > bot->GetPositionZ() + SPREAD_MAX_CLIMB)
             continue;
         float nearest = std::numeric_limits<float>::max();
         for (auto& member : members)
