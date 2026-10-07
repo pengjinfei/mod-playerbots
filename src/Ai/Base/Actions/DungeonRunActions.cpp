@@ -84,8 +84,9 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     std::string waitReason;
     Player* dead = nullptr;
     Player* fighting = nullptr;
-    // Waves do not wait: the Violet Hold's invaders walk to the seal, not to the group, and with the group waiting on
-    // a dead mage they broke it and the event started over (run 2319). The wave is fought; the rest comes after.
+    // Waves wait only so long: the Violet Hold's invaders walk to the seal, not to the group, and with the group
+    // waiting on a dead mage they broke it and the event started over (run 2319). Not at all left the healer no
+    // time between portals to resurrect anyone, and the group was worn down (runs 2322-2325).
     Unit* waveTarget = nullptr;
     GameObject* waveObject = nullptr;
     uint32 waveIndex = 0;
@@ -93,7 +94,12 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     bool const ready = GroupReady(waitReason, dead, fighting);
     if (!ready)
         wave = NextItem(*route, waveTarget, waveObject, waveIndex);
-    if (!ready && !(wave && wave->repeat && waveTarget))
+    bool const waveWaiting = !ready && wave && wave->repeat && waveTarget;
+    if (!waveWaiting)
+        _waveWaitSinceMs = 0;
+    else if (!_waveWaitSinceMs)
+        _waveWaitSinceMs = getMSTime();
+    if (!ready && !(waveWaiting && getMSTimeDiff(_waveWaitSinceMs, getMSTime()) >= WAVE_WAIT_MS))
     {
         // Go to a member something is fighting out of the leader's sight: the Azure Magus caught the priest 16 yd off
         // the entrance corridor while the others had walked on 40 yd round the corner, and the leader waited there
