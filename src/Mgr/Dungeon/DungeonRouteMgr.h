@@ -35,6 +35,7 @@ struct DungeonRouteItem
     bool boss;
     bool object = false;               // a game object the leader walks to and uses (a lever, a containment sphere)
     bool sent = false;                 // the encounter sends this pack to the group: wait for it, do not pull it
+    uint32 spotWaitMs = 0;             // spotwait=<s>: wait this long at the pull spot for the pack (default 60 s)
     uint32 waitMs = 0;                 // wait: stand at (x, y, z) this long once, out of combat, then walk on
     bool drop = false;                 // a hole to jump down: the group walks to its rim and steps over (x, y, z)
     float rimX = 0.0f, rimY = 0.0f, rimZ = 0.0f;  // drop: a point on the floor at the hole's edge, walked to first

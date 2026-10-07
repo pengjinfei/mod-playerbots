@@ -371,7 +371,9 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             _spotItem = index;
             _spotSinceMs = now;
         }
-        if (getMSTimeDiff(_spotSinceMs, now) < SPOT_WAIT_MS)
+        // A patrol whose loop takes longer than the default wait: Halls of Lightning's south Vanguard pair was walked to
+        // after 60 s, beside the squad it passes, and both came (my-mac run 100259).
+        if (getMSTimeDiff(_spotSinceMs, now) < (item->spotWaitMs ? item->spotWaitMs : SPOT_WAIT_MS))
         {
             if (TraceDue())
                 LOG_DEBUG("playerbots", "dungeon-run bot={} waiting at the pull spot of item={} for {} dist={:.1f}",

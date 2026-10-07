@@ -166,6 +166,7 @@ bool DungeonRouteMgr::LoadFile(std::string const& path, DungeonRoute& route)
         item.spawnIds = ParseIdList(Field(tokens, "spawns"));
         item.object = tokens[0] == "object";
         item.drop = tokens[0] == "drop";
+        item.spotWaitMs = 1000 * Acore::StringTo<uint32>(Field(tokens, "spotwait")).value_or(0);
         if (tokens[0] == "wait")
             item.waitMs = Acore::StringTo<uint32>(Field(tokens, "ms")).value_or(0);
         // rim=<x>,<y>,<z>: the navmesh has no floor over a hole, so a drop's approach aims at its edge.
