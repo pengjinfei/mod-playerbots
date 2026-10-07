@@ -23,6 +23,11 @@ enum VioletHoldIDs
     SPELL_SHROUD_OF_DARKNESS_N         = 54524,
     SPELL_SHROUD_OF_DARKNESS_H         = 59745,
     NPC_VOID_SENTRY                    = 29364,
+
+    // Portals
+    NPC_PORTAL_GUARDIAN                = 30660,
+    NPC_PORTAL_KEEPER_1                = 30695,
+    NPC_PORTAL_KEEPER_2                = 30893,
 };
 
 #define SPELL_SHROUD_OF_DARKNESS    DUNGEON_MODE(bot, SPELL_SHROUD_OF_DARKNESS_N, SPELL_SHROUD_OF_DARKNESS_H)
@@ -52,6 +57,18 @@ class ShroudOfDarknessTrigger : public Trigger
 {
 public:
     ShroudOfDarknessTrigger(PlayerbotAI* ai) : Trigger(ai, "shroud of darkness") {}
+    bool IsActive() override;
+};
+
+// A portal held open by its Guardian or Keeper sends three or four Azure invaders every 20 s until that one dies. The
+// group fought the invaders as they came and never reached the keeper; they piled up over waves 7-11 and the group
+// died (Violet Hold full run 2303). Damage dealers kill the keeper, the tank holds the invaders.
+Creature* VioletHoldPortalKeeper(Player* bot);
+
+class PortalKeeperTrigger : public Trigger
+{
+public:
+    PortalKeeperTrigger(PlayerbotAI* ai) : Trigger(ai, "portal keeper") {}
     bool IsActive() override;
 };
 

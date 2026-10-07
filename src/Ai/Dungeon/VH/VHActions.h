@@ -10,6 +10,13 @@
 #include "Action.h"
 #include "AttackAction.h"
 
+class AttackPortalKeeperAction : public AttackAction
+{
+public:
+    AttackPortalKeeperAction(PlayerbotAI* ai) : AttackAction(ai, "attack portal keeper") {}
+    bool Execute(Event event) override;
+};
+
 class AttackErekemAction : public AttackAction
 {
 public:

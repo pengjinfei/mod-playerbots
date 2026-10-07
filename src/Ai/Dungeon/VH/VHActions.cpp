@@ -101,3 +101,11 @@ bool AttackVoidSentryAction::Execute(Event /*event*/)
 
     return false;
 }
+
+bool AttackPortalKeeperAction::Execute(Event /*event*/)
+{
+    Creature* keeper = VioletHoldPortalKeeper(bot);
+    if (!keeper || AI_VALUE(Unit*, "current target") == keeper)
+        return false;
+    return Attack(keeper);
+}

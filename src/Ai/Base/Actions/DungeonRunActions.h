@@ -7,6 +7,7 @@
 #ifndef PLAYERBOTS_DUNGEONRUNACTIONS_H
 #define PLAYERBOTS_DUNGEONRUNACTIONS_H
 
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -117,6 +118,7 @@ private:
     mutable std::unordered_set<uint32> _objectsDone;   // objects seen used
     std::unordered_set<uint32> _waitsDone;             // waits stood out
     std::unordered_set<uint32> _gossipsDone;           // event starters talked to
+    std::set<ObjectGuid> _waveDirect;                  // wave members walked straight at (stop short refused)
     uint32 _waitItem = UINT32_MAX;                     // wait being stood, and since when
     uint32 _waitSinceMs = 0;
     uint32 _lastWaitLogMs = 0;

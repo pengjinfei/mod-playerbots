@@ -49,3 +49,18 @@ bool CyanigosaPositioningTrigger::IsActive()
     return !botAI->IsTank(bot) && !botAI->IsRangedDps(bot);
     // return botAI->IsMelee(bot) && !botAI->IsTank(bot);
 }
+
+Creature* VioletHoldPortalKeeper(Player* bot)
+{
+    Creature* best = nullptr;
+    for (uint32 entry : {NPC_PORTAL_GUARDIAN, NPC_PORTAL_KEEPER_1, NPC_PORTAL_KEEPER_2})
+        if (Creature* keeper = bot->FindNearestCreature(entry, 80.0f))
+            if (bot->IsValidAttackTarget(keeper) && (!best || bot->GetDistance(keeper) < bot->GetDistance(best)))
+                best = keeper;
+    return best;
+}
+
+bool PortalKeeperTrigger::IsActive()
+{
+    return bot->IsInCombat() && botAI->IsDps(bot) && VioletHoldPortalKeeper(bot);
+}

@@ -20,6 +20,7 @@ class WotlkDungeonVHTriggerContext : public NamedObjectContext<Trigger>
             creators["void shift"] = &WotlkDungeonVHTriggerContext::void_shift;
             creators["shroud of darkness"] = &WotlkDungeonVHTriggerContext::shroud_of_darkness;
             creators["cyanigosa positioning"] = &WotlkDungeonVHTriggerContext::cyanigosa_positioning;
+            creators["portal keeper"] = &WotlkDungeonVHTriggerContext::portal_keeper;
         }
     private:
         static Trigger* erekem_target(PlayerbotAI* ai) { return new ErekemTargetTrigger(ai); }
@@ -27,6 +28,7 @@ class WotlkDungeonVHTriggerContext : public NamedObjectContext<Trigger>
         static Trigger* void_shift(PlayerbotAI* ai) { return new VoidShiftTrigger(ai); }
         static Trigger* shroud_of_darkness(PlayerbotAI* ai) { return new ShroudOfDarknessTrigger(ai); }
         static Trigger* cyanigosa_positioning(PlayerbotAI* ai) { return new CyanigosaPositioningTrigger(ai); }
+        static Trigger* portal_keeper(PlayerbotAI* ai) { return new PortalKeeperTrigger(ai); }
 };
 
 #endif

@@ -18,11 +18,13 @@ class WotlkDungeonVHActionContext : public NamedObjectContext<Action>
             creators["attack erekem"] = &WotlkDungeonVHActionContext::attack_erekem;
             creators["attack ichor globule"] = &WotlkDungeonVHActionContext::attack_ichor_globule;
             creators["attack void sentry"] = &WotlkDungeonVHActionContext::attack_void_sentry;
+            creators["attack portal keeper"] = &WotlkDungeonVHActionContext::attack_portal_keeper;
         }
     private:
         static Action* attack_erekem(PlayerbotAI* ai) { return new AttackErekemAction(ai); }
         static Action* attack_ichor_globule(PlayerbotAI* ai) { return new AttackIchorGlobuleAction(ai); }
         static Action* attack_void_sentry(PlayerbotAI* ai) { return new AttackVoidSentryAction(ai); }
+        static Action* attack_portal_keeper(PlayerbotAI* ai) { return new AttackPortalKeeperAction(ai); }
 };
 
 #endif

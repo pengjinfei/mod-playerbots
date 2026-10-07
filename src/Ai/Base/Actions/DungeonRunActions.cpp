@@ -540,11 +540,12 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     {
         // A wave's member out of reach from here: back to the hold point and on from there. The Violet Hold leader
         // walked into Ichoron's pool after a Portal Guardian on the ledge above, the move up was refused from the pool
-        // and the guardians of every later wave were given up with the item; the portal never closed (run 2288).
-        if (item->repeat && item->hold)
+        // and the guardians of every later wave were given up with the item; the portal never closed (run 2288). Back
+        // to the wave item's own point (the middle of the room) and on from there.
+        if (item->repeat)
         {
             _approachSinceMs = getMSTime();
-            return MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
+            return MoveTo(bot->GetMapId(), item->x, item->y, item->z, false, false, false, false,
                           MovementPriority::MOVEMENT_NORMAL);
         }
         _pullAttempts[index] = MAX_PULL_ATTEMPTS;
@@ -556,7 +557,10 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // leader from 36 yd to 15 yd of the mage hunters past Telestra within one tick, inside their aggro (run 1925).
     // Out of sight there, the next tick walks on at the member.
     Position approach = destination;
-    if (toTarget && target && distance > pullDistance)
+    // A wave's member whose stop short lay in a pool under its ledge: from the middle of the room, straight at it -
+    // the path up the ramps is whole from there.
+    bool const direct = item->repeat && target && _waveDirect.count(target->GetGUID());
+    if (toTarget && target && distance > pullDistance && !direct)
     {
         float const angle = target->GetAngle(bot);
         float const shortOf = pullDistance - PULL_APPROACH_MARGIN;
@@ -629,10 +633,12 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     if (!moved && toTarget && target && approach.GetExactDist(destination) > 0.5f)
         moved = MoveTo(bot->GetMapId(), destination.GetPositionX(), destination.GetPositionY(),
                        destination.GetPositionZ(), false, false, false, false, MovementPriority::MOVEMENT_NORMAL);
-    // A wave's member refused from where the leader stands (a pool below its ledge): back to the hold point, from
-    // where the room's ways lead everywhere.
-    if (!moved && item->repeat && item->hold && !AtHold(*item))
-        moved = MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
+    // A wave's member refused from where the leader stands (a pool below its ledge): back to the wave item's own
+    // point (the middle of the room), from where the room's ways lead everywhere.
+    if (!moved && item->repeat && target)
+        _waveDirect.insert(target->GetGUID());
+    if (!moved && item->repeat && bot->GetExactDist(item->x, item->y, item->z) > 5.0f)
+        moved = MoveTo(bot->GetMapId(), item->x, item->y, item->z, false, false, false, false,
                        MovementPriority::MOVEMENT_NORMAL);
     // The node a step ahead refused, the nearest one ahead instead: up the ramp from Jedoga's room the path to the
     // node 36 yd on dived to a level 60 yd below and the leader stood at the ramp's middle ten minutes (Ahn'kahet,

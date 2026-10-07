@@ -11,6 +11,10 @@
 
 void WotlkDungeonVHStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
+    // Portals: the keeper first
+    triggers.push_back(new TriggerNode("portal keeper",
+        { NextAction("attack portal keeper", ACTION_RAID + 1) }));
+
     // Erekem
     // This boss has many purgable buffs, purging/dispels could be merged into generic strats though
     triggers.push_back(new TriggerNode("erekem target",
@@ -24,7 +28,10 @@ void WotlkDungeonVHStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         { NextAction("attack ichor globule", ACTION_RAID + 1) }));
 
     // Xevozz
-    // TODO: Revisit in heroics, waypoints back and forth on stairs. Need to test with double beacon spawn
+    // Not kited: three ways of walking him off his Ethereal Spheres (step clear of them, step off one 6 yd from him,
+    // step to the point farthest from all of them) each lost the isolated fight (1/5, 0/1, 0/4: runs 2290-2296,
+    // 2312-2315) against 4/5 fought where he stands (2298-2302). Open: in the full run the spheres reach him before
+    // his first Arcane Barrage Volley (18-21k against 0-9k in isolation) and the group dies (runs 2289, 2305, 2310).
 
     // Lavanthor
     // Tank & spank
