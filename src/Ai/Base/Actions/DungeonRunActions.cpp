@@ -92,6 +92,35 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             (bot->GetDistance(fighting) > 10.0f || !bot->IsWithinLOSInMap(fighting)))
             MoveTo(fighting->GetMapId(), fighting->GetPositionX(), fighting->GetPositionY(), fighting->GetPositionZ(),
                    false, false, false, false, MovementPriority::MOVEMENT_NORMAL);
+        // To what holds a member in combat for long: a Mindless Servant off the walkway, out of everyone's sight,
+        // kept the priest in combat at full health and the leader beside her waited until the run was stopped
+        // (Utgarde Pinnacle, my-mac run 100239); a Strategist stood 18 yd off the tank, out of its sight, the same
+        // way (Utgarde Keep, run 100123). Walked to, it is in sight and fought.
+        uint32 const nowMs = getMSTime();
+        if (dead || !fighting)
+            _fightingSince = ObjectGuid::Empty;
+        else if (fighting->GetGUID() != _fightingSince)
+        {
+            _fightingSince = fighting->GetGUID();
+            _fightingSinceMs = nowMs;
+        }
+        else if (getMSTimeDiff(_fightingSinceMs, nowMs) >= HELD_IN_COMBAT_MS)
+        {
+            Unit* holder = nullptr;
+            for (Unit* attacker : fighting->getAttackers())
+                if (attacker && attacker->IsAlive() && attacker->GetMapId() == bot->GetMapId() &&
+                    (!holder || bot->GetDistance(attacker) < bot->GetDistance(holder)))
+                    holder = attacker;
+            if (holder && (bot->GetDistance(holder) > 5.0f || !bot->IsWithinLOSInMap(holder)))
+            {
+                if (TraceDue())
+                    LOG_DEBUG("playerbots", "dungeon-run bot={} to {} holding {} in combat dist={:.1f} los={}",
+                              bot->GetName(), holder->GetName(), fighting->GetName(), bot->GetDistance(holder),
+                              bot->IsWithinLOSInMap(holder));
+                MoveTo(holder->GetMapId(), holder->GetPositionX(), holder->GetPositionY(), holder->GetPositionZ(),
+                       false, false, false, false, MovementPriority::MOVEMENT_NORMAL);
+            }
+        }
         // Take the group to a dead member so the healers are in range and in sight of the body: a rogue who died
         // on the ledge above the ramp lay 34 yd away and 11 yd up and was never resurrected (run 1810).
         // A member who released its spirit stands wherever its ghost is; the body is what gets resurrected.

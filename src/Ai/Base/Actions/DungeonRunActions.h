@@ -49,6 +49,7 @@ private:
     static constexpr float OBJECT_SIGHT = 80.0f;          // closer than this, an object item is judged by its state
     static constexpr float SUMMON_SIGHT = 80.0f;          // closer than this, a summoned pack is judged by what stands
     static constexpr uint32 MAX_USE_ATTEMPTS = 5;         // uses of one object before it is skipped
+    static constexpr uint32 HELD_IN_COMBAT_MS = 15000;    // a member in combat this long: go to what holds it
     static constexpr uint32 SENT_WAIT_MS = 240000;        // longest wait for a pack the encounter sends; then pull it
     static constexpr float DROP_DEPTH = 50.0f;            // this far under a hole's rim counts as having dropped
     static constexpr float PROGRESS_WINDOW = 100.0f;      // nodes this far ahead along the route count as reached
@@ -131,6 +132,8 @@ private:
     uint32 _spotItem = UINT32_MAX;    // the item waited for at its pull spot
     uint32 _spotSinceMs = 0;
     ObjectGuid _ccGateTarget;
+    ObjectGuid _fightingSince;        // the member the group has waited for in combat, and since when
+    uint32 _fightingSinceMs = 0;
     uint32 _clearItem = UINT32_MAX;   // the item whose clear= patrol was last measured...
     float _clearLastDist = 0.0f;      // ...and how far it was then
     uint32 _ccGateSinceMs = 0;
