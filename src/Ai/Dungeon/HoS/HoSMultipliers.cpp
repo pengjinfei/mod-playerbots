@@ -17,6 +17,12 @@ float KrystallusMultiplier::GetValue(Action* action)
     Unit* boss = AI_VALUE2(Unit*, "find target", "krystallus");
     if (!boss) { return 1.0f; }
 
+    // No elemental beside the group: a Greater Fire Elemental is stoned by Ground Slam like a player and its Shatter
+    // hit every member for 8-12k on top of theirs - three died to one Shatter that they would have lived through
+    // without it (Halls of Stone full run 2347).
+    if (action->getName() == "fire elemental totem" || action->getName() == "earth elemental totem")
+        return 0.0f;
+
     // Check both of these... the spell is applied first, debuff later.
     // Neither is active for the full duration so we need to trigger off both
     if (bot->HasAura(SPELL_GROUND_SLAM) || bot->HasAura(DEBUFF_GROUND_SLAM))
