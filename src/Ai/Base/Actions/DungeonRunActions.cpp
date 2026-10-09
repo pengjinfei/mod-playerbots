@@ -683,6 +683,29 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
                 next = &node;
             break;
         }
+    // Nothing anywhere between the leader and the node ahead, and that node unwalkable: Taldaram's travel node at
+    // z 42 stands 62 yd sideways of the Twilight hall, past AIR_NODE_RANGE, so it became the node ahead while the
+    // leader stood 66 yd under it - every move to it refused, and the one-node-ahead fallback has no node at all
+    // between 859 and 901 to try, so the leader stood still (Ahn'kahet, run 2401; the 826-947 yd stalls before it).
+    // Walk on at the nearest node ahead that lies on the leader's own floor instead.
+    if (!moved && !toTarget)
+    {
+        DungeonRouteNode const* onFloor = nullptr;
+        float bestDistance = NODE_AHEAD_RANGE;
+        for (DungeonRouteNode const& node : route->nodes)
+        {
+            if (node.along <= progress || std::fabs(node.z - bot->GetPositionZ()) > NODE_AHEAD_FLOOR)
+                continue;
+            float const distance = bot->GetExactDist(node.x, node.y, node.z);
+            if (distance < STOP_REACHED || distance >= bestDistance)
+                continue;
+            onFloor = &node;
+            bestDistance = distance;
+        }
+        if (onFloor)
+            moved = MoveTo(bot->GetMapId(), onFloor->x, onFloor->y, onFloor->z, false, false, false, false,
+                           MovementPriority::MOVEMENT_NORMAL);
+    }
     // Standing off the navmesh no path starts: Taldaram's lowered platform is a game object, and after him the leader
     // stood on it for eight minutes, every move refused (Ahn'kahet, run 1981). A straight step towards where it goes
     // takes it back onto the navmesh.
@@ -1037,7 +1060,10 @@ void DungeonRunAdvanceAction::UpdateProgress(DungeonRoute const& route)
     for (DungeonRouteNode const& node : route.nodes)
     {
         // 100 yd ahead, past a node in the air the leader never reaches (Taldaram's at 901 between 859 and 931: with
-        // 60 yd the progress stuck at 859 while the leader walked on, run 1992).
+        // 60 yd the progress stuck at 859 while the leader walked on, run 1992). Riding that platform down into the
+        // Twilight hall jumps some 280 yd of route at once and no window covers that, so the progress stays at 859
+        // for the rest of the run (run 2401): the stall watchdog therefore has to keep counting the tank's own
+        // movement as progress, or a group that walks on is aborted.
         if (node.along < progress - 20.0f || node.along > progress + PROGRESS_WINDOW)
             continue;
         // The farthest along of the nodes the leader stands on, not the nearest: past Jedoga the recorded path loops
