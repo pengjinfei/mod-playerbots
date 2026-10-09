@@ -153,6 +153,7 @@ private:
     mutable ObjectGuid _heldWatched;
     mutable uint32 _heldWatchedPct = 0;
     mutable uint32 _heldWatchedSinceMs = 0;
+    mutable bool _heldLogged = false;  // the "held, not fighting" line is written once per member watched
     uint32 _lastTraceMs = 0;
     uint32 _dropItem = UINT32_MAX;  // hole the leader jumped down while members may still be above
     uint32 _crossItem = UINT32_MAX;  // walkway the group is walking over

@@ -1035,9 +1035,22 @@ bool DungeonRunAdvanceAction::MemberHeldNotFighting(Player* member) const
         _heldWatched = member->GetGUID();
         _heldWatchedPct = pct;
         _heldWatchedSinceMs = now;
+        _heldLogged = false;
         return false;
     }
-    return getMSTimeDiff(_heldWatchedSinceMs, now) >= MEMBER_HELD_WAIT_MS;
+    if (getMSTimeDiff(_heldWatchedSinceMs, now) < MEMBER_HELD_WAIT_MS)
+    {
+        _heldLogged = false;
+        return false;
+    }
+    // Said once per member watched: a run that goes on proves nothing on its own, this line proves the rule fired.
+    if (!_heldLogged)
+    {
+        _heldLogged = true;
+        LOG_DEBUG("playerbots", "dungeon-run bot={} walking on, {} held in combat at {}% for {}ms", bot->GetName(),
+                  member->GetName(), pct, getMSTimeDiff(_heldWatchedSinceMs, now));
+    }
+    return true;
 }
 
 bool DungeonRunAdvanceAction::StuckWithoutProgress(uint32 index, float progress)
