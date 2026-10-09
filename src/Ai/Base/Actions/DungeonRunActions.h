@@ -45,6 +45,7 @@ private:
     static constexpr uint32 WAIT_LOG_INTERVAL_MS = 10000;
     static constexpr uint32 APPROACH_TIMEOUT_MS = 45000;
     static constexpr uint32 STUCK_PROGRESS_MS = 90000;  // no item change and no route progress this long: walk on
+    static constexpr uint32 MEMBER_HELD_WAIT_MS = 45000;  // "in combat" with a health that does not fall this long: held
     static constexpr float PULL_BACK = 20.0f;             // pull position: the node this far behind
     static constexpr float PULL_FROM_SPOT_DISTANCE = 40.0f;  // from a pull spot, the pack is pulled at range
     static constexpr uint32 CC_WAIT_MS = 25000;           // longest wait for the crowd control to land
@@ -55,7 +56,6 @@ private:
     static constexpr float SUMMON_SIGHT = 80.0f;          // closer than this, a summoned pack is judged by what stands
     static constexpr uint32 MAX_USE_ATTEMPTS = 5;         // uses of one object before it is skipped
     static constexpr uint32 HELD_IN_COMBAT_MS = 15000;    // a member in combat this long: go to what holds it
-    static constexpr uint32 MEMBER_HELD_WAIT_MS = 45000;  // ... and this long: walk on without it
     static constexpr uint32 SENT_WAIT_MS = 240000;        // longest wait for a pack the encounter sends; then pull it
     static constexpr float DROP_DEPTH = 50.0f;            // this far under a hole's rim counts as having dropped
     static constexpr float PROGRESS_WINDOW = 100.0f;      // nodes this far ahead along the route count as reached
@@ -114,9 +114,13 @@ private:
     bool HoldGroupAt(DungeonRouteItem const& item);  // the others wait at the item's hold point; true when there
     Unit* NearestLivingMember(DungeonRouteItem const& item) const;  // attackable, nearest to the bot
     bool ApproachTimedOut(uint32 index, float distance);
-    // Neither moved on to another item nor advanced the route for STUCK_PROGRESS_MS, with the group ready and nobody
-    // fighting (Execute only reaches it after that wait): the leader is not walking anywhere.
     bool StuckWithoutProgress(uint32 index, float progress);
+    // A member "in combat" whose health does not fall is held by something that takes no damage, not fighting: the
+    // Mindless Servant off Utgarde Pinnacle's walkway kept the priest in combat at full health and the leader waited
+    // beside her until the run was stopped (my-mac run 100239); by Amanitar the group stood the same way (Ahn'kahet,
+    // run 2403: 19 damage events in the following ten minutes). Such a member is not waited for; a player walks on
+    // and it follows when it is free. True while it is being held.
+    bool MemberHeldNotFighting(Player* member) const;
     bool TraceDue();  // throttles the debug trace to one line per WAIT_LOG_INTERVAL_MS
     bool GroupReady(std::string& reason, Player*& dead, Player*& fighting) const;
     bool GroupFighting() const;
@@ -142,9 +146,13 @@ private:
     float _approachBest = 0.0f;
     uint32 _approachSinceMs = 0;
     uint32 _lastApproachTickMs = 0;
-    uint32 _stuckItem = UINT32_MAX;  // item and route progress the leader is going nowhere on, and since when
+    uint32 _stuckItem = UINT32_MAX;  // variant G: the three members under test
     float _stuckProgress = 0.0f;
     uint32 _stuckSinceMs = 0;
+    // The member being watched for "held, not fighting", its health when the watch started, and since when.
+    mutable ObjectGuid _heldWatched;
+    mutable uint32 _heldWatchedPct = 0;
+    mutable uint32 _heldWatchedSinceMs = 0;
     uint32 _lastTraceMs = 0;
     uint32 _dropItem = UINT32_MAX;  // hole the leader jumped down while members may still be above
     uint32 _crossItem = UINT32_MAX;  // walkway the group is walking over
