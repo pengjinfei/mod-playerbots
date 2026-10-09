@@ -44,6 +44,7 @@ private:
     static constexpr uint32 MAX_PULL_ATTEMPTS = 20;     // pulls issued on one pack before it is skipped
     static constexpr uint32 WAIT_LOG_INTERVAL_MS = 10000;
     static constexpr uint32 APPROACH_TIMEOUT_MS = 45000;
+    static constexpr uint32 STUCK_PROGRESS_MS = 90000;  // no item change and no route progress this long: walk on
     static constexpr float PULL_BACK = 20.0f;             // pull position: the node this far behind
     static constexpr float PULL_FROM_SPOT_DISTANCE = 40.0f;  // from a pull spot, the pack is pulled at range
     static constexpr uint32 CC_WAIT_MS = 25000;           // longest wait for the crowd control to land
@@ -112,6 +113,9 @@ private:
     bool HoldGroupAt(DungeonRouteItem const& item);  // the others wait at the item's hold point; true when there
     Unit* NearestLivingMember(DungeonRouteItem const& item) const;  // attackable, nearest to the bot
     bool ApproachTimedOut(uint32 index, float distance);
+    // Neither moved on to another item nor advanced the route for STUCK_PROGRESS_MS, with the group ready and nobody
+    // fighting (Execute only reaches it after that wait): the leader is not walking anywhere.
+    bool StuckWithoutProgress(uint32 index, float progress);
     bool TraceDue();  // throttles the debug trace to one line per WAIT_LOG_INTERVAL_MS
     bool GroupReady(std::string& reason, Player*& dead, Player*& fighting) const;
     bool GroupFighting() const;
@@ -137,6 +141,9 @@ private:
     float _approachBest = 0.0f;
     uint32 _approachSinceMs = 0;
     uint32 _lastApproachTickMs = 0;
+    uint32 _stuckItem = UINT32_MAX;  // item and route progress the leader is going nowhere on, and since when
+    float _stuckProgress = 0.0f;
+    uint32 _stuckSinceMs = 0;
     uint32 _lastTraceMs = 0;
     uint32 _dropItem = UINT32_MAX;  // hole the leader jumped down while members may still be above
     uint32 _crossItem = UINT32_MAX;  // walkway the group is walking over

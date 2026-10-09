@@ -500,6 +500,25 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             return false;
         }
     }
+    // Nothing to show for a whole window while the group stands ready and nobody fights. The harness' stall watchdog
+    // cannot see this shape: the tank keeps moving a few yards every tick, which is progress to it while the run goes
+    // nowhere (Ahn'kahet, run 2402: 84 minutes of "approach item=41 ... moved=true" 150 yd from the pack it was after,
+    // until the run was stopped by hand; after a pull the same shape left the leader standing, run 2401). A player
+    // would have gone round the obstacle or given the pack up long before. Walk the nearest node on the leader's own
+    // floor; when even that is refused, give up on the item - never on a boss (see ApproachTimedOut above).
+    if (StuckWithoutProgress(index, progress))
+    {
+        if (MoveToFloorNodeAhead(*route, progress))
+            return true;
+        if (!item->boss)
+        {
+            _pullAttempts[index] = MAX_PULL_ATTEMPTS;
+            LOG_DEBUG("playerbots", "dungeon-run bot={} skip item={} along={:.0f} target={} - no progress for {}s",
+                      bot->GetName(), index, item->along, name, STUCK_PROGRESS_MS / 1000);
+            return false;
+        }
+    }
+
     if (target && !spotRefused && bot->GetDistance(target) <= pullDistance && bot->IsWithinLOSInMap(target))
     {
         // A pack of three or more gets the trash crowd-control chain first; the leader stands still until the
@@ -1002,6 +1021,22 @@ bool DungeonRunAdvanceAction::ApproachTimedOut(uint32 index, float distance)
     return getMSTimeDiff(_approachSinceMs, now) >= APPROACH_TIMEOUT_MS;
 }
 
+bool DungeonRunAdvanceAction::StuckWithoutProgress(uint32 index, float progress)
+{
+    uint32 const now = getMSTime();
+    if (!_stuckSinceMs || index != _stuckItem || progress > _stuckProgress + 1.0f)
+    {
+        _stuckItem = index;
+        _stuckProgress = progress;
+        _stuckSinceMs = now;
+        return false;
+    }
+    if (getMSTimeDiff(_stuckSinceMs, now) < STUCK_PROGRESS_MS)
+        return false;
+    _stuckSinceMs = now;  // a fresh window: whatever the caller does gets its own chance to make progress
+    return true;
+}
+
 bool DungeonRunAdvanceAction::TraceDue()
 {
     uint32 const now = getMSTime();
@@ -1092,22 +1127,23 @@ float DungeonRunAdvanceAction::StartAlong(DungeonRoute const& route) const
 void DungeonRunAdvanceAction::UpdateProgress(DungeonRoute const& route)
 {
     float progress = AI_VALUE(float, "dungeon run progress");
-    // Only look near the current progress so a node on another floor straight above or below never counts.
+    // Near the current progress only, so a node on another floor straight above or below never counts - except for a
+    // node the leader is standing on, on its own floor: riding Taldaram's platform down carries the leader 280 yd
+    // along the route in one move, no window covers that, and the progress then stayed at 859 for the rest of the
+    // run (Ahn'kahet, runs 2401, 2402). A player knows where they are; re-anchor to what the leader stands on.
     DungeonRouteNode const* best = nullptr;
     float const bestDistance = NODE_REACHED;
     for (DungeonRouteNode const& node : route.nodes)
     {
         // 100 yd ahead, past a node in the air the leader never reaches (Taldaram's at 901 between 859 and 931: with
-        // 60 yd the progress stuck at 859 while the leader walked on, run 1992). Riding that platform down into the
-        // Twilight hall jumps some 280 yd of route at once and no window covers that, so the progress stays at 859
-        // for the rest of the run (run 2401): the stall watchdog therefore has to keep counting the tank's own
-        // movement as progress, or a group that walks on is aborted.
-        if (node.along < progress - 20.0f || node.along > progress + PROGRESS_WINDOW)
+        // 60 yd the progress stuck at 859 while the leader walked on, run 1992).
+        bool const inWindow = node.along >= progress - 20.0f && node.along <= progress + PROGRESS_WINDOW;
+        float const distance = bot->GetDistance(node.x, node.y, node.z);
+        if (!inWindow && (distance >= bestDistance || std::fabs(node.z - bot->GetPositionZ()) > NODE_AHEAD_FLOOR))
             continue;
         // The farthest along of the nodes the leader stands on, not the nearest: past Jedoga the recorded path loops
         // in place, a dozen nodes from 2017 to 2242 within 10 yd, and the nearest kept the progress at 2017 while
         // the next one ahead could not be walked to (Ahn'kahet, run 1996).
-        float const distance = bot->GetDistance(node.x, node.y, node.z);
         if (distance < bestDistance && (!best || node.along > best->along))
             best = &node;
     }
