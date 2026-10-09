@@ -46,6 +46,7 @@ private:
     static constexpr uint32 APPROACH_TIMEOUT_MS = 45000;
     static constexpr uint32 STUCK_PROGRESS_MS = 90000;  // no item change and no route progress this long: walk on
     static constexpr uint32 MEMBER_HELD_WAIT_MS = 45000;  // "in combat" with a health that does not fall this long: held
+    static constexpr uint32 STUCK_WALK_WINDOWS = 3;       // stuck: walk at it so many windows, then give the item up
     static constexpr float PULL_BACK = 20.0f;             // pull position: the node this far behind
     static constexpr float PULL_FROM_SPOT_DISTANCE = 40.0f;  // from a pull spot, the pack is pulled at range
     static constexpr uint32 CC_WAIT_MS = 25000;           // longest wait for the crowd control to land
@@ -149,6 +150,7 @@ private:
     uint32 _stuckItem = UINT32_MAX;  // variant G: the three members under test
     float _stuckProgress = 0.0f;
     uint32 _stuckSinceMs = 0;
+    uint32 _stuckWindows = 0;        // stuck windows spent walking at the item before giving it up
     // The member being watched for "held, not fighting", its health when the watch started, and since when.
     mutable ObjectGuid _heldWatched;
     mutable uint32 _heldWatchedPct = 0;

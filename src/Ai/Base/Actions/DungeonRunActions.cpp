@@ -509,7 +509,12 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // "waiting for boss item to be attackable" branch above returns first, and the encounter's own fix belongs there).
     if (StuckWithoutProgress(index, progress))
     {
-        bool const walked = MoveToFloorNodeAhead(*route, progress) != nullptr;
+        // Walk at it for STUCK_WALK_WINDOWS windows, then give the item up; when that leaves nothing to walk at, stand
+        // still. Walking on moves the tank a few yards every tick, which is progress to the harness' watchdog, so a
+        // leader that keeps doing it never looks stalled and the run stays up for hours (Ahn'kahet, run 2409: 7445 s,
+        // stopped by hand). A quiet end is worth more than an endless run: standing still lets the harness report it.
+        bool const walked = ++_stuckWindows <= STUCK_WALK_WINDOWS &&
+                            MoveToFloorNodeAhead(*route, progress) != nullptr;
         if (!walked)
         {
             _pullAttempts[index] = MAX_PULL_ATTEMPTS;
@@ -1038,6 +1043,16 @@ bool DungeonRunAdvanceAction::MemberHeldNotFighting(Player* member) const
         _heldLogged = false;
         return false;
     }
+    // Nothing is exchanging damage at all: the member's health has not moved, and neither has any attacker's. A real
+    // fight takes health off one side or the other - a member kept at full health behind a shield or under a healer
+    // is fighting, not held, and leaving it behind pulled the next pack onto the group (two early wipes in a row:
+    // Ahn'kahet, runs 2405/2405 in the H arm, 290 s and 512 s, deaths at the Deep Crawler packs).
+    for (Unit* attacker : member->getAttackers())
+        if (attacker && attacker->IsAlive() && attacker->GetHealthPct() < 99)
+        {
+            _heldLogged = false;
+            return false;
+        }
     if (getMSTimeDiff(_heldWatchedSinceMs, now) < MEMBER_HELD_WAIT_MS)
     {
         _heldLogged = false;
@@ -1058,6 +1073,8 @@ bool DungeonRunAdvanceAction::StuckWithoutProgress(uint32 index, float progress)
     uint32 const now = getMSTime();
     if (!_stuckSinceMs || index != _stuckItem || progress > _stuckProgress + 1.0f)
     {
+        if (index != _stuckItem)
+            _stuckWindows = 0;
         _stuckItem = index;
         _stuckProgress = progress;
         _stuckSinceMs = now;
