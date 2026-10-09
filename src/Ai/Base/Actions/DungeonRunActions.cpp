@@ -99,7 +99,25 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         _waveWaitSinceMs = 0;
     else if (!_waveWaitSinceMs)
         _waveWaitSinceMs = getMSTime();
-    if (!ready && !(waveWaiting && getMSTimeDiff(_waveWaitSinceMs, getMSTime()) >= WAVE_WAIT_MS))
+    // How long the same member has been the one holding the group. The leader walks to what holds it (below), and
+    // after MEMBER_HELD_WAIT_MS it walks on without it: nothing damages that member for the rest of the run
+    // otherwise - the group waits at the hold point while the leader watches it, and the log stays on "waiting:
+    // <member> in combat" (Ahn'kahet, run 2402: 19 damage events in the following ten minutes). Same shape as the
+    // Mindless Servant that held the priest at full health (Utgarde Pinnacle, my-mac run 100239). A player leaves
+    // such a member behind and walks on; it follows once it is free.
+    uint32 const nowMs = getMSTime();
+    if (dead || !fighting)
+        _fightingSince = ObjectGuid::Empty;
+    else if (fighting->GetGUID() != _fightingSince)
+    {
+        _fightingSince = fighting->GetGUID();
+        _fightingSinceMs = nowMs;
+    }
+    bool const heldTooLong = !dead && fighting && getMSTimeDiff(_fightingSinceMs, nowMs) >= MEMBER_HELD_WAIT_MS;
+    if (heldTooLong && TraceDue())
+        LOG_DEBUG("playerbots", "dungeon-run bot={} walking on, {} held in combat for {}ms", bot->GetName(),
+                  fighting->GetName(), getMSTimeDiff(_fightingSinceMs, nowMs));
+    if (!ready && !(waveWaiting && getMSTimeDiff(_waveWaitSinceMs, getMSTime()) >= WAVE_WAIT_MS) && !heldTooLong)
     {
         // Go to a member something is fighting out of the leader's sight: the Azure Magus caught the priest 16 yd off
         // the entrance corridor while the others had walked on 40 yd round the corner, and the leader waited there
@@ -112,15 +130,7 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         // kept the priest in combat at full health and the leader beside her waited until the run was stopped
         // (Utgarde Pinnacle, my-mac run 100239); a Strategist stood 18 yd off the tank, out of its sight, the same
         // way (Utgarde Keep, run 100123). Walked to, it is in sight and fought.
-        uint32 const nowMs = getMSTime();
-        if (dead || !fighting)
-            _fightingSince = ObjectGuid::Empty;
-        else if (fighting->GetGUID() != _fightingSince)
-        {
-            _fightingSince = fighting->GetGUID();
-            _fightingSinceMs = nowMs;
-        }
-        else if (getMSTimeDiff(_fightingSinceMs, nowMs) >= HELD_IN_COMBAT_MS)
+        if (getMSTimeDiff(_fightingSinceMs, nowMs) >= HELD_IN_COMBAT_MS)
         {
             Unit* holder = nullptr;
             for (Unit* attacker : fighting->getAttackers())

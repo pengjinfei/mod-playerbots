@@ -55,6 +55,7 @@ private:
     static constexpr float SUMMON_SIGHT = 80.0f;          // closer than this, a summoned pack is judged by what stands
     static constexpr uint32 MAX_USE_ATTEMPTS = 5;         // uses of one object before it is skipped
     static constexpr uint32 HELD_IN_COMBAT_MS = 15000;    // a member in combat this long: go to what holds it
+    static constexpr uint32 MEMBER_HELD_WAIT_MS = 45000;  // ... and this long: walk on without it
     static constexpr uint32 SENT_WAIT_MS = 240000;        // longest wait for a pack the encounter sends; then pull it
     static constexpr float DROP_DEPTH = 50.0f;            // this far under a hole's rim counts as having dropped
     static constexpr float PROGRESS_WINDOW = 100.0f;      // nodes this far ahead along the route count as reached
