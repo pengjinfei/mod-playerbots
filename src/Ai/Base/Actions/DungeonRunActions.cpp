@@ -518,15 +518,26 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // floor; when even that is refused, give up on the item - never on a boss (see ApproachTimedOut above).
     if (StuckWithoutProgress(index, progress))
     {
-        if (MoveToFloorNodeAhead(*route, progress))
-            return true;
-        if (!item->boss)
+        bool const walked = MoveToFloorNodeAhead(*route, progress) != nullptr;
+        if (item->boss)
+        {
+            // A boss the encounter will not let us hit (Taldaram's embrace, Jedoga's ritual): nothing on the route can
+            // change that. Try to get at it for a few windows, then stand still - walking on keeps the tank moving,
+            // which is progress to the harness' stall watchdog, so the run would spin on instead of ending (Ahn'kahet,
+            // run 2403: "waiting for boss item=49 to be attackable" with no damage for ten minutes).
+            ++_bossRetries;
+            if (TraceDue())
+                LOG_DEBUG("playerbots", "dungeon-run bot={} boss item={} along={:.0f} not attackable, window {}",
+                          bot->GetName(), index, item->along, _bossRetries);
+            return _bossRetries <= BOSS_RETRY_WINDOWS ? walked : false;
+        }
+        if (!walked)
         {
             _pullAttempts[index] = MAX_PULL_ATTEMPTS;
             LOG_DEBUG("playerbots", "dungeon-run bot={} skip item={} along={:.0f} target={} - no progress for {}s",
                       bot->GetName(), index, item->along, name, STUCK_PROGRESS_MS / 1000);
-            return false;
         }
+        return walked;
     }
 
     if (target && !spotRefused && bot->GetDistance(target) <= pullDistance && bot->IsWithinLOSInMap(target))
@@ -1036,6 +1047,8 @@ bool DungeonRunAdvanceAction::StuckWithoutProgress(uint32 index, float progress)
     uint32 const now = getMSTime();
     if (!_stuckSinceMs || index != _stuckItem || progress > _stuckProgress + 1.0f)
     {
+        if (index != _stuckItem)
+            _bossRetries = 0;
         _stuckItem = index;
         _stuckProgress = progress;
         _stuckSinceMs = now;
