@@ -45,7 +45,6 @@ private:
     static constexpr uint32 WAIT_LOG_INTERVAL_MS = 10000;
     static constexpr uint32 APPROACH_TIMEOUT_MS = 45000;
     static constexpr uint32 STUCK_PROGRESS_MS = 90000;  // no item change and no route progress this long: walk on
-    static constexpr uint32 BOSS_RETRY_WINDOWS = 3;     // a boss that stays unhittable: as many windows at it, then idle
     static constexpr float PULL_BACK = 20.0f;             // pull position: the node this far behind
     static constexpr float PULL_FROM_SPOT_DISTANCE = 40.0f;  // from a pull spot, the pack is pulled at range
     static constexpr uint32 CC_WAIT_MS = 25000;           // longest wait for the crowd control to land
@@ -146,7 +145,6 @@ private:
     uint32 _stuckItem = UINT32_MAX;  // item and route progress the leader is going nowhere on, and since when
     float _stuckProgress = 0.0f;
     uint32 _stuckSinceMs = 0;
-    uint32 _bossRetries = 0;         // windows spent walking at a boss the encounter will not let us hit
     uint32 _lastTraceMs = 0;
     uint32 _dropItem = UINT32_MAX;  // hole the leader jumped down while members may still be above
     uint32 _crossItem = UINT32_MAX;  // walkway the group is walking over

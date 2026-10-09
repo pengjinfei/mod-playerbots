@@ -99,89 +99,96 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         _waveWaitSinceMs = 0;
     else if (!_waveWaitSinceMs)
         _waveWaitSinceMs = getMSTime();
-    // How long the same member has been the one holding the group. The leader walks to what holds it (below), and
-    // after MEMBER_HELD_WAIT_MS it walks on without it: nothing damages that member for the rest of the run
-    // otherwise - the group waits at the hold point while the leader watches it, and the log stays on "waiting:
-    // <member> in combat" (Ahn'kahet, run 2402: 19 damage events in the following ten minutes). Same shape as the
-    // Mindless Servant that held the priest at full health (Utgarde Pinnacle, my-mac run 100239). A player leaves
-    // such a member behind and walks on; it follows once it is free.
-    uint32 const nowMs = getMSTime();
-    if (dead || !fighting)
-        _fightingSince = ObjectGuid::Empty;
-    else if (fighting->GetGUID() != _fightingSince)
+    if (!ready && !(waveWaiting && getMSTimeDiff(_waveWaitSinceMs, getMSTime()) >= WAVE_WAIT_MS))
     {
-        _fightingSince = fighting->GetGUID();
-        _fightingSinceMs = nowMs;
-    }
-    bool const heldTooLong = !dead && fighting && getMSTimeDiff(_fightingSinceMs, nowMs) >= MEMBER_HELD_WAIT_MS;
-    if (heldTooLong && TraceDue())
-        LOG_DEBUG("playerbots", "dungeon-run bot={} walking on, {} held in combat for {}ms", bot->GetName(),
-                  fighting->GetName(), getMSTimeDiff(_fightingSinceMs, nowMs));
-    if (!ready && !(waveWaiting && getMSTimeDiff(_waveWaitSinceMs, getMSTime()) >= WAVE_WAIT_MS) && !heldTooLong)
-    {
-        // Go to a member something is fighting out of the leader's sight: the Azure Magus caught the priest 16 yd off
-        // the entrance corridor while the others had walked on 40 yd round the corner, and the leader waited there
-        // for eight minutes while the priest fought him alone (run 1936).
-        if (!dead && fighting && fighting != bot &&
-            (bot->GetDistance(fighting) > 10.0f || !bot->IsWithinLOSInMap(fighting)))
-            MoveTo(fighting->GetMapId(), fighting->GetPositionX(), fighting->GetPositionY(), fighting->GetPositionZ(),
-                   false, false, false, false, MovementPriority::MOVEMENT_NORMAL);
-        // To what holds a member in combat for long: a Mindless Servant off the walkway, out of everyone's sight,
-        // kept the priest in combat at full health and the leader beside her waited until the run was stopped
-        // (Utgarde Pinnacle, my-mac run 100239); a Strategist stood 18 yd off the tank, out of its sight, the same
-        // way (Utgarde Keep, run 100123). Walked to, it is in sight and fought.
-        if (getMSTimeDiff(_fightingSinceMs, nowMs) >= HELD_IN_COMBAT_MS)
+        // How long the same member has been the one holding the group. The leader walks to what holds it (below), and
+        // after MEMBER_HELD_WAIT_MS it walks on without it: nothing damages that member for the rest of the run
+        // otherwise - the group waits at the hold point while the leader watches it, and the log stays on "waiting:
+        // <member> in combat" (Ahn'kahet, run 2402: 19 damage events in the following ten minutes). Same shape as the
+        // Mindless Servant that held the priest at full health (Utgarde Pinnacle, my-mac run 100239). A player leaves
+        // such a member behind and walks on; it follows once it is free.
+        // Read and written only in here: GroupReady() sets dead/fighting on its failing path alone, so outside this
+        // block they still hold whatever the last failing tick left - a member who has since died or left, and
+        // dereferencing that crashed the server on every such tick (variants B, D, E, 2026-10-09).
+        uint32 const nowMs = getMSTime();
+        if (dead || !fighting)
+            _fightingSince = ObjectGuid::Empty;
+        else if (fighting->GetGUID() != _fightingSince)
         {
-            Unit* holder = nullptr;
-            for (Unit* attacker : fighting->getAttackers())
-                if (attacker && attacker->IsAlive() && attacker->GetMapId() == bot->GetMapId() &&
-                    (!holder || bot->GetDistance(attacker) < bot->GetDistance(holder)))
-                    holder = attacker;
-            if (holder && (bot->GetDistance(holder) > 5.0f || !bot->IsWithinLOSInMap(holder)))
-            {
-                if (TraceDue())
-                    LOG_DEBUG("playerbots", "dungeon-run bot={} to {} holding {} in combat dist={:.1f} los={}",
-                              bot->GetName(), holder->GetName(), fighting->GetName(), bot->GetDistance(holder),
-                              bot->IsWithinLOSInMap(holder));
-                MoveTo(holder->GetMapId(), holder->GetPositionX(), holder->GetPositionY(), holder->GetPositionZ(),
-                       false, false, false, false, MovementPriority::MOVEMENT_NORMAL);
-            }
+            _fightingSince = fighting->GetGUID();
+            _fightingSinceMs = nowMs;
         }
-        // Take the group to a dead member so the healers are in range and in sight of the body: a rogue who died
-        // on the ledge above the ramp lay 34 yd away and 11 yd up and was never resurrected (run 1810).
-        // A member who released its spirit stands wherever its ghost is; the body is what gets resurrected.
-        if (dead)
+        bool const heldTooLong = !dead && fighting &&
+                                 getMSTimeDiff(_fightingSinceMs, nowMs) >= MEMBER_HELD_WAIT_MS;
+        if (!heldTooLong)
         {
-            WorldLocation const body = dead->HasPlayerFlag(PLAYER_FLAGS_GHOST) ? dead->GetCorpseLocation()
-                                                                                 : dead->GetWorldLocation();
-            if (body.GetMapId() == bot->GetMapId() && bot->GetDistance(body) > 10.0f)
+            // Go to a member something is fighting out of the leader's sight: the Azure Magus caught the priest 16 yd off
+            // the entrance corridor while the others had walked on 40 yd round the corner, and the leader waited there
+            // for eight minutes while the priest fought him alone (run 1936).
+            if (!dead && fighting && fighting != bot &&
+                (bot->GetDistance(fighting) > 10.0f || !bot->IsWithinLOSInMap(fighting)))
+                MoveTo(fighting->GetMapId(), fighting->GetPositionX(), fighting->GetPositionY(), fighting->GetPositionZ(),
+                       false, false, false, false, MovementPriority::MOVEMENT_NORMAL);
+            // To what holds a member in combat for long: a Mindless Servant off the walkway, out of everyone's sight,
+            // kept the priest in combat at full health and the leader beside her waited until the run was stopped
+            // (Utgarde Pinnacle, my-mac run 100239); a Strategist stood 18 yd off the tank, out of its sight, the same
+            // way (Utgarde Keep, run 100123). Walked to, it is in sight and fought.
+            if (getMSTimeDiff(_fightingSinceMs, nowMs) >= HELD_IN_COMBAT_MS)
             {
-                bool const moved = MoveTo(bot->GetMapId(), body.GetPositionX(), body.GetPositionY(),
-                                          body.GetPositionZ(), false, false, false, false,
-                                          MovementPriority::MOVEMENT_NORMAL);
-                if (TraceDue())
+                Unit* holder = nullptr;
+                for (Unit* attacker : fighting->getAttackers())
+                    if (attacker && attacker->IsAlive() && attacker->GetMapId() == bot->GetMapId() &&
+                        (!holder || bot->GetDistance(attacker) < bot->GetDistance(holder)))
+                        holder = attacker;
+                if (holder && (bot->GetDistance(holder) > 5.0f || !bot->IsWithinLOSInMap(holder)))
                 {
-                    LastMovement& lastMove = *context->GetValue<LastMovement&>("last movement");
-                    LOG_DEBUG("playerbots", "dungeon-run bot={} to body of {} dist={:.1f} moved={} can_move={} "
-                              "last_priority={} last_age_ms={}", bot->GetName(), dead->GetName(),
-                              bot->GetDistance(body), moved, botAI->CanMove(), uint32(lastMove.priority),
-                              getMSTimeDiff(lastMove.msTime, getMSTime()));
+                    if (TraceDue())
+                        LOG_DEBUG("playerbots", "dungeon-run bot={} to {} holding {} in combat dist={:.1f} los={}",
+                                  bot->GetName(), holder->GetName(), fighting->GetName(), bot->GetDistance(holder),
+                                  bot->IsWithinLOSInMap(holder));
+                    MoveTo(holder->GetMapId(), holder->GetPositionX(), holder->GetPositionY(), holder->GetPositionZ(),
+                           false, false, false, false, MovementPriority::MOVEMENT_NORMAL);
                 }
             }
-        }
-        uint32 const now = getMSTime();
-        if (getMSTimeDiff(_lastWaitLogMs, now) >= WAIT_LOG_INTERVAL_MS)
-        {
-            _lastWaitLogMs = now;
-            LOG_DEBUG("playerbots", "dungeon-run bot={} waiting: {} progress={:.0f}", bot->GetName(), waitReason,
-                      AI_VALUE(float, "dungeon run progress"));
+            // Take the group to a dead member so the healers are in range and in sight of the body: a rogue who died
+            // on the ledge above the ramp lay 34 yd away and 11 yd up and was never resurrected (run 1810).
+            // A member who released its spirit stands wherever its ghost is; the body is what gets resurrected.
             if (dead)
-                LOG_DEBUG("playerbots", "dungeon-run bot={} dead member {} death_state={} ghost={} rez_requested={} "
-                          "dist={:.1f}", bot->GetName(), dead->GetName(), uint32(dead->getDeathState()),
-                          dead->HasPlayerFlag(PLAYER_FLAGS_GHOST), dead->isResurrectRequested(),
-                          bot->GetDistance(dead));
+            {
+                WorldLocation const body = dead->HasPlayerFlag(PLAYER_FLAGS_GHOST) ? dead->GetCorpseLocation()
+                                                                                     : dead->GetWorldLocation();
+                if (body.GetMapId() == bot->GetMapId() && bot->GetDistance(body) > 10.0f)
+                {
+                    bool const moved = MoveTo(bot->GetMapId(), body.GetPositionX(), body.GetPositionY(),
+                                              body.GetPositionZ(), false, false, false, false,
+                                              MovementPriority::MOVEMENT_NORMAL);
+                    if (TraceDue())
+                    {
+                        LastMovement& lastMove = *context->GetValue<LastMovement&>("last movement");
+                        LOG_DEBUG("playerbots", "dungeon-run bot={} to body of {} dist={:.1f} moved={} can_move={} "
+                                  "last_priority={} last_age_ms={}", bot->GetName(), dead->GetName(),
+                                  bot->GetDistance(body), moved, botAI->CanMove(), uint32(lastMove.priority),
+                                  getMSTimeDiff(lastMove.msTime, getMSTime()));
+                    }
+                }
+            }
+            uint32 const now = getMSTime();
+            if (getMSTimeDiff(_lastWaitLogMs, now) >= WAIT_LOG_INTERVAL_MS)
+            {
+                _lastWaitLogMs = now;
+                LOG_DEBUG("playerbots", "dungeon-run bot={} waiting: {} progress={:.0f}", bot->GetName(), waitReason,
+                          AI_VALUE(float, "dungeon run progress"));
+                if (dead)
+                    LOG_DEBUG("playerbots", "dungeon-run bot={} dead member {} death_state={} ghost={} rez_requested={} "
+                              "dist={:.1f}", bot->GetName(), dead->GetName(), uint32(dead->getDeathState()),
+                              dead->HasPlayerFlag(PLAYER_FLAGS_GHOST), dead->isResurrectRequested(),
+                              bot->GetDistance(dead));
+            }
+            return false;
         }
-        return false;
+        if (TraceDue())
+            LOG_DEBUG("playerbots", "dungeon-run bot={} walking on, {} held in combat for {}ms", bot->GetName(),
+                      fighting->GetName(), getMSTimeDiff(_fightingSinceMs, nowMs));
     }
 
     Unit* target = nullptr;
@@ -519,23 +526,14 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     if (StuckWithoutProgress(index, progress))
     {
         bool const walked = MoveToFloorNodeAhead(*route, progress) != nullptr;
-        if (item->boss)
-        {
-            // A boss the encounter will not let us hit (Taldaram's embrace, Jedoga's ritual): nothing on the route can
-            // change that. Try to get at it for a few windows, then stand still - walking on keeps the tank moving,
-            // which is progress to the harness' stall watchdog, so the run would spin on instead of ending (Ahn'kahet,
-            // run 2403: "waiting for boss item=49 to be attackable" with no damage for ten minutes).
-            ++_bossRetries;
-            if (TraceDue())
-                LOG_DEBUG("playerbots", "dungeon-run bot={} boss item={} along={:.0f} not attackable, window {}",
-                          bot->GetName(), index, item->along, _bossRetries);
-            return _bossRetries <= BOSS_RETRY_WINDOWS ? walked : false;
-        }
+        // A boss that stays unhittable never reaches here: the "waiting for boss item to be attackable"
+        // branch above returns first, and that is where the encounter's own fix belongs.
         if (!walked)
         {
             _pullAttempts[index] = MAX_PULL_ATTEMPTS;
             LOG_DEBUG("playerbots", "dungeon-run bot={} skip item={} along={:.0f} target={} - no progress for {}s",
-                      bot->GetName(), index, item->along, name, STUCK_PROGRESS_MS / 1000);
+                      bot->GetName(), index, item->along, target ? target->GetName() : "object",
+                      STUCK_PROGRESS_MS / 1000);
         }
         return walked;
     }
@@ -1047,8 +1045,6 @@ bool DungeonRunAdvanceAction::StuckWithoutProgress(uint32 index, float progress)
     uint32 const now = getMSTime();
     if (!_stuckSinceMs || index != _stuckItem || progress > _stuckProgress + 1.0f)
     {
-        if (index != _stuckItem)
-            _bossRetries = 0;
         _stuckItem = index;
         _stuckProgress = progress;
         _stuckSinceMs = now;
