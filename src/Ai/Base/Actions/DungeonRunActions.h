@@ -17,6 +17,7 @@
 
 struct DungeonRoute;
 struct DungeonRouteItem;
+struct DungeonRouteNode;
 
 // Group leader out of combat on a map with a dungeon route: once the group is ready, walk the route node by node and
 // pull the next pack or boss on it. Combat is left to the normal combat strategies; this only chooses where to go and
@@ -58,9 +59,10 @@ private:
     static constexpr float PROGRESS_WINDOW = 100.0f;      // nodes this far ahead along the route count as reached
     static constexpr float AIR_NODE_RANGE = 30.0f;        // a node this close sideways ...
     static constexpr float AIR_NODE_HEIGHT = 15.0f;       // ... and this far up or down is passed by
-    static constexpr float NODE_AHEAD_RANGE = 40.0f;      // all moves refused: a node this far ahead on the leader's
+    static constexpr float NODE_AHEAD_RANGE = 60.0f;      // all moves refused: a node this far ahead on the leader's
     static constexpr float NODE_AHEAD_FLOOR = 8.0f;       // ... own floor, within this height, is walked at instead
-    static constexpr float OFF_NAVMESH_STEP = 6.0f;       // off the navmesh, step this far straight on
+                                                          // (Taldaram's room is 55 yd from the way down to the Twilight hall)
+    static constexpr float STRAIGHT_STEP = 6.0f;          // no path starts: step this far straight on and re-path
     static constexpr float HOLD_ARRIVED = 8.0f;           // a member this close to the hold point is there
     static constexpr float START_NODE_RANGE = 25.0f;      // a leader this close to a route node joins the route there
     static constexpr float START_AT_ENTRANCE = 30.0f;     // ... unless that node is this close to the entrance
@@ -94,14 +96,19 @@ private:
     bool PushOverDrop(DungeonRouteItem const& item, float range);
     bool CrossOver(DungeonRouteItem const& item, uint32 index);  // true once the whole group is across
     void StepOverDrop(DungeonRouteItem const& item);  // the leader itself, over the rim
+    // Every path refused: step straight towards (x, y) and re-path from there - what WASD gives a player and the
+    // path search alone does not. Only onto ground at the leader's own height, so this never steps off a ledge.
+    bool StepTowards(float x, float y);
     // An object item still to be used: in sight and usable (selectable, not yet activated), or too far away to tell.
     bool PendingObject(DungeonRouteItem const& item, GameObject*& object) const;
     bool ItemOpen(DungeonRoute const& route, uint32 index) const;  // on the path and not given up on
     bool BossAlive(DungeonRouteItem const& item) const;  // the boss creature alive, attackable or not
     Unit* BossSummon(DungeonRouteItem const& item) const;  // a creature of the boss's own to engage it by
     float StartAlong(DungeonRoute const& route) const;
-    bool OnNavmesh() const;
-    bool InItem(DungeonRouteItem const& item, Unit* unit) const;  // one of the item's pack  // a navmesh polygon under the leader
+    // Every move to where the route wants the leader refused: walk at the nearest node ahead that lies on its own
+    // floor instead. Returns the node walked at, or null when there is none or its move was refused too.
+    DungeonRouteNode const* MoveToFloorNodeAhead(DungeonRoute const& route, float progress);
+    bool InItem(DungeonRouteItem const& item, Unit* unit) const;  // one of the item's pack
     bool HoldGroupAt(DungeonRouteItem const& item);  // the others wait at the item's hold point; true when there
     Unit* NearestLivingMember(DungeonRouteItem const& item) const;  // attackable, nearest to the bot
     bool ApproachTimedOut(uint32 index, float distance);

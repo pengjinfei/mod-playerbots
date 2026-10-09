@@ -193,11 +193,17 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
             !_held.empty() && _holdX == item->holdX && _holdY == item->holdY && _holdZ == item->holdZ;
         if (!heldHere && bot->GetExactDist(item->holdX, item->holdY, item->holdZ) > HOLD_ARRIVED)
         {
+            bool moved = MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
+                                MovementPriority::MOVEMENT_NORMAL);
+            // The hold point out of the leader's reach: left on Taldaram's lowered platform it stands 44 yd from the
+            // Twilight hall's hold point and 28 yd above it, and every move straight there was refused for eight
+            // minutes (Ahn'kahet, run 2402). The route's own nodes lead to that hold point, so walk them instead.
+            if (!moved)
+                moved = MoveToFloorNodeAhead(*route, AI_VALUE(float, "dungeon run progress")) != nullptr;
             if (TraceDue())
-                LOG_DEBUG("playerbots", "dungeon-run bot={} leading the group to the hold point of item={}",
-                          bot->GetName(), index);
-            return MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
-                          MovementPriority::MOVEMENT_NORMAL);
+                LOG_DEBUG("playerbots", "dungeon-run bot={} leading the group to the hold point of item={} moved={}",
+                          bot->GetName(), index, moved);
+            return moved;
         }
         if (!HoldGroupAt(*item))
         {
@@ -687,46 +693,19 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // z 42 stands 62 yd sideways of the Twilight hall, past AIR_NODE_RANGE, so it became the node ahead while the
     // leader stood 66 yd under it - every move to it refused, and the one-node-ahead fallback has no node at all
     // between 859 and 901 to try, so the leader stood still (Ahn'kahet, run 2401; the 826-947 yd stalls before it).
-    // Walk on at the nearest node ahead that lies on the leader's own floor instead.
     if (!moved && !toTarget)
-    {
-        DungeonRouteNode const* onFloor = nullptr;
-        float bestDistance = NODE_AHEAD_RANGE;
-        for (DungeonRouteNode const& node : route->nodes)
+        if (DungeonRouteNode const* onFloor = MoveToFloorNodeAhead(*route, progress))
         {
-            if (node.along <= progress || std::fabs(node.z - bot->GetPositionZ()) > NODE_AHEAD_FLOOR)
-                continue;
-            float const distance = bot->GetExactDist(node.x, node.y, node.z);
-            if (distance < STOP_REACHED || distance >= bestDistance)
-                continue;
-            onFloor = &node;
-            bestDistance = distance;
-        }
-        if (onFloor)
-            moved = MoveTo(bot->GetMapId(), onFloor->x, onFloor->y, onFloor->z, false, false, false, false,
-                           MovementPriority::MOVEMENT_NORMAL);
-    }
-    // Standing off the navmesh no path starts: Taldaram's lowered platform is a game object, and after him the leader
-    // stood on it for eight minutes, every move refused (Ahn'kahet, run 1981). A straight step towards where it goes
-    // takes it back onto the navmesh.
-    if (!moved && !OnNavmesh() && bot->movespline->Finalized())
-    {
-        float const toX = toTarget ? approach.GetPositionX() : next->x;
-        float const toY = toTarget ? approach.GetPositionY() : next->y;
-        float const angle = bot->GetAngle(toX, toY);
-        float const step = std::min(OFF_NAVMESH_STEP, bot->GetExactDist2d(toX, toY));
-        float const stepX = bot->GetPositionX() + step * std::cos(angle);
-        float const stepY = bot->GetPositionY() + step * std::sin(angle);
-        // Only onto ground at the leader's height: where the collision model has no floor (most of Ahn'kahet) the
-        // step was put on whatever lay far below and the tank walked down to z -123 (run 2015).
-        float const ground =
-            bot->GetMap()->GetHeight(bot->GetPhaseMask(), stepX, stepY, bot->GetPositionZ() + 2.0f, true, 6.0f);
-        if (ground > INVALID_HEIGHT && std::fabs(ground - bot->GetPositionZ()) < 4.0f)
-        {
-            bot->GetMotionMaster()->MovePoint(0, stepX, stepY, ground, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
             moved = true;
+            next = onFloor;
         }
-    }
+    // Every path refused, so walk a step straight towards where the route wants the leader and re-path from there:
+    // a player under WASD always has this and never becomes unable to move, while a bot is left with the path search
+    // alone. It is not only off the navmesh that this matters: on Taldaram's lowered platform the leader stands on a
+    // navmesh island of its own, with the Twilight hall's floor on another, so a polygon is under it while every
+    // move is still refused (runs 1981, 2401, 2402 - the 826-947 yd stalls).
+    if (!moved && bot->movespline->Finalized())
+        moved = StepTowards(toTarget ? approach.GetPositionX() : next->x, toTarget ? approach.GetPositionY() : next->y);
     if (TraceDue())
         LOG_DEBUG("playerbots", "dungeon-run bot={} approach item={} target={} dist={:.1f} los={} to={} moved={} "
                   "progress={:.0f}", bot->GetName(), index, name, distance,
@@ -1030,6 +1009,65 @@ bool DungeonRunAdvanceAction::TraceDue()
         return false;
     _lastTraceMs = now;
     return true;
+}
+
+// A step straight towards (x, y) and re-path from there. A player under WASD moves like this and so never becomes
+// unable to move; a bot is left with the path search alone, and where no path starts the leader used to stand until
+// the run timed out. MovementAction::StepTowardsNavmesh() does the same from inside MoveTo and with more care (its
+// reverse path across a cut-off navmesh patch, a nearer polygon at the bot's height), but it is guarded by how far
+// and how far down that patch may be - left on Taldaram's platform the hold point and the way down to the Twilight
+// hall are both past those guards, so MoveTo returns false there and nothing else stepped (runs 2401, 2402). This is
+// the last resort behind it: one step, onto ground within a few yards of the leader's own height, and re-path.
+bool DungeonRunAdvanceAction::StepTowards(float x, float y)
+{
+    float const distance = bot->GetExactDist2d(x, y);
+    float const step = std::min(STRAIGHT_STEP, distance);
+    if (step < 0.5f)
+        return false;
+    float const angle = bot->GetAngle(x, y);
+    float const stepX = bot->GetPositionX() + step * std::cos(angle);
+    float const stepY = bot->GetPositionY() + step * std::sin(angle);
+    float const ground =
+        bot->GetMap()->GetHeight(bot->GetPhaseMask(), stepX, stepY, bot->GetPositionZ() + 2.0f, true, 6.0f);
+    if (ground <= INVALID_HEIGHT || std::fabs(ground - bot->GetPositionZ()) >= 4.0f)
+        return false;
+    bot->GetMotionMaster()->MovePoint(0, stepX, stepY, ground, FORCED_MOVEMENT_NONE, 0.0f, 0.0f, false, true);
+    return true;
+}
+
+// Every move the route asked for was refused: walk at the nearest node ahead that lies on the leader's own floor.
+// Taldaram's death lowers his platform and the leader ends up 44 yd from the Twilight hall's hold point and 28 yd
+// above it, with every move straight there refused (Ahn'kahet, runs 2401, 2402: the same room stands 55 yd from the
+// ledge the route's descent starts at, node 931). The route's own nodes are the way on - that descent ends at the
+// pack's hold point itself - so walking them beats standing still. Null when no node qualifies or its move was
+// refused as well; the refusal is logged on the normal trace.
+DungeonRouteNode const* DungeonRunAdvanceAction::MoveToFloorNodeAhead(DungeonRoute const& route, float progress)
+{
+    DungeonRouteNode const* onFloor = nullptr;
+    float bestDistance = NODE_AHEAD_RANGE;
+    for (DungeonRouteNode const& node : route.nodes)
+    {
+        if (node.along <= progress || std::fabs(node.z - bot->GetPositionZ()) > NODE_AHEAD_FLOOR)
+            continue;
+        float const distance = bot->GetExactDist(node.x, node.y, node.z);
+        if (distance < STOP_REACHED || distance >= bestDistance)
+            continue;
+        onFloor = &node;
+        bestDistance = distance;
+    }
+    if (!onFloor)
+        return nullptr;
+    bool moved = MoveTo(bot->GetMapId(), onFloor->x, onFloor->y, onFloor->z, false, false, false, false,
+                        MovementPriority::MOVEMENT_NORMAL);
+    // The node's own move refused as well (its polygon on another island): step towards it and re-path from there.
+    if (!moved && bot->movespline->Finalized())
+        moved = StepTowards(onFloor->x, onFloor->y);
+    if (!moved)
+        return nullptr;
+    if (TraceDue())
+        LOG_DEBUG("playerbots", "dungeon-run bot={} every move refused, on at the floor node along={:.0f} "
+                  "({:.1f} yd) progress={:.0f}", bot->GetName(), onFloor->along, bestDistance, progress);
+    return onFloor;
 }
 
 float DungeonRunAdvanceAction::StartAlong(DungeonRoute const& route) const
@@ -1344,19 +1382,6 @@ bool DungeonRunAdvanceAction::InItem(DungeonRouteItem const& item, Unit* unit) c
     if (!item.summonEntries.empty())
         return creature->GetExactDist(item.x, item.y, item.z) <= item.radius;
     return std::find(item.spawnIds.begin(), item.spawnIds.end(), creature->GetSpawnId()) != item.spawnIds.end();
-}
-
-bool DungeonRunAdvanceAction::OnNavmesh() const
-{
-    dtNavMeshQuery const* query = bot->GetMap()->GetMapCollisionData().GetMMapData().GetNavMeshQuery();
-    if (!query)
-        return true;
-    float const point[3] = {bot->GetPositionY(), bot->GetPositionZ(), bot->GetPositionX()};
-    float const extents[3] = {2.0f, 4.0f, 2.0f};
-    float closest[3] = {0.0f, 0.0f, 0.0f};
-    dtQueryFilter const filter;
-    dtPolyRef poly = 0;
-    return dtStatusSucceed(query->findNearestPoly(point, extents, &filter, &poly, closest)) && poly;
 }
 
 bool DungeonRunAdvanceAction::GroupFighting() const
