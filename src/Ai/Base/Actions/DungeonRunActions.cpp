@@ -187,7 +187,12 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     // down the ramp the leader's (run 2127). Not while any of the group still fights: the tank out of combat with the
     // Nexus rift's surges on the others, the group was held again out of sight of the rift, which was never killed and
     // kept summoning them for seven minutes (run 2124).
-    if (item && item->hold && target && !GroupFighting())
+    // 拉脱了、怪还在的包：不用 target 也要走到集合点守着（下面的 StuckWithoutProgress 给出等待上限）。
+    // 没有这条，「等它回来」的 item 会落到函数末尾的 `!target && ...` 早返回，人站在原地、
+    // 既不守集合点也没有看门狗 —— 位置对但没有任何机制把它拉出来。
+    bool const waitingForPack = !target && item && item->hold &&
+                                (_pullAttempts.count(index) || !_held.empty()) && AnySpawnAlive(*item);
+    if (item && item->hold && (target || waitingForPack) && !GroupFighting())
     {
         bool const heldHere =
             !_held.empty() && _holdX == item->holdX && _holdY == item->holdY && _holdZ == item->holdZ;
@@ -207,6 +212,25 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         }
         if (!HoldGroupAt(*item))
         {
+            // The group never gathers: stragglers left on the floor above the hold point sit there as long as the
+            // leader waits, and nothing asks whether the wait is going anywhere. Ahn'kahet's Twilight hall: two
+            // members stuck on node 826, 43 yd off and a floor up, held the leader at (497.3,-806.1,-24.2) for eight
+            // minutes. The stuck watchdog further down covers every other shape but is never reached from here - this
+            // return comes first (the boss-untouchable branch's own comment notes the same for its shape). Ask it
+            // here too: a hold the group cannot come to is walked away from, not waited out.
+            float const heldProgress = AI_VALUE(float, "dungeon run progress");
+            if (StuckWithoutProgress(index, heldProgress))
+            {
+                bool const walked = ++_stuckWindows <= STUCK_WALK_WINDOWS &&
+                                    MoveToFloorNodeAhead(*route, heldProgress) != nullptr;
+                if (!walked)
+                {
+                    _pullAttempts[index] = MAX_PULL_ATTEMPTS;
+                    LOG_DEBUG("playerbots", "dungeon-run bot={} skip item={} along={:.0f} target={} - hold never "
+                              "gathered", bot->GetName(), index, item->along, target ? target->GetName() : "object");
+                }
+                return walked;
+            }
             if (TraceDue())
                 LOG_DEBUG("playerbots", "dungeon-run bot={} sending the group to the hold point of item={}",
                           bot->GetName(), index);
@@ -221,7 +245,30 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         if (item->hold && !AtHold(*item))
             return MoveTo(bot->GetMapId(), item->holdX, item->holdY, item->holdZ, false, false, false, false,
                           MovementPriority::MOVEMENT_NORMAL);
-        if (TraceDue())
+        // 站到集合点上了、boss 还是不可打：等一会儿可以，无限等不行。耶戈达（AK item 49）就死在这 ——
+        // 她的集合点离入会者中心 24.8 码，而入会者要 26 码内才起身，跪着时 IsValidAttackTarget() 为假，
+        // NearestLivingMember 恒空，事件永不开始（realm2 run2429 与 realm3 run2442 各 45 次
+        // `waiting for boss item=49`，坦克钉在 (366.2,-729.8,-16.2) 一直耗到 8 分钟 route stalled）。
+        // 真人这时是走上去把事件开起来，不是站着等。超时后朝 boss 走；走不过去就顺路线的同层节点往前。
+        uint32 const nowMs = getMSTime();
+        if (_bossWaitItem != index)
+        {
+            _bossWaitItem = index;
+            _bossWaitSinceMs = nowMs;
+        }
+        if (getMSTimeDiff(_bossWaitSinceMs, nowMs) >= BOSS_ATTACKABLE_WAIT_MS)
+        {
+            bool moved = MoveTo(bot->GetMapId(), item->x, item->y, item->z, false, false, false, false,
+                                MovementPriority::MOVEMENT_NORMAL);
+            if (!moved)
+                moved = MoveToFloorNodeAhead(*route, AI_VALUE(float, "dungeon run progress")) != nullptr;
+            if (TraceDue())
+                LOG_DEBUG("playerbots", "dungeon-run bot={} boss item={} not attackable for {}ms, walking in moved={}",
+                          bot->GetName(), index, BOSS_ATTACKABLE_WAIT_MS, moved);
+            if (moved)
+                return true;
+        }
+        else if (TraceDue())
             LOG_DEBUG("playerbots", "dungeon-run bot={} waiting for boss item={} to be attackable", bot->GetName(),
                       index);
         return false;
@@ -972,10 +1019,16 @@ bool DungeonRunAdvanceAction::CcGateOpen(DungeonRouteItem const& item, Unit* nea
     }
 
     uint32 const now = getMSTime();
+    // 只换 item 才重置等待计时（2026-10-11）：目标在同一个包里来回翻时也重置的话，`waited` 永远归零，
+    // `no_plan`/`timeout` 两条都到不了，领队在集合点站到 8 分钟判据收尾。钉住的目标仍然每 tick 更新。
+    if (_ccGateAlong != item.along)
+    {
+        _ccGateAlong = item.along;
+        _ccGateSinceMs = now;
+    }
     if (_ccGateTarget != target->GetGUID())
     {
         _ccGateTarget = target->GetGUID();
-        _ccGateSinceMs = now;
         context->GetValue<ObjectGuid>("pull target")->Set(target->GetGUID());
         return false;
     }
@@ -1390,6 +1443,21 @@ DungeonRouteItem const* DungeonRunAdvanceAction::NextItem(DungeonRoute const& ro
         }
         if (!nearest)
         {
+            // 这个包刚被拉过（或队伍正扣在它的集合点）却暂时没有可打的成员：**不换包**，回到它的集合点等它回来。
+            // 2026-10-12 实测：安卡赫特 along=245 那片，领队在 280 秒里发了 61 次 `pull action`、39 次 `trash cc mark`，
+            // 全是 `attempt=1` —— 因为怪一 evade/暂不可攻击，`nearest` 就为空，下面那个 `continue` 直接跳到下一个包，
+            // 循环往复。这正是「全员脱战站着」占掉单场 30% 时长的来源（realm2 run2426: 280 秒 / 985 秒）。
+            // 真人不会这样：拉脱了就守在原地等怪回来，不会跑去拉下一组。
+            // 只有「怪还在」才守：包已经清掉（全死）时这里必须照旧 continue，让领队往前走。
+            // ws-V 当初漏了这一条，把「已清的包」也扣成等待 —— pack 的 item 在清掉后并不会自动退休
+            // （只有 _pullAttempts 到 MAX_PULL_ATTEMPTS 才关），于是领队抱着一个空包原地不动：
+            // realm1 run2430 在 466.4,-1027.0,30.3（pack 199/221 的集合点）站了 455 秒后 aborted。
+            if (item.hold && (_pullAttempts.count(i) || !_held.empty()) && AnySpawnAlive(item))
+            {
+                target = nullptr;
+                index = i;
+                return &item;
+            }
             // A boss alive but out of reach for now (evading home, resetting) is not cleared: Hadronox evaded, the
             // next item was the hole in her pit, and the leader walked down into the tunnel her adds pour out of
             // (run 1955).
@@ -1519,7 +1587,15 @@ bool DungeonRunAdvanceAction::HoldGroupAt(DungeonRouteItem const& item)
             positions["stay"] = stay;
         }
         _held.insert(member->GetGUID());
-        if (!member->IsInCombat() && member->GetExactDist(item.holdX, item.holdY, item.holdZ) > HOLD_ARRIVED)
+        // A member in a fight is the combat engine's to release - a pack that walks up by itself starts the fight
+        // without a pull, and waiting for the fighters would leave the leader standing. But that exemption was total:
+        // a member fighting a floor away counted as "here", so the hold never reported the group incomplete. At
+        // Ahn'kahet's pack 708 the tank stood on the ledge hold (656.8,-787.6,8.5) while a member fought 11.7 yd
+        // straight below it (z -3.19, so only 11.8 yd away and a distance test would miss it), and HoldGroupAt said
+        // the group was ready - which is what kept the hold watchdog from ever running, eight minutes of standing
+        // still. On a different floor is not "here", in combat or not.
+        bool const offFloor = std::fabs(member->GetPositionZ() - item.holdZ) > NODE_AHEAD_FLOOR;
+        if (member->GetExactDist(item.holdX, item.holdY, item.holdZ) > HOLD_ARRIVED && (!member->IsInCombat() || offFloor))
             allThere = false;
     }
     return allThere;
@@ -1639,6 +1715,30 @@ Unit* DungeonRunAdvanceAction::NearestLivingMember(DungeonRouteItem const& item)
         }
     }
     return nearest;
+}
+
+bool DungeonRunAdvanceAction::AnySpawnAlive(DungeonRouteItem const& item) const
+{
+    Map* map = bot->GetMap();
+    if (!map)
+        return false;
+    if (!item.summonEntries.empty())
+    {
+        std::list<Creature*> creatures;
+        bot->GetCreatureListWithEntryInGrid(creatures, item.summonEntries, SUMMON_SIGHT + item.radius);
+        for (Creature* creature : creatures)
+            if (creature && creature->IsAlive() && creature->GetExactDist(item.x, item.y, item.z) <= item.radius)
+                return true;
+        return false;
+    }
+    for (uint32 spawnId : item.spawnIds)
+    {
+        auto const bounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
+        for (auto itr = bounds.first; itr != bounds.second; ++itr)
+            if (Creature* creature = itr->second; creature && creature->IsAlive())
+                return true;
+    }
+    return false;
 }
 
 bool DungeonRunReleaseGroupAction::Execute(Event /*event*/)

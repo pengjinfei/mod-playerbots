@@ -45,6 +45,12 @@ private:
     static constexpr uint32 WAIT_LOG_INTERVAL_MS = 10000;
     static constexpr uint32 APPROACH_TIMEOUT_MS = 45000;
     static constexpr uint32 STUCK_PROGRESS_MS = 90000;  // no item change and no route progress this long: walk on
+    // 站在 boss 的集合点、boss 却一直不可打时的等待上限。耶戈达（AK item 49）的集合点
+    // 被刻意放在她的入会者触发圈外（hold 离入会者中心 24.8 码，而入会者 26 码内才会全部起身），
+    // 跪着的入会者 IsValidAttackTarget() 为假 → NearestLivingMember 恒空 → 事件永不开始 →
+    // 领队无限等（realm2 run2429 / realm3 run2442 各 45 次 `waiting for boss item=49`，
+    // 坦克钉在 (366.2,-729.8,-16.2) 直到 8 分钟 route stalled）。真人这时候是走上去开怪。
+    static constexpr uint32 BOSS_ATTACKABLE_WAIT_MS = 45000;
     static constexpr uint32 MEMBER_HELD_WAIT_MS = 45000;  // "in combat" with a health that does not fall this long: held
     static constexpr uint32 STUCK_WALK_WINDOWS = 3;       // stuck: walk at it so many windows, then give the item up
     static constexpr float PULL_BACK = 20.0f;             // pull position: the node this far behind
@@ -114,6 +120,8 @@ private:
     bool InItem(DungeonRouteItem const& item, Unit* unit) const;  // one of the item's pack
     bool HoldGroupAt(DungeonRouteItem const& item);  // the others wait at the item's hold point; true when there
     Unit* NearestLivingMember(DungeonRouteItem const& item) const;  // attackable, nearest to the bot
+    // 这包的怪还有活着的吗（不看能不能打）：区分「拉脱了、怪还在，等它回来」与「已经清掉、该往前走」。
+    bool AnySpawnAlive(DungeonRouteItem const& item) const;
     bool ApproachTimedOut(uint32 index, float distance);
     bool StuckWithoutProgress(uint32 index, float progress);
     // A member "in combat" whose health does not fall is held by something that takes no damage, not fighting: the
@@ -142,6 +150,8 @@ private:
     std::set<ObjectGuid> _waveDirect;                  // wave members walked straight at (stop short refused)
     uint32 _waitItem = UINT32_MAX;                     // wait being stood, and since when
     uint32 _waitSinceMs = 0;
+    uint32 _bossWaitItem = UINT32_MAX;                 // boss item waited on, and since when
+    uint32 _bossWaitSinceMs = 0;
     uint32 _lastWaitLogMs = 0;
     uint32 _approachItem = UINT32_MAX;  // item being walked to, best distance reached, since when
     float _approachBest = 0.0f;
@@ -168,6 +178,10 @@ private:
     uint32 _spotItem = UINT32_MAX;    // the item waited for at its pull spot
     uint32 _spotSinceMs = 0;
     ObjectGuid _ccGateTarget;
+    // 2026-10-11：计时器只在**换 item** 时重置。原先跟着 `_ccGateTarget` 重置，而钉住的目标在同一个包内
+    // 会来回翻（谁离包心最近就钉谁），于是 `waited` 永远归零、`timeout` 永不触发、领队在 hold 上站到底
+    // （安卡赫特实测：realm4 整场 `cc gate open` 0 次，而 STALL TRACE 显示 atHold=true pulls=0 moving=false）。
+    float _ccGateAlong = -1.0f;
     ObjectGuid _fightingSince;        // the member the group has waited for in combat, and since when
     uint32 _fightingSinceMs = 0;
     uint32 _clearItem = UINT32_MAX;   // the item whose clear= patrol was last measured...
