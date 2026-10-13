@@ -62,6 +62,10 @@ public:
     TrashCcCastAction(PlayerbotAI* ai, TrashCcRole const& role, std::string const name)
         : CastSpellAction(ai, role.spell), role(role), name(name) {}
 
+    // 只在施法者站的地方够得着时才放，不为上控制往前走（2026-10-13 还原 10-11 的 MoveNear）。
+    // 走到 18 码再放会走进 81 级精英约 21 码的仇恨半径，等于替坦克开怪：安卡赫特 10-11 18:24 起
+    // 崩盘窗口里被法师/萨满拉到的怪从 10% 升到 46%，击杀 38% → 6%（交接文档 HANDOVER-2026-10-13 §10）。
+
     Unit* GetTarget() override { return TrashCcCastTarget(botAI, bot, role); }
     bool isUseful() override { return GetTarget() != nullptr; }
     std::string const getName() override { return name; }

@@ -114,8 +114,9 @@ bool MarkRtiAction::Execute(Event /*event*/)
 
 namespace
 {
-    // 变形术 / 妖术的施法距离（不含 combat reach）。
-    constexpr float kCcSpellRange = 30.0f;
+    // 指派控制时的距离上限：施法者此刻够得着（变形术 / 妖术施法距离，不含 combat reach）才分给它。
+    // 10-11 曾放宽到 60 码并让动作自己走过去，2026-10-13 还原：走过去会把怪开了（见 TrashCcCastAction）。
+    constexpr float kCcAssignRange = 30.0f;
     constexpr float kSapStandOff = 11.0f;   // TrashCcSapAction 停步距离
     constexpr float kSapClearance = 12.0f;  // 站位离同组其他怪至少这么远才派闷棍
     // 控制迟迟不落地时，第一个控制图标打上多久后照样标骷髅（要小于编排层的等待上限）。
@@ -150,8 +151,15 @@ bool TrashCcMarkAction::AssignPrePull(Group* group)
         return false;
 
     // 治疗 → 施法者 → 其它。前面的分给控制，最后剩下的（最像近战的那只）给坦克。
+    // 正在打我方的治疗的那只排最前（2026-10-11）：唯一的奶被单点打死 → 全队 2 分钟内崩，
+    // 而前 20 分钟承伤与治疗一直是平衡的（见 TrashCcAttackingHealer 的注释）。
     std::stable_sort(pack.begin(), pack.end(),
-                     [](Creature* a, Creature* b) { return TrashCcPreference(a) < TrashCcPreference(b); });
+                     [&](Creature* a, Creature* b)
+                     {
+                         int const rankA = TrashCcAttackingHealer(a, bot) ? -1 : TrashCcPreference(a);
+                         int const rankB = TrashCcAttackingHealer(b, bot) ? -1 : TrashCcPreference(b);
+                         return rankA < rankB;
+                     });
 
     auto inPack = [&](Unit* unit) { return unit && std::find(pack.begin(), pack.end(), unit->ToCreature()) != pack.end(); };
 
@@ -185,7 +193,8 @@ bool TrashCcMarkAction::AssignPrePull(Group* group)
 
         // 闷棍：离盗贼最近的那只。羊/妖术：按优先级取第一只在 30 码施法距离内的；一只都不在距离内
         // 就**不分**（准备点必须离怪 >23 码，两只治疗未必都在 30 码内——(509,62) 到两只治疗是
-        // 29.4 / 33.3 码；分一只够不着的等于让全队白等 15 秒）。
+        // 29.4 / 33.3 码；分一只够不着的等于让全队白等 15 秒）。10-11 曾改成"在场就分、自己走过去"，
+        // 2026-10-13 还原：施法者走到 18 码会进仇恨半径把怪开了（见 TrashCcCastAction）。
         Creature* pick = nullptr;
         for (Creature* creature : pack)
         {
@@ -213,7 +222,7 @@ bool TrashCcMarkAction::AssignPrePull(Group* group)
                 continue;
             }
 
-            if (caster->GetDistance(creature) <= kCcSpellRange)
+            if (caster->GetDistance(creature) <= kCcAssignRange)
             {
                 pick = creature;
                 break;

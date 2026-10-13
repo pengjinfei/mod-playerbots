@@ -9,6 +9,10 @@
 
 void WotlkDungeonOKStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
+    // The shared trash crowd-control chain first, as the other dungeon strategies do: assign kill/cc icons, cast the
+    // cc out of combat, and hold the AoE while any of it stands. Without this the full-run leader pulls whole packs.
+    TrashCcPullStrategy::InitTriggers(triggers);
+
     // Elder Nadox
     triggers.push_back(new TriggerNode("nadox guardian",
         { NextAction("attack nadox guardian", ACTION_RAID + 5) }));

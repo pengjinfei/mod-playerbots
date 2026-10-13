@@ -114,6 +114,9 @@ void TrashCcRegisterDisabledClasses(uint32 mapId, std::initializer_list<uint8> c
 bool TrashCcSpellFits(Player* caster, TrashCcRole const& role, Creature* creature);
 // 控制候选的优先级：治疗(0) > 有法力的施法者(1) > 其它(2)。数值越小越先被控，剩下的留给坦克。
 int TrashCcPreference(Creature* creature);
+// 这只怪是否正在打我方的治疗（2026-10-11：唯一的奶被单点打死 → 全队 2 分钟内崩，见 .cpp 注释）。
+// 为真时它拿到比 TrashCcPreference 更高的优先级，见 AssignPrePull 的排序。
+bool TrashCcAttackingHealer(Creature* creature, Player* bot);
 // 各副本在自己的策略构造时登记治疗小怪的 entry（普通/英雄 entry 都可）。
 void TrashCcRegisterHealerEntries(std::initializer_list<uint32> entries);
 

@@ -181,6 +181,28 @@ int TrashCcPreference(Creature* creature)
     return creature->getPowerType() == POWER_MANA ? 1 : 2;
 }
 
+// 这只怪是不是正在打我们队伍里的治疗。2026-10-11 安卡赫特整本实证：治疗者（队伍里唯一的奶）被
+// 30111 Twilight Worshipper 单点 23,359 打死（run2437，22–25 分钟段），随后 2 分钟内全队崩盘 ——
+// 而前 20 分钟承伤与治疗一直是平衡的。所以"谁在打奶"必须是**最高优先**的控制候选，
+// 排在"治疗怪/有法力"之前：控住它 = 保住唯一的奶源。
+bool TrashCcAttackingHealer(Creature* creature, Player* bot)
+{
+    if (!creature || !bot)
+        return false;
+    for (Unit* attacker : creature->getAttackers())
+    {
+        Player* player = attacker ? attacker->ToPlayer() : nullptr;
+        if (!player || !player->IsAlive())
+            continue;
+        if (player->GetMapId() != bot->GetMapId())
+            continue;
+        PlayerbotAI* playerAI = GET_PLAYERBOT_AI(player);
+        if (playerAI && playerAI->IsHeal(player))
+            return true;
+    }
+    return false;
+}
+
 TrashCcRole const* TrashCcRoleForClass(uint8 playerClass)
 {
     for (TrashCcRole const& role : kTrashCcRoles)
