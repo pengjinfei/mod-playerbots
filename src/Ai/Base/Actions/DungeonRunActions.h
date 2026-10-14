@@ -30,7 +30,7 @@ public:
     bool Execute(Event event) override;
     bool isUseful() override;
 
-    bool HoldsGroup() const { return !_held.empty(); }
+    bool HoldsGroup() const { return !_held.empty() || _backtracking || _backtrackWaitSinceMs; }
     void ReleaseGroup();  // the members waiting at a hold point follow again
 
 private:
@@ -45,6 +45,7 @@ private:
     static constexpr uint32 WAIT_LOG_INTERVAL_MS = 10000;
     static constexpr uint32 APPROACH_TIMEOUT_MS = 45000;
     static constexpr uint32 STUCK_PROGRESS_MS = 90000;  // no item change and no route progress this long: walk on
+    static constexpr float BACKTRACK_RANGE = 300.0f;    // never go farther back than this before the current item
     // 站在 boss 的集合点、boss 却一直不可打时的等待上限。耶戈达（AK item 49）的集合点
     // 被刻意放在她的入会者触发圈外（hold 离入会者中心 24.8 码，而入会者 26 码内才会全部起身），
     // 跪着的入会者 IsValidAttackTarget() 为假 → NearestLivingMember 恒空 → 事件永不开始 →
@@ -147,7 +148,13 @@ private:
     std::unordered_set<uint32> _waitsDone;             // waits stood out
     std::unordered_set<uint32> _gossipsDone;           // event starters talked to
     uint32 _waveWaitSinceMs = 0;                       // a wave there while the group is not ready, since
-    std::set<ObjectGuid> _waveDirect;                  // wave members walked straight at (stop short refused)
+    uint32 _backtrackItem = UINT32_MAX;                // item whose cross-floor distance wait is being watched
+    uint32 _backtrackWaitSinceMs = 0;
+    bool _backtracking = false;
+    uint32 _backtrackNode = UINT32_MAX;  // current node or adjacent step being walked to
+    float _backtrackMinAlong = 0.0f;
+    float _backtrackClosest = 0.0f;    // closest aggregate farthest distance in the wait window
+    std::set<ObjectGuid> _waveDirect;        // wave members walked straight at (stop short refused)
     uint32 _waitItem = UINT32_MAX;                     // wait being stood, and since when
     uint32 _waitSinceMs = 0;
     uint32 _bossWaitItem = UINT32_MAX;                 // boss item waited on, and since when

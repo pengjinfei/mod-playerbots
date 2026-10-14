@@ -6,6 +6,7 @@
 
 #include "AttackAction.h"
 #include "CreatureAI.h"
+#include "DungeonRunStrategy.h"
 #include "Event.h"
 #include "LastMovementValue.h"
 #include "LootObjectStack.h"
@@ -163,6 +164,9 @@ bool AttackAction::Attack(Unit* target, bool /*with_pet*/ /*true*/)
 
         return false;
     }
+
+    if (!DungeonRunStrategy::CanAssistTarget(botAI, target))
+        return false;
 
     // if (bot->IsMounted() && bot->IsWithinLOSInMap(target))
     // {

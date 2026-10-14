@@ -253,9 +253,24 @@ std::vector<Item*> InventoryAction::parseItems(std::string const text, IterateIt
 
         if (found.empty())
         {
+            // Only food that also restores mana stands in for a drink: a mage out of water sat down to plain cheese
+            // nine times at 40% mana and the leader waited on him until the run stalled (Ahn'kahet, realm 6 run 2463).
             FindFoodVisitor visitor(bot, 11);
             IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
-            found.insert(visitor.GetResult().begin(), visitor.GetResult().end());
+            for (Item* item : visitor.GetResult())
+            {
+                SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(item->GetTemplate()->Spells[0].SpellId);
+                if (!spellInfo)
+                    continue;
+                // Refreshments (Conjured Mana Strudel) restore mana through a triggered drink spell.
+                bool restoresMana = spellInfo->HasAura(SPELL_AURA_MOD_POWER_REGEN);
+                for (SpellEffectInfo const& effect : spellInfo->GetEffects())
+                    if (effect.Effect == SPELL_EFFECT_TRIGGER_SPELL)
+                        if (SpellInfo const* triggered = sSpellMgr->GetSpellInfo(effect.TriggerSpell))
+                            restoresMana = restoresMana || triggered->HasAura(SPELL_AURA_MOD_POWER_REGEN);
+                if (restoresMana)
+                    found.insert(item);
+            }
         }
     }
 

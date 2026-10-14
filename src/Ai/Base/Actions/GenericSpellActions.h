@@ -36,6 +36,8 @@ public:
     std::string const getSpell() { return spell; }
 
 protected:
+    bool CanStartAttack(Unit* target);
+
     std::string spell;
     float range;
 };

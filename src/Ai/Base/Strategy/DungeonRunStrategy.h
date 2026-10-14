@@ -10,6 +10,7 @@
 #include "NonCombatStrategy.h"
 
 class PlayerbotAI;
+class Unit;
 
 // Opt-in, for the group leader: walk the map's dungeon route (AiPlayerbot.DungeonRouteDir) and pull what is on it.
 // The rest of the group follows the leader; combat is handled by the usual combat strategies.
@@ -21,6 +22,8 @@ public:
     std::string const getName() override { return "dungeon run"; }
     // Replaces NonCombatStrategy::InitTriggers on purpose: its quest-log and mount triggers already come with "nc".
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+
+    static bool CanAssistTarget(PlayerbotAI* botAI, Unit* target);
 };
 
 #endif

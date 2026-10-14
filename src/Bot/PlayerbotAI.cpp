@@ -15,6 +15,7 @@
 #include "Common.h"
 #include "CreatureData.h"
 #include "DBCStores.h"
+#include "DungeonRunStrategy.h"
 #include "EmoteAction.h"
 #include "Engine.h"
 #include "EventProcessor.h"
@@ -422,6 +423,38 @@ void PlayerbotAI::UpdateAI(uint32 elapsed, bool minimal)
     if (!bot || !bot->GetSession() || !bot->IsInWorld() || bot->IsBeingTeleported() ||
         bot->GetSession()->IsLoggingOut() || bot->IsDuringRemoveFromWorld())
         return;
+
+    // Stop an existing wand/auto-shot when its target resets, even while the action engine is delayed.
+    if (Spell* autoRepeat = bot->GetCurrentSpell(CURRENT_AUTOREPEAT_SPELL))
+    {
+        Unit* target = GetUnit(autoRepeat->m_targets.GetUnitTargetGUID());
+        if (target && !DungeonRunStrategy::CanAssistTarget(this, target))
+        {
+            bot->InterruptSpell(CURRENT_AUTOREPEAT_SPELL);
+            if (bot->GetVictim() == target)
+                bot->AttackStop();
+        }
+    }
+
+    // Drinking sleeps the AI for up to 27 s and nothing woke it when the group was jumped: the priest sat for 19 s
+    // with full mana and healed nobody while four elites killed the party (Ahn'kahet pack 273, realm 2 run 2457).
+    // Attackers, not the combat flag: that lingers for seconds after a fight and would stand every drink up.
+    if (nextAICheckDelay > 1000 && bot->IsSitState() && bot->IsAlive())
+    {
+        bool jumped = !bot->getAttackers().empty();
+        if (Group* group = bot->GetGroup())
+            for (GroupReference* ref = group->GetFirstMember(); ref && !jumped; ref = ref->next())
+            {
+                Player* member = ref->GetSource();
+                jumped = member && member != bot && member->IsAlive() && member->GetMapId() == bot->GetMapId() &&
+                         bot->GetDistance(member) < 100.0f && !member->getAttackers().empty();
+            }
+        if (jumped)
+        {
+            nextAICheckDelay = 0;
+            bot->SetStandState(UNIT_STAND_STATE_STAND);
+        }
+    }
 
     // Bots send no movement opcodes, so m_lastFallZ stays frozen and Player::IsFalling() (a Z test
     // against it) blocks LFG teleports. Unit::IsFalling() is the flag test, so real falls keep theirs.

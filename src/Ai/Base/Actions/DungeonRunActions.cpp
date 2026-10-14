@@ -21,6 +21,8 @@
 
 bool DungeonRunAdvanceAction::isUseful()
 {
+    if ((!bot->IsAlive() || bot->IsInCombat()) && (_backtracking || _backtrackWaitSinceMs))
+        ReleaseGroup();
     // A combat flag with nobody attacking does not hold the leader: Hadronox's gauntlet left the tank flagged in
     // combat for minutes with no attacker, and the run stood still on the ramp (run 1857).
     return bot->IsAlive() && (!bot->IsInCombat() || bot->getAttackers().empty()) &&
@@ -94,6 +96,162 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
     bool const ready = GroupReady(waitReason, dead, fighting);
     if (!ready)
         wave = NextItem(*route, waveTarget, waveObject, waveIndex);
+    // Meet the moving member's floor (Ahn'kahet item 52, realm 3 run 2472); also twilight hold, run 2462.
+    static constexpr float BACKTRACK_DISTANCE_PROGRESS = 10.0f;
+    auto const resetBacktrack = [this]()
+    {
+        _backtracking = false;
+        _backtrackWaitSinceMs = 0;
+        _backtrackItem = UINT32_MAX;
+    };
+    bool const distanceWaiting = !ready && waitReason.ends_with(" yd away");
+    if (_backtracking || distanceWaiting)
+    {
+        Group* group = bot->GetGroup();
+        bool canRegroup = group && bot->IsAlive() && !bot->IsInCombat();
+        bool resourcesReady = true, gathered = true;
+        Player* straggler = nullptr;
+        float farthest = 0.0f;
+        if (group)
+            for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+            {
+                Player* member = ref->GetSource();
+                if (!member || !member->IsInWorld() || member->GetMapId() != bot->GetMapId() || !member->IsAlive())
+                {
+                    canRegroup = false;
+                    continue;
+                }
+                canRegroup = canRegroup && !member->IsInCombat();
+                if ((member->IsSitState() &&
+                     (member->HasAuraType(SPELL_AURA_MOD_POWER_REGEN) || member->HasAuraType(SPELL_AURA_MOD_REGEN))) ||
+                    member->GetHealthPct() < READY_HEALTH_PCT ||
+                    (member->getPowerType() == POWER_MANA && member->GetMaxPower(POWER_MANA) > 0 &&
+                     member->GetPowerPct(POWER_MANA) < READY_MANA_PCT))
+                    resourcesReady = false;
+                float const distance = bot->GetDistance(member);
+                bool const offFloor = std::fabs(member->GetPositionZ() - bot->GetPositionZ()) > NODE_AHEAD_FLOOR;
+                bool const away = distance > GROUP_RANGE;
+                gathered = gathered && !away && !offFloor;
+                if ((_backtracking ? away || offFloor : away && offFloor) && (!straggler || distance > farthest))
+                {
+                    straggler = member;
+                    farthest = distance;
+                }
+            }
+        if (!canRegroup)
+            resetBacktrack();
+        else if (_backtracking && gathered)
+        {
+            bot->StopMoving();
+            LOG_DEBUG("playerbots", "dungeon-run bot={} backtrack gathered item={}", bot->GetName(), _backtrackItem);
+            ReleaseGroup();
+            _stuckSinceMs = 0;
+            _stuckWindows = 0;
+            return false;  // GroupReady is checked again next tick, before the hold and its watchdog.
+        }
+        else if (!_backtracking && (!resourcesReady || !straggler || !wave))
+            resetBacktrack();
+        else
+        {
+            if (!resourcesReady)
+                return false;
+            uint32 const now = getMSTime();
+            if (!_backtracking)
+            {
+                if (!_backtrackWaitSinceMs || _backtrackItem != waveIndex ||
+                    farthest < _backtrackClosest - BACKTRACK_DISTANCE_PROGRESS)
+                {
+                    _backtrackItem = waveIndex;
+                    _backtrackWaitSinceMs = now;
+                    _backtrackClosest = farthest;
+                    if (!botAI->HasStrategy("dungeon run", BOT_STATE_COMBAT))
+                        botAI->ChangeStrategy("+dungeon run", BOT_STATE_COMBAT);
+                }
+                if (getMSTimeDiff(_backtrackWaitSinceMs, now) >= STUCK_PROGRESS_MS)
+                {
+                    ReleaseGroup();
+                    _backtracking = true;
+                    _backtrackItem = waveIndex;
+                    _backtrackMinAlong = std::max(0.0f, wave->along - BACKTRACK_RANGE);
+                    _stuckSinceMs = 0;
+                    _stuckWindows = 0;
+                    LOG_DEBUG("playerbots", "dungeon-run bot={} backtrack enter item={} member={} min_along={:.0f}",
+                              bot->GetName(), _backtrackItem, straggler->GetName(), _backtrackMinAlong);
+                }
+            }
+            if (_backtracking)
+            {
+                if (!straggler || _backtrackItem >= route->items.size())
+                    return false;
+                auto const inAir = [this](DungeonRouteNode const& node)
+                {
+                    return bot->GetExactDist2d(node.x, node.y) < AIR_NODE_RANGE &&
+                           std::fabs(node.z - bot->GetPositionZ()) > AIR_NODE_HEIGHT;
+                };
+                float const maxAlong = route->items[_backtrackItem].along;
+                uint32 goal = UINT32_MAX, first = UINT32_MAX, last = UINT32_MAX;
+                float nearest = 0.0f, anchorDistance = BACKTRACK_RANGE;
+                bool const anchoring = _backtrackNode == UINT32_MAX;
+                for (uint32 i = 0; i < route->nodes.size(); ++i)
+                {
+                    DungeonRouteNode const& node = route->nodes[i];
+                    if (node.along < _backtrackMinAlong || node.along > maxAlong || inAir(node))
+                        continue;
+                    float const distance = straggler->GetExactDist(node.x, node.y, node.z);
+                    bool const sameFloor = std::fabs(node.z - straggler->GetPositionZ()) <= NODE_AHEAD_FLOOR;
+                    first = std::min(first, i);
+                    last = i;
+                    if (sameFloor && (goal == UINT32_MAX || distance < nearest))
+                    {
+                        goal = i;
+                        nearest = distance;
+                    }
+                    float const fromLeader = anchoring ? bot->GetExactDist(node.x, node.y, node.z) : anchorDistance;
+                    if (anchoring && std::fabs(node.z - bot->GetPositionZ()) <= NODE_AHEAD_FLOOR &&
+                        fromLeader < anchorDistance)
+                    {
+                        anchorDistance = fromLeader;
+                        _backtrackNode = i;
+                    }
+                }
+                bool const limited = goal == UINT32_MAX;
+                if (limited && first != UINT32_MAX)
+                    goal =
+                        straggler->GetExactDist(route->nodes[first].x, route->nodes[first].y, route->nodes[first].z) <
+                                straggler->GetExactDist(route->nodes[last].x, route->nodes[last].y,
+                                                        route->nodes[last].z)
+                            ? first
+                            : last;
+                if (_backtrackNode < route->nodes.size() && goal < route->nodes.size())
+                {
+                    DungeonRouteNode const& current = route->nodes[_backtrackNode];
+                    // Finish this adjacent step before selecting the next one, including when the member passes us.
+                    if (bot->GetExactDist(current.x, current.y, current.z) <= STOP_REACHED && _backtrackNode != goal)
+                    {
+                        if (TraceDue())
+                            LOG_DEBUG("playerbots", "dungeon-run bot={} backtrack reached node={:.0f} item={}",
+                                      bot->GetName(), current.along, _backtrackItem);
+                        int32 const direction = goal > _backtrackNode ? 1 : -1;
+                        do
+                            _backtrackNode = uint32(int32(_backtrackNode) + direction);
+                        while (_backtrackNode != goal && inAir(route->nodes[_backtrackNode]));
+                    }
+                    DungeonRouteNode const& next = route->nodes[_backtrackNode];
+                    if (!inAir(next) && bot->GetExactDist(next.x, next.y, next.z) > STOP_REACHED)
+                        return MoveTo(bot->GetMapId(), next.x, next.y, next.z, false, false, false, false,
+                                      MovementPriority::MOVEMENT_NORMAL);
+                }
+                bot->StopMoving();
+                if (TraceDue())
+                    LOG_DEBUG("playerbots", "dungeon-run bot={} backtrack {} item={} node={} goal={} - waiting",
+                              bot->GetName(), limited ? "limit" : "at rendezvous", _backtrackItem, _backtrackNode,
+                              goal);
+                return false;
+            }
+        }
+    }
+    else
+        resetBacktrack();
     bool const waveWaiting = !ready && wave && wave->repeat && waveTarget;
     if (!waveWaiting)
         _waveWaitSinceMs = 0;
@@ -1651,6 +1809,11 @@ bool DungeonRunAdvanceAction::HoldGroupAt(DungeonRouteItem const& item)
 
 void DungeonRunAdvanceAction::ReleaseGroup()
 {
+    _backtracking = false;
+    _backtrackWaitSinceMs = 0;
+    _backtrackItem = UINT32_MAX;
+    _backtrackNode = UINT32_MAX;
+    _backtrackClosest = 0.0f;
     for (ObjectGuid const& guid : _held)
     {
         Player* member = ObjectAccessor::FindPlayer(guid);

@@ -6,6 +6,7 @@
 
 #include "GenericSpellActions.h"
 #include "Chat.h"
+#include "DungeonRunStrategy.h"
 #include "Event.h"
 #include "GenericBuffUtils.h"
 #include "Group.h"
@@ -178,7 +179,26 @@ bool CastSpellAction::Execute(Event /*event*/)
         return botAI->CastSpell(castId, bot);
     }
 
-    return botAI->CastSpell(spell, GetTarget());
+    Unit* target = GetTarget();
+    // Some offensive actions override isUseful without calling the base check.
+    return CanStartAttack(target) && botAI->CastSpell(spell, target);
+}
+
+bool CastSpellAction::CanStartAttack(Unit* target)
+{
+    if (!target || bot->IsFriendlyTo(target) || DungeonRunStrategy::CanAssistTarget(botAI, target))
+        return true;
+
+    // Sap overrides isUseful, but uses this Execute and must remain available before the pull.
+    if (spell == "sap")
+        return true;
+
+    if (getThreatType() != ActionThreatType::None || dynamic_cast<CastShootAction*>(this))
+        return false;
+
+    // Hunter Auto Shot also reports no action threat and has its own isUseful override.
+    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(AI_VALUE2(uint32, "spell id", spell));
+    return !spellInfo || !spellInfo->IsAutoRepeatRangedSpell();
 }
 
 bool CastSpellAction::isUseful()
@@ -197,6 +217,9 @@ bool CastSpellAction::isUseful()
 
     Unit* spellTarget = GetTarget();
     if (!spellTarget || !spellTarget->IsInWorld() || spellTarget->GetMapId() != bot->GetMapId())
+        return false;
+
+    if (!CanStartAttack(spellTarget))
         return false;
 
     // float combatReach = bot->GetCombatReach() + target->GetCombatReach();
@@ -450,10 +473,14 @@ bool CastShootAction::isPossible()
 
 bool CastShootAction::Execute(Event /*event*/)
 {
-    if (shootSpellId)
-        return botAI->CastSpell(shootSpellId, GetTarget());
+    Unit* target = GetTarget();
+    if (!CanStartAttack(target))
+        return false;
 
-    return botAI->CastSpell(spell, GetTarget());
+    if (shootSpellId)
+        return botAI->CastSpell(shootSpellId, target);
+
+    return botAI->CastSpell(spell, target);
 }
 
 Value<Unit*>* CastDebuffSpellOnAttackerAction::GetTargetValue()
