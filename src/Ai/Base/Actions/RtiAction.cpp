@@ -281,11 +281,11 @@ bool TrashCcMarkAction::AssignPrePull(Group* group)
     }
 
     Unit* skull = TrashCcIconUnit(botAI, TRASH_CC_ICON_SKULL);
-    if (!inPack(skull) || assigned.count(skull->GetGUID()))
+    if (!inPack(skull) || assigned.count(skull->GetGUID()) || TrashCcIncapacitated(skull, bot))
     {
         skull = nullptr;
         for (auto it = pack.rbegin(); it != pack.rend(); ++it)
-            if (!assigned.count((*it)->GetGUID()))
+            if (!assigned.count((*it)->GetGUID()) && !TrashCcIncapacitated(*it, bot))
             {
                 skull = *it;
                 break;
@@ -318,7 +318,7 @@ bool TrashCcMarkAction::AdvanceKillOrder(Group* group)
     for (ObjectGuid const& guid : AI_VALUE(GuidVector, "attackers"))
     {
         Unit* unit = botAI->GetUnit(guid);
-        if (!unit || !unit->IsAlive() || !unit->IsCreature())
+        if (!unit || !unit->IsAlive() || !unit->IsCreature() || TrashCcIncapacitated(unit, bot))
             continue;
 
         bool ccIcon = false;
@@ -333,6 +333,24 @@ bool TrashCcMarkAction::AdvanceKillOrder(Group* group)
         // distance to the tank.
         if (!best || Ranks(unit, best))
             best = unit;
+    }
+
+    // Sheep puts its caster in combat before the loose pack enters "attackers". Do not release that sheep while
+    // the tank still has an unengaged member to pull (Ahn'kahet pack 1745, runs 2454/2459).
+    if (!best && !bot->IsInCombat())
+    {
+        Unit* pull = botAI->GetUnit(AI_VALUE(ObjectGuid, "pull target"));
+        for (Creature* creature : TrashCcCollectPack(botAI, bot, pull))
+        {
+            if (TrashCcIncapacitated(creature, bot))
+                continue;
+            bool ccIcon = false;
+            for (uint8 icon : {TRASH_CC_ICON_MOON, TRASH_CC_ICON_SQUARE, TRASH_CC_ICON_CROSS, TRASH_CC_ICON_TRIANGLE})
+                if (group->GetTargetIcon(icon) == creature->GetGUID())
+                    ccIcon = true;
+            if (!ccIcon && (!best || Ranks(creature, best)))
+                best = creature;
+        }
     }
 
     if (best)

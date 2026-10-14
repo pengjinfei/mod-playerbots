@@ -594,6 +594,53 @@ bool DungeonRunAdvanceAction::Execute(Event /*event*/)
         Unit* pullUnit = TrashCcIconUnit(botAI, TRASH_CC_SKULL_ICON);
         if (!pullUnit || !pullUnit->IsAlive() || !InItem(*item, pullUnit))
             pullUnit = target;
+        // A sheep can already be the skull when only its caster is in combat (Ahn'kahet pack 1745, runs 2454/2459).
+        // Pull a loose member of this item instead; keep the old target only when none is left.
+        auto controlled = [&](Unit* unit)
+        {
+            if (TrashCcIncapacitated(unit, bot))
+                return true;
+            for (uint8 icon : TRASH_CC_ICONS)
+                if (TrashCcIconUnit(botAI, icon) == unit)
+                    return true;
+            return false;
+        };
+        if (controlled(pullUnit))
+        {
+            Unit* best = nullptr;
+            bool bestInReach = false;
+            float bestDistance = 0.0f;
+            auto consider = [&](Creature* member)
+            {
+                if (!member || !member->IsAlive() || !InItem(*item, member) || !bot->IsValidAttackTarget(member) ||
+                    controlled(member))
+                    return;
+                float const distance = bot->GetDistance(member);
+                bool const inReach = distance <= pullDistance && bot->IsWithinLOSInMap(member);
+                if (!best || (inReach && !bestInReach) || (inReach == bestInReach && distance < bestDistance))
+                {
+                    best = member;
+                    bestInReach = inReach;
+                    bestDistance = distance;
+                }
+            };
+            if (!item->summonEntries.empty())
+            {
+                std::list<Creature*> creatures;
+                bot->GetCreatureListWithEntryInGrid(creatures, item->summonEntries, SUMMON_SIGHT + item->radius);
+                for (Creature* member : creatures)
+                    consider(member);
+            }
+            else if (Map* map = bot->GetMap())
+                for (uint32 spawnId : item->spawnIds)
+                {
+                    auto const bounds = map->GetCreatureBySpawnIdStore().equal_range(spawnId);
+                    for (auto itr = bounds.first; itr != bounds.second; ++itr)
+                        consider(itr->second);
+                }
+            if (best)
+                pullUnit = best;
+        }
         uint32& attempts = _pullAttempts[index];
         ++attempts;
         LOG_DEBUG("playerbots", "dungeon-run bot={} pull item={} along={:.0f} target={} attempt={} progress={:.0f}",
@@ -979,6 +1026,7 @@ bool DungeonRunAdvanceAction::CcGateOpen(DungeonRouteItem const& item, Unit* nea
 {
     // The trash-cc chain sees the pack as what stands within 15 yd of the pinned unit; pin the member nearest the
     // pack's centre, not the one nearest the leader, or a spread pack (four elites over 18 yd) never counts as one.
+    // This is the pack anchor, not the pull strategy's target; the ranged pull selects a loose member separately.
     Unit* target = nearest;
     float best = nearest->GetExactDist(item.x, item.y, item.z);
     if (Map* map = bot->GetMap())
