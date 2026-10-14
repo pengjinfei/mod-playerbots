@@ -7,6 +7,7 @@
 #include "PaladinPullStrategy.h"
 #include "PlayerbotAI.h"
 #include "Playerbots.h"
+#include "RtiTargetValue.h"
 
 std::string PaladinPullStrategy::GetPullActionName() const
 {
@@ -17,7 +18,14 @@ std::string PaladinPullStrategy::GetPullActionName() const
         return PullStrategy::GetPullActionName();
     }
 
-    if (botAI->CanCastSpell("avenger's shield", target))
+    // The shield bounces, and crowd-control protection holds it while a crowd-control mark stands within 45 yd:
+    // the pull then never went out and the tank walked into the pack (Ahn'kahet pack 1182, realm 8 run 2463).
+    bool markedNear = false;
+    for (uint8 icon : { TRASH_CC_ICON_TRIANGLE, TRASH_CC_ICON_MOON, TRASH_CC_ICON_SQUARE, TRASH_CC_ICON_CROSS })
+        if (Unit* marked = TrashCcIconUnit(botAI, icon))
+            markedNear = markedNear ||
+                         (marked != target && marked->IsAlive() && botAI->GetBot()->GetDistance(marked) <= 45.0f);
+    if (!markedNear && botAI->CanCastSpell("avenger's shield", target))
         return "avenger's shield";
 
     if (botAI->CanCastSpell("hand of reckoning", target))
